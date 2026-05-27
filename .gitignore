@@ -1,0 +1,33 @@
+```gitignore
+# Dependencies
+/node_modules
+/vendor
+dist/
+build/
+
+# Environment variables
+.env
+.env.local
+
+# Build and compile artifacts
+*.log
+*.tmp
+temp/
+src/cache/
+
+# IDE and OS specific files
+.idea/
+*.iml
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Testing and coverage
+/coverage
+/test-results
+.sisyphus
+/testsprite_tests
+
+# Log files
+logs/*.log
+```
