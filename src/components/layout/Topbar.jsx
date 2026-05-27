@@ -42,7 +42,7 @@ const Topbar = () => {
 
         <div className="h-8 w-[1px] bg-slate-200 mx-1 hidden sm:block" />
 
-        <button className="p-2 rounded-lg hover:bg-slate-100 text-slate-500 transition-colors">
+        <button aria-label="Toggle dark mode" className="p-2 rounded-lg hover:bg-slate-100 text-slate-500 transition-colors">
           <Moon size={20} />
         </button>
 

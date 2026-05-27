@@ -91,6 +91,7 @@ export default function Register() {
                 </label>
                 <Input
                   id="username"
+                  autoComplete="username"
                   placeholder="johndoe"
                   className={cn(errors.username && "border-red-500 focus-visible:ring-red-500")}
                   {...register('username')}
@@ -107,6 +108,7 @@ export default function Register() {
                 <Input
                   id="email"
                   type="email"
+                  autoComplete="email"
                   placeholder="name@example.com"
                   className={cn(errors.email && "border-red-500 focus-visible:ring-red-500")}
                   {...register('email')}
@@ -124,11 +126,13 @@ export default function Register() {
                   <Input
                     id="password"
                     type={showPassword ? "text" : "password"}
+                    autoComplete="new-password"
                     className={cn(errors.password && "border-red-500 focus-visible:ring-red-500", "pr-10")}
                     {...register('password')}
                   />
                   <button
                     type="button"
+                    aria-label={showPassword ? "Hide password" : "Show password"}
                     onClick={() => setShowPassword(!showPassword)}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
                   >
@@ -148,11 +152,13 @@ export default function Register() {
                   <Input
                     id="confirmPassword"
                     type={showConfirmPassword ? "text" : "password"}
+                    autoComplete="new-password"
                     className={cn(errors.confirmPassword && "border-red-500 focus-visible:ring-red-500", "pr-10")}
                     {...register('confirmPassword')}
                   />
                   <button
                     type="button"
+                    aria-label={showConfirmPassword ? "Hide password" : "Show password"}
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
                   >

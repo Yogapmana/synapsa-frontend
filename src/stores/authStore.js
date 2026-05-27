@@ -55,6 +55,12 @@ export const useAuthStore = create((set, get) => ({
     })
   },
 
+  updateToken: (newToken) => {
+    if (typeof window === 'undefined') return
+    window.localStorage.setItem(TOKEN_KEY, newToken)
+    set({ token: newToken })
+  },
+
   restoreSession: () => {
     const storedSession = readStoredUser()
 
@@ -72,5 +78,12 @@ export const useAuthStore = create((set, get) => ({
 }))
 
 if (typeof window !== 'undefined') {
-  useAuthStore.getState().restoreSession()
+  const storedSession = readStoredUser()
+  if (storedSession) {
+    useAuthStore.setState({
+      token: storedSession.token,
+      user: storedSession.user,
+      isAuthenticated: true,
+    })
+  }
 }

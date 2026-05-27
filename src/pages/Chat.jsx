@@ -57,7 +57,7 @@ export default function Chat() {
       const previousHistory = queryClient.getQueryData(['chat', currentTopicId]);
       
       const optimisticMessage = {
-        id: Date.now(),
+        id: 'optimistic-user',
         role: 'user',
         content: newMessage,
         created_at: new Date().toISOString()
@@ -68,19 +68,21 @@ export default function Chat() {
       return { previousHistory };
     },
     onError: (err, newMessage, context) => {
-      queryClient.setQueryData(['chat', currentTopicId], context.previousHistory);
+      queryClient.setQueryData(['chat', currentTopicId], (old = []) => {
+        return old.filter(msg => msg.id !== 'optimistic-user');
+      });
     },
     onSuccess: (data) => {
-      const aiMessage = {
-        id: data.message_id || Date.now() + 1,
-        role: 'assistant',
-        content: data.response,
-        sources: data.sources,
-        created_at: new Date().toISOString()
-      };
-      
       queryClient.setQueryData(['chat', currentTopicId], (old = []) => {
-        return [...old, aiMessage];
+        const filtered = old.filter(msg => msg.id !== 'optimistic-user')
+        const aiMessage = {
+          id: data.message_id || `ai-${Date.now()}`,
+          role: 'assistant',
+          content: data.response,
+          sources: data.sources,
+          created_at: new Date().toISOString()
+        };
+        return [...filtered, aiMessage];
       });
     },
   });
@@ -107,7 +109,7 @@ export default function Chat() {
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-56px)] bg-slate-50 overflow-hidden">
+    <div className="flex flex-col h-[calc(100vh-56px)] bg-slate-50 dark:bg-slate-900 overflow-hidden">
       {/* Chat Header */}
       <header className="px-6 py-3 bg-white border-b border-slate-200 flex items-center justify-between shadow-sm z-10">
         <div className="flex items-center gap-4">
@@ -123,7 +125,7 @@ export default function Chat() {
               <span className="text-xs text-slate-500">Membahas tentang:</span>
               {topics.length > 0 ? (
                 <Select value={currentTopicId} onValueChange={handleTopicChange}>
-                  <SelectTrigger className="h-6 border-none bg-transparent p-0 text-xs font-semibold text-primary-600 hover:text-primary-700 focus:ring-0 shadow-none gap-1">
+                  <SelectTrigger aria-label="Select topic" className="h-6 border-none bg-transparent p-0 text-xs font-semibold text-primary-600 hover:text-primary-700 focus:ring-0 shadow-none gap-1">
                     <SelectValue placeholder="Pilih Topik" />
                   </SelectTrigger>
                   <SelectContent>
@@ -144,7 +146,7 @@ export default function Chat() {
         </div>
         
         <div className="flex items-center gap-3">
-          <button className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors">
+          <button aria-label="Chat info" className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors">
             <Info size={20} />
           </button>
         </div>

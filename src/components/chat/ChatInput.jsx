@@ -45,6 +45,7 @@ const ChatInput = ({ onSend, isLoading, placeholder }) => {
         <Button
           onClick={handleSend}
           disabled={!text.trim() || isLoading}
+          aria-label="Send message"
           className="rounded-full w-10 h-10 p-0 flex-shrink-0 bg-primary-500 hover:bg-primary-600 shadow-sm"
         >
           {isLoading ? (

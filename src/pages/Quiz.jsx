@@ -82,7 +82,17 @@ export default function Quiz() {
     }));
 
     try {
-      const sessionId = activeSession?.id || 'current-session';
+      if (!activeSession?.id) {
+        toast({
+          title: "Sesi tidak ditemukan",
+          description: "Silakan mulai sesi belajar terlebih dahulu.",
+          variant: "destructive"
+        });
+        setQuizState('answering');
+        return;
+      }
+
+      const sessionId = activeSession.id;
       const res = await submitQuiz.mutateAsync({
         session_id: sessionId,
         topic_id: topicId,

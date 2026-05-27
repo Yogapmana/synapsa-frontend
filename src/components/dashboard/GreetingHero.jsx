@@ -41,7 +41,7 @@ export default function GreetingHero({ username = 'Pelajar', streak = 0, xp = 0 
     <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
       <div className="space-y-1">
         <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-100">
-          {greeting}, {username}! 🌱
+          {greeting}, {username}! <span aria-hidden="true">🌱</span>
         </h1>
         <p className="text-gray-500 dark:text-gray-400">
           Siap untuk melanjutkan petualangan belajarmu hari ini?

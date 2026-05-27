@@ -23,19 +23,22 @@ export default function Module() {
   const [generationTriggered, setGenerationTriggered] = useState(false)
 
   useEffect(() => {
+    let interval;
     if (!isLoading && !module && !generating && !generationTriggered && sessionId && topicId) {
       setGenerating(true)
       setGenerationTriggered(true)
       generateModule(sessionId, topicId)
         .then(() => {
-          const interval = setInterval(() => {
+          interval = setInterval(() => {
             refetch()
           }, 5000)
-          return () => clearInterval(interval)
         })
         .catch(() => {
           setGenerating(false)
         })
+    }
+    return () => {
+      if (interval) clearInterval(interval)
     }
   }, [isLoading, module, generating, generationTriggered, sessionId, topicId, refetch])
 

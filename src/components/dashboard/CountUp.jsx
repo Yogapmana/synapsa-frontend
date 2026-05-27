@@ -20,5 +20,5 @@ export function CountUp({ value, duration = 1 }) {
     return () => controls.stop();
   }, [value, duration, shouldReduceMotion]);
 
-  return <span>{count}</span>;
+  return <span className="tabular-nums">{count}</span>;
 }

@@ -79,7 +79,7 @@ const Sidebar = () => {
         }}
         transition={shouldReduceMotion ? { duration: 0 } : { duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
         className={cn(
-          "fixed left-0 top-0 z-40 h-screen border-r border-slate-200 bg-white flex flex-col",
+          "fixed left-0 top-0 z-40 h-screen border-r border-slate-200 dark:border-slate-700 bg-white dark:bg-gray-900 flex flex-col",
           isMobile && sidebarCollapsed ? "invisible" : "visible"
         )}
       >
@@ -89,6 +89,7 @@ const Sidebar = () => {
           )}
           <button
             onClick={toggleSidebar}
+            aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
             className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-500 transition-colors ml-auto"
           >
             {sidebarCollapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
