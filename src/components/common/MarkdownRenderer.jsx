@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import rehypeHighlight from 'rehype-highlight'
-import { Check, Copy } from 'lucide-react'
+import { Check, Copy, X } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
@@ -42,7 +42,103 @@ function CodeBlock({ inline, className, children, ...props }) {
   )
 }
 
-function MarkdownRenderer({ content, className }) {
+function ImageLightbox({ src, alt, isOpen, onClose }) {
+  if (!isOpen) return null
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm p-4"
+      onClick={onClose}
+    >
+      <button
+        className="absolute top-4 right-4 text-white/70 hover:text-white transition-colors"
+        onClick={onClose}
+        aria-label="Close lightbox"
+      >
+        <X size={32} />
+      </button>
+      <img
+        src={src}
+        alt={alt || 'Ilustrasi'}
+        className="max-w-[90vw] max-h-[90vh] rounded-lg shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      />
+      {alt && (
+        <p className="absolute bottom-4 left-0 right-0 text-center text-white/80 text-sm">
+          {alt}
+        </p>
+      )}
+    </div>
+  )
+}
+
+function PollinationsImage({ src, alt }) {
+  const [isLightboxOpen, setIsLightboxOpen] = useState(false)
+
+  return (
+    <>
+      <figure
+        className="my-8 group cursor-zoom-in"
+        onClick={() => setIsLightboxOpen(true)}
+      >
+        <img
+          src={src}
+          alt={alt || 'Ilustrasi'}
+          className="w-full rounded-xl shadow-lg border bg-white transition-transform duration-300 group-hover:scale-[1.02] group-hover:shadow-xl"
+          loading="lazy"
+        />
+        {alt && alt !== 'Ilustrasi' && (
+          <figcaption className="mt-2 text-center text-sm text-muted-foreground italic">
+            {alt}
+          </figcaption>
+        )}
+      </figure>
+      <ImageLightbox
+        src={src}
+        alt={alt}
+        isOpen={isLightboxOpen}
+        onClose={() => setIsLightboxOpen(false)}
+      />
+    </>
+  )
+}
+
+function ContentWithImages({ content, className }) {
+  const segments = useMemo(() => {
+    if (!content) return []
+
+    const imageRegex = /!\[([^\]]*)\]\((https:\/\/(image|gen)\.pollinations\.ai\/image\/[^)]+\?[^)]+)\)/g
+    const parts = []
+    let lastIndex = 0
+    let match
+    let idx = 0
+
+    while ((match = imageRegex.exec(content)) !== null) {
+      if (match.index > lastIndex) {
+        parts.push({
+          type: 'text',
+          content: content.slice(lastIndex, match.index)
+        })
+      }
+      parts.push({
+        type: 'image',
+        alt: match[1],
+        src: match[2],
+        key: `img-${idx++}`
+      })
+      lastIndex = match.index + match[0].length
+    }
+
+    if (lastIndex < content.length) {
+      parts.push({
+        type: 'text',
+        content: content.slice(lastIndex)
+      })
+    }
+
+    return parts
+  }, [content])
+
   const components = useMemo(() => ({
     blockquote: ({ children }) => <blockquote className="border-l-4 border-primary/40 pl-4 italic text-muted-foreground">{children}</blockquote>,
     code: CodeBlock,
@@ -53,9 +149,27 @@ function MarkdownRenderer({ content, className }) {
 
   return (
     <div className={cn('module-content prose prose-slate max-w-none', className)}>
-      <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeHighlight]} components={components}>{content}</ReactMarkdown>
+      {segments.map((segment, i) => {
+        if (segment.type === 'image') {
+          return <PollinationsImage key={segment.key} src={segment.src} alt={segment.alt} />
+        }
+        return (
+          <ReactMarkdown
+            key={i}
+            remarkPlugins={[remarkGfm]}
+            rehypePlugins={[rehypeHighlight]}
+            components={components}
+          >
+            {segment.content}
+          </ReactMarkdown>
+        )
+      })}
     </div>
   )
+}
+
+function MarkdownRenderer({ content, className }) {
+  return <ContentWithImages content={content} className={className} />
 }
 
 export default MarkdownRenderer
