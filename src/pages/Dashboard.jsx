@@ -77,17 +77,23 @@ export default function Dashboard() {
   
   let totalQuizScore = 0;
   quizHistory.forEach(q => {
-    totalQuizScore += q.score;
-    if (q.score >= 90) xp += 30;
-    else if (q.score >= 75) xp += 20;
+    const scoreValue = q.score > 1 ? q.score : q.score * 100;
+    totalQuizScore += scoreValue;
+    if (scoreValue >= 90) xp += 30;
+    else if (scoreValue >= 75) xp += 20;
     else xp += 5;
   });
   
-  const avgQuizScore = quizHistory.length > 0 ? Math.round(totalQuizScore / quizHistory.length) : 0;
+  const avgQuizScore = quizHistory.length > 0
+    ? Math.round(quizHistory.reduce((sum, q) => {
+      const scoreVal = q.score > 1 ? q.score : q.score * 100;
+      return sum + scoreVal;
+    }, 0) / quizHistory.length)
+    : 0;
   
   const stats = [
     { label: 'Topik Selesai', value: `${completedTopicsCount}/${topics.length || 0}`, subtext: 'Dari total silabus' },
-    { label: 'Rata-rata Kuis', value: `${avgQuizScore}%`, subtext: `${quizHistory.length} kuis diambil` },
+    { label: 'Rata-rata Kuis', value: avgQuizScore, subtext: `${quizHistory.length} kuis diambil` },
     { label: 'Materi Dikurasi', value: topics.length || 0, subtext: 'Disusun oleh Planner' },
     { label: 'Streak Hari', value: streak || 0, subtext: 'Pertahankan!' },
   ];
@@ -119,13 +125,16 @@ export default function Dashboard() {
     };
   });
 
-  const activities = quizHistory.map(q => ({
-    id: q.id,
-    type: 'quiz',
-    title: `Kuis: ${q.topic_title || 'Topik'}`,
-    description: `Skor: ${q.score}% - Waktu: ${Math.round(q.time_spent_seconds / 60)} menit`,
-    time: new Date(q.created_at || Date.now()).toLocaleDateString('id-ID'),
-  })).slice(0, 5);
+  const activities = quizHistory.map(q => {
+    const displayScore = q.score > 1 ? q.score : Math.round(q.score * 100);
+    return {
+      id: q.id,
+      type: 'quiz',
+      title: `Kuis: ${q.topic_title || 'Topik'}`,
+      description: `Skor: ${displayScore} - Waktu: ${Math.round(q.time_spent_seconds / 60)} menit`,
+      time: new Date(q.created_at || Date.now()).toLocaleDateString('id-ID'),
+    };
+  }).slice(0, 5);
 
   return (
     <div className="max-w-7xl mx-auto pb-12">
