@@ -80,7 +80,7 @@ export function UXRadarChart({ data, hasSubmitted, sessionId, onSurveySubmitted 
             <PolarGrid />
             <PolarAngleAxis dataKey="subject" tick={{ fill: 'currentColor', fontSize: 10 }} />
             <PolarRadiusAxis angle={30} domain={[0, 5]} tick={{ fontSize: 10 }} />
-            <Radar name="UX" dataKey="A" stroke="#8b5cf6" fill="#8b5cf6" fillOpacity={0.6} />
+            <Radar name="UX" dataKey="A" stroke="#C4251C" fill="#C4251C" fillOpacity={0.6} />
           </RadarChart>
         </ResponsiveContainer>
       </div>

@@ -40,8 +40,8 @@ export default function MaterialRating({ sessionId, topicId, onRate }) {
             className={cn(
               'flex items-center gap-1.5 rounded-lg border px-3 py-2 text-sm transition-colors',
               selected === option.value
-                ? 'border-primary bg-primary/10 text-primary font-medium'
-                : 'border-border bg-background text-foreground hover:border-primary/50 hover:bg-primary/5',
+                ? 'border-primary bg-tertiary/10 text-primary font-medium'
+                : 'border-border bg-background text-foreground hover:border-primary/50 hover:bg-tertiary/5',
             )}
           >
             <span className="text-base">{option.emoji}</span>

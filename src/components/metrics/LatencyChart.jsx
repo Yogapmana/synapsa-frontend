@@ -42,7 +42,7 @@ export function LatencyChart({ data }) {
             cursor={{ fill: 'transparent' }}
             contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
           />
-          <Bar dataKey="count" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+          <Bar dataKey="count" fill="#C4251C" radius={[4, 4, 0, 0]} />
           {/* Need to position reference lines appropriately. Since X is buckets, reference lines for P50/P95 might be tricky to plot on X axis unless we use a scatter/line or map P50 to bucket. 
           Alternatively, display P50 and P95 as text overlays or custom elements. Let's map P50/P95 to string keys for ReferenceLine, or just show them in a legend. */}
         </BarChart>

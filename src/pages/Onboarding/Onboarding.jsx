@@ -95,22 +95,22 @@ export default function Onboarding() {
     return (
       <div className="flex flex-col items-center justify-center space-y-8 py-12 text-center">
         <div className="space-y-4">
-          <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-primary-100 text-primary-600">
+          <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-tertiary/10 text-tertiary">
             <Sparkles className="h-10 w-10" />
           </div>
-          <h1 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
+          <h1 className="text-3xl font-bold tracking-tight text-primary sm:text-4xl font-serif">
             Lanjutkan Sesi Belajar
           </h1>
-          <p className="mx-auto max-w-md text-lg text-muted-foreground">
+          <p className="mx-auto max-w-md text-lg text-secondary font-serif">
             Kamu memiliki sesi belajar yang sedang berlangsung. Mari lanjutkan perjalanan belajarmu!
           </p>
         </div>
 
-        <div className="w-full max-w-md overflow-hidden rounded-2xl border bg-card p-6 shadow-sm">
+        <div className="w-full max-w-md overflow-hidden rounded-2xl border-[var(--border)] bg-surface p-6 shadow-sm">
           <div className="space-y-4">
             <div className="space-y-1">
-              <p className="text-sm font-medium text-muted-foreground">Topik</p>
-              <h3 className="text-xl font-semibold text-foreground">
+              <p className="text-sm font-medium text-secondary font-label">Topik</p>
+              <h3 className="text-xl font-semibold text-primary font-serif">
                 {activeSession.topic}
               </h3>
             </div>
@@ -118,7 +118,7 @@ export default function Onboarding() {
             <div className="flex items-center justify-center gap-2">
               <span className={cn(
                 "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium",
-                activeSession.status === 'processing' ? "bg-amber-100 text-amber-800" : "bg-green-100 text-green-800"
+                activeSession.status === 'processing' ? "bg-amber-100 text-amber-800" : "bg-tertiary/10 text-green-800"
               )}>
                 {activeSession.status === 'processing' ? 'Sedang Diproses' : 'Siap'}
               </span>
@@ -126,7 +126,7 @@ export default function Onboarding() {
 
             <Button
               onClick={handleContinueSession}
-              className="w-full gap-2 bg-primary-500 hover:bg-primary-600 text-white h-12 text-lg font-semibold rounded-xl"
+              className="w-full gap-2 bg-tertiary hover:bg-tertiary-dark text-white h-12 text-lg font-semibold rounded-xl font-label"
             >
               <Play className="h-5 w-5" />
               Lanjut
@@ -136,7 +136,7 @@ export default function Onboarding() {
 
         <button
           onClick={() => setActiveSession(null)}
-          className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+          className="text-sm font-medium text-secondary hover:text-primary transition-colors font-label"
         >
           Atau mulai sesi baru
         </button>
@@ -152,17 +152,17 @@ export default function Onboarding() {
             <div
               className={cn(
                 'flex h-9 w-9 items-center justify-center rounded-full text-sm font-semibold transition-all',
-                i < step && 'bg-primary-500 text-white',
-                i === step && 'bg-primary-500 text-white ring-4 ring-primary-100',
-                i > step && 'bg-muted text-muted-foreground'
+                i < step && 'bg-tertiary text-white',
+                i === step && 'bg-tertiary text-white ring-4 ring-tertiary/20',
+                i > step && 'bg-secondary/30 text-secondary'
               )}
             >
               {i < step ? '✓' : i + 1}
             </div>
             <span
               className={cn(
-                'text-sm font-medium hidden sm:inline',
-                i <= step ? 'text-foreground' : 'text-muted-foreground'
+                'text-sm font-medium font-label hidden sm:inline',
+                i <= step ? 'text-primary' : 'text-secondary'
               )}
             >
               {s.label}
@@ -171,7 +171,7 @@ export default function Onboarding() {
               <div
                 className={cn(
                   'h-0.5 w-8 sm:w-12 rounded-full transition-colors',
-                  i < step ? 'bg-primary-500' : 'bg-border'
+                  i < step ? 'bg-tertiary' : 'bg-border'
                 )}
               />
             )}
@@ -201,7 +201,7 @@ export default function Onboarding() {
 
       {error && (
         <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-center">
-          <p className="text-sm font-medium text-red-800">{error}</p>
+          <p className="text-sm font-medium text-red-800 font-serif">{error}</p>
         </div>
       )}
 
@@ -233,7 +233,7 @@ export default function Onboarding() {
           <Button
             onClick={handleStart}
             disabled={loading}
-            className="gap-2 bg-primary-500 hover:bg-primary-600 text-white shadow-green h-14 px-8 text-lg font-semibold rounded-xl"
+            className="gap-2 bg-tertiary hover:bg-tertiary-dark text-white shadow-sm h-14 px-8 text-lg font-semibold rounded-xl font-label"
           >
             {loading ? (
               <>

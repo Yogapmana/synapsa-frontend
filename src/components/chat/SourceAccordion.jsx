@@ -14,28 +14,28 @@ const SourceAccordion = ({ sources }) => {
     <div className="mt-2 w-full max-w-2xl">
       <Accordion type="single" collapsible className="w-full">
         <AccordionItem value="sources" className="border-none">
-          <AccordionTrigger className="py-1 text-xs text-slate-500 hover:text-slate-700 hover:no-underline transition-colors">
+          <AccordionTrigger className="py-1 text-xs text-secondary hover:text-primary hover:no-underline transition-colors">
             <div className="flex items-center gap-1.5 font-medium">
               <BookOpen size={12} />
               <span>Lihat Sumber ({sources.length})</span>
             </div>
           </AccordionTrigger>
           <AccordionContent className="pb-2 pt-1">
-            <div className="flex flex-col gap-1.5 pl-4 border-l-2 border-slate-100">
+            <div className="flex flex-col gap-1.5 pl-4 border-l-2 border-[var(--border)]">
               {sources.map((source, index) => (
                 <div key={index} className="flex flex-col gap-0.5">
                   <div className="flex items-center justify-between gap-2">
-                    <span className="text-xs font-semibold text-slate-700 truncate">
+                    <span className="text-xs font-semibold text-primary truncate">
                       {source.title || "Sumber Tanpa Judul"}
                     </span>
                     {source.relevance_score && (
-                      <span className="text-[10px] bg-slate-100 px-1.5 py-0.5 rounded-full text-slate-500 font-mono">
+                      <span className="text-[10px] bg-neutral px-1.5 py-0.5 rounded-full text-secondary font-mono">
                         {(source.relevance_score * 100).toFixed(0)}% relevan
                       </span>
                     )}
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-[10px] text-slate-400 uppercase tracking-wider font-bold">
+                    <span className="text-[10px] text-secondary/70 uppercase tracking-wider font-bold">
                       {source.type || "Document"}
                     </span>
                     {source.url && (
@@ -43,7 +43,7 @@ const SourceAccordion = ({ sources }) => {
                         href={source.url} 
                         target="_blank" 
                         rel="noopener noreferrer"
-                        className="text-[10px] text-primary-600 hover:underline flex items-center gap-0.5"
+                        className="text-[10px] text-tertiary hover:underline flex items-center gap-0.5"
                       >
                         Buka <ExternalLink size={8} />
                       </a>

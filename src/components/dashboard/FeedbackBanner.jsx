@@ -12,23 +12,23 @@ export default function FeedbackBanner({ message, isVisible, onDismiss }) {
           exit={{ opacity: 0, height: 0, marginBottom: 0, scale: 0.95 }}
           className="mb-8 overflow-hidden"
         >
-          <div className="bg-[#fef3c7] dark:bg-amber-900/30 border border-[#fde68a] dark:border-amber-700/50 rounded-xl p-4 flex gap-4 items-start shadow-sm">
+          <div className="bg-tertiary/5 border border-tertiary/20 rounded-xl p-4 flex gap-4 items-start shadow-sm">
             <div className="mt-0.5">
-              <RefreshCcw className="w-5 h-5 text-amber-600 dark:text-amber-500" />
+              <RefreshCcw className="w-5 h-5 text-tertiary" />
             </div>
             
             <div className="flex-1">
-              <h4 className="text-sm font-bold text-amber-900 dark:text-amber-200 mb-1">
+              <h4 className="text-sm font-bold text-primary mb-1">
                 Jadwal diperbarui oleh Planner Agent
               </h4>
-              <p className="text-sm text-amber-800/80 dark:text-amber-300/80 leading-relaxed">
+              <p className="text-sm text-secondary leading-relaxed">
                 {message}
               </p>
             </div>
             
             <button 
               onClick={onDismiss}
-              className="text-amber-500 hover:text-amber-700 dark:hover:text-amber-300 transition-colors p-1 rounded-md hover:bg-amber-200/50 dark:hover:bg-amber-800/50"
+              className="text-tertiary hover:text-tertiary transition-colors p-1 rounded-md hover:bg-amber-200/50"
               aria-label="Tutup pesan"
             >
               <X className="w-5 h-5" />

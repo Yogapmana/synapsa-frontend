@@ -33,7 +33,7 @@ export default function Quiz() {
   if (isLoading) {
     return (
       <div className="flex h-[calc(100vh-4rem)] items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-primary-600" />
+        <Loader2 className="w-8 h-8 animate-spin text-tertiary" />
       </div>
     );
   }
@@ -41,8 +41,8 @@ export default function Quiz() {
   if (error || !quizData) {
     return (
       <div className="flex flex-col h-[calc(100vh-4rem)] items-center justify-center text-center p-4">
-        <h2 className="text-xl font-bold text-slate-800 mb-2">Gagal Memuat Kuis</h2>
-        <p className="text-slate-600 mb-4">Terjadi kesalahan saat mengambil data kuis.</p>
+        <h2 className="text-xl font-bold text-primary mb-2">Gagal Memuat Kuis</h2>
+        <p className="text-secondary mb-4">Terjadi kesalahan saat mengambil data kuis.</p>
         <Button onClick={() => refetch()}>Coba Lagi</Button>
       </div>
     );
@@ -148,8 +148,8 @@ export default function Quiz() {
     <div className="container py-8 max-w-4xl mx-auto flex flex-col items-center">
       {quizState === 'submitting' ? (
         <div className="flex flex-col items-center justify-center space-y-4 py-12">
-          <Loader2 className="w-10 h-10 animate-spin text-primary-600" />
-          <p className="text-slate-600 font-medium">Menghitung skor...</p>
+          <Loader2 className="w-10 h-10 animate-spin text-tertiary" />
+          <p className="text-secondary font-medium">Menghitung skor...</p>
         </div>
       ) : (
         <QuizCard 

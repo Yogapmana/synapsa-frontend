@@ -22,7 +22,7 @@ export function TopicNode({ topic }) {
       border: 'border-green-300',
       text: 'text-green-800',
       iconText: 'text-green-600',
-      iconBg: 'bg-green-100',
+      iconBg: 'bg-tertiary/10',
       icon: Check,
       label: 'Selesai',
       isClickable: true,
@@ -31,8 +31,8 @@ export function TopicNode({ topic }) {
       bg: 'bg-[#eff6ff]',
       border: 'border-blue-300',
       text: 'text-blue-900',
-      iconText: 'text-blue-600',
-      iconBg: 'bg-blue-100',
+      iconText: 'text-secondary',
+      iconBg: 'bg-secondary/10',
       icon: Play,
       label: 'Sedang berjalan',
       isClickable: true,
@@ -40,19 +40,19 @@ export function TopicNode({ topic }) {
     review: {
       bg: 'bg-[#fefce8]',
       border: 'border-amber-300',
-      text: 'text-amber-900',
-      iconText: 'text-amber-600',
+      text: 'text-primary',
+      iconText: 'text-tertiary',
       iconBg: 'bg-amber-100',
       icon: RefreshCw,
       label: 'Perlu diulang',
       isClickable: true,
     },
     locked: {
-      bg: 'bg-slate-50 opacity-60',
-      border: 'border-slate-200',
-      text: 'text-slate-500',
-      iconText: 'text-slate-400',
-      iconBg: 'bg-slate-100',
+      bg: 'bg-neutral opacity-60',
+      border: 'border-[var(--border)]',
+      text: 'text-secondary',
+      iconText: 'text-secondary/70',
+      iconBg: 'bg-neutral',
       icon: Lock,
       label: 'Terkunci',
       isClickable: false,
@@ -94,7 +94,7 @@ export function TopicNode({ topic }) {
       </div>
 
       <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 mb-1 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+        <div className="flex items-center gap-2 mb-1 text-xs font-semibold text-secondary uppercase tracking-wider">
           <span>Hari {topic.day_number}</span>
           <span>•</span>
           <span className="flex items-center gap-1">
@@ -112,7 +112,7 @@ export function TopicNode({ topic }) {
         "hidden sm:flex items-center px-2.5 py-1 text-xs font-medium rounded-full border",
         styleConfig.text,
         styleConfig.border,
-        "bg-white/50"
+        "bg-secondary/10"
       )}>
         {styleConfig.label}
       </div>

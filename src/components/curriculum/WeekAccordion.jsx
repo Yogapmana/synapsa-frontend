@@ -11,18 +11,18 @@ export function WeekAccordion({ week, topics }) {
   const totalCount = topics.length;
 
   return (
-    <AccordionItem value={`week-${week.week_number}`} className="bg-white border rounded-xl overflow-hidden mb-4">
-      <AccordionTrigger className="px-6 py-4 hover:bg-slate-50 transition-colors hover:no-underline">
+    <AccordionItem value={`week-${week.week_number}`} className="bg-surface border rounded-xl overflow-hidden mb-4">
+      <AccordionTrigger className="px-6 py-4 hover:bg-surface transition-colors hover:no-underline">
         <div className="flex items-center justify-between w-full pr-4">
           <div className="flex flex-col items-start gap-1 text-left">
-            <span className="text-sm font-medium text-slate-500 uppercase tracking-wider">
+            <span className="text-sm font-medium text-secondary uppercase tracking-wider">
               Minggu {week.week_number}
             </span>
-            <h3 className="font-semibold text-lg text-slate-900">
+            <h3 className="font-semibold text-lg text-primary">
               {week.title}
             </h3>
           </div>
-          <div className="flex items-center gap-2 text-sm font-medium text-slate-500 bg-slate-100 px-3 py-1 rounded-full">
+          <div className="flex items-center gap-2 text-sm font-medium text-secondary bg-neutral px-3 py-1 rounded-full">
             <span>{completedCount}/{totalCount} selesai</span>
           </div>
         </div>

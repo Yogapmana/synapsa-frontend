@@ -84,7 +84,7 @@ function PollinationsImage({ src, alt }) {
         <img
           src={src}
           alt={alt || 'Ilustrasi'}
-          className="w-full rounded-xl shadow-lg border bg-white transition-transform duration-300 group-hover:scale-[1.02] group-hover:shadow-xl"
+          className="w-full rounded-xl shadow-lg border bg-surface transition-transform duration-300 group-hover:scale-[1.02] group-hover:shadow-xl"
           loading="lazy"
         />
         {alt && alt !== 'Ilustrasi' && (

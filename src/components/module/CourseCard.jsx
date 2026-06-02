@@ -5,9 +5,9 @@ import { PLATFORM_COLORS } from '@/utils/constants'
 import { motion, useReducedMotion } from 'framer-motion'
 
 const PRICE_VARIANTS = {
-  gratis: 'bg-green-100 text-green-700 border-green-200',
-  berbayar: 'bg-amber-100 text-amber-700 border-amber-200',
-  audit: 'bg-blue-100 text-blue-700 border-blue-200',
+  gratis: 'bg-tertiary/10 text-tertiary border-green-200',
+  berbayar: 'bg-amber-100 text-tertiary border-amber-200',
+  audit: 'bg-secondary/10 text-secondary border-blue-200',
 }
 
 function PlatformLogo({ platform }) {
@@ -39,7 +39,7 @@ function RatingStars({ rating }) {
                 ? 'fill-amber-400 text-amber-400'
                 : i === full && hasHalf
                   ? 'fill-amber-400/50 text-amber-400'
-                  : 'fill-none text-gray-300',
+                  : 'fill-none text-secondary/50',
             )}
           />
         ))}

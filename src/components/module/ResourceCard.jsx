@@ -49,9 +49,9 @@ export default function ResourceCard({ source }) {
       <div className={cn(
         'flex size-10 shrink-0 items-center justify-center rounded-lg',
         source.type === 'video' && 'bg-red-100 text-red-600',
-        source.type === 'article' && 'bg-blue-100 text-blue-600',
-        source.type === 'paper' && 'bg-purple-100 text-purple-600',
-        !TYPE_ICONS[source.type] && 'bg-gray-100 text-gray-600',
+        source.type === 'article' && 'bg-secondary/10 text-secondary',
+        source.type === 'paper' && 'bg-secondary/10 text-secondary',
+        !TYPE_ICONS[source.type] && 'bg-neutral text-secondary',
       )}>
         <Icon className="size-5" />
       </div>

@@ -7,16 +7,10 @@ import ChatBubble from '@/components/chat/ChatBubble';
 import ChatInput from '@/components/chat/ChatInput';
 import SuggestionChips from '@/components/chat/SuggestionChips';
 import ThinkingIndicator from '@/components/chat/ThinkingIndicator';
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from "@/components/ui/select";
+import ChatHistoryDrawer from '@/components/chat/ChatHistoryDrawer';
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Bot, Info } from 'lucide-react';
+import { Bot, History, BookOpen } from 'lucide-react';
 
 export default function Chat() {
   const queryClient = useQueryClient();
@@ -24,6 +18,7 @@ export default function Chat() {
   const scrollRef = useRef(null);
   
   const [currentTopicId, setCurrentTopicId] = useState(activeTopic?.id || null);
+  const [historyOpen, setHistoryOpen] = useState(false);
 
   const { data: topics = [] } = useQuery({
     queryKey: ['topics', activeSession?.id],
@@ -108,62 +103,58 @@ export default function Chat() {
     }
   };
 
+  const handleRegenerate = () => {
+    const lastUserMessage = [...history].reverse().find(msg => msg.role === 'user');
+    if (lastUserMessage) {
+      sendMutation.mutate(lastUserMessage.content);
+    }
+  };
+
   return (
-    <div className="flex flex-col h-[calc(100vh-56px)] bg-slate-50 dark:bg-slate-900 overflow-hidden">
+    <div className="flex flex-col h-[calc(100vh-56px)] bg-neutral overflow-hidden">
       {/* Chat Header */}
-      <header className="px-6 py-3 bg-white border-b border-slate-200 flex items-center justify-between shadow-sm z-10">
-        <div className="flex items-center gap-4">
+      <header className="px-6 py-3 bg-surface border-b border-[var(--border)] flex items-center justify-between shadow-sm z-10">
+        <div className="flex items-center gap-3">
+          <button 
+            onClick={() => setHistoryOpen(true)} 
+            aria-label="Riwayat topik" 
+            className="p-2 text-secondary/70 hover:text-tertiary hover:bg-tertiary/5 rounded-full transition-colors"
+          >
+            <History size={20} />
+          </button>
           <div className="flex flex-col">
             <div className="flex items-center gap-2">
-              <h1 className="text-lg font-bold text-slate-800">Tanya PLA</h1>
-              <Badge className="bg-primary-50 text-primary-700 border-primary-200 hover:bg-primary-50 flex items-center gap-1.5 px-2 py-0.5">
-                <span className="w-1.5 h-1.5 bg-primary-500 rounded-full animate-pulse" />
+              <h1 className="text-lg font-bold text-primary">Tanya PLA</h1>
+              <Badge className="bg-tertiary/5 text-tertiary border-primary-200 hover:bg-tertiary/5 flex items-center gap-1.5 px-2 py-0.5">
+                <span className="w-1.5 h-1.5 bg-tertiary rounded-full animate-pulse" />
                 RAG Aktif
               </Badge>
             </div>
-            <div className="flex items-center gap-1 mt-0.5">
-              <span className="text-xs text-slate-500">Membahas tentang:</span>
-              {topics.length > 0 ? (
-                <Select value={currentTopicId} onValueChange={handleTopicChange}>
-                  <SelectTrigger aria-label="Select topic" className="h-6 border-none bg-transparent p-0 text-xs font-semibold text-primary-600 hover:text-primary-700 focus:ring-0 shadow-none gap-1">
-                    <SelectValue placeholder="Pilih Topik" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {topics.map((topic) => (
-                      <SelectItem key={topic.id} value={topic.id} className="text-xs">
-                        {topic.title}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              ) : (
-                <span className="text-xs font-semibold text-slate-400">
-                  Belum ada topik. Mulai sesi belajar untuk membuat kurikulum.
-                </span>
-              )}
-            </div>
+            <span className="text-sm font-medium text-tertiary truncate max-w-[200px]">
+              {currentTopic?.title || 'Pilih topik'}
+            </span>
           </div>
-        </div>
-        
-        <div className="flex items-center gap-3">
-          <button aria-label="Chat info" className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors">
-            <Info size={20} />
-          </button>
         </div>
       </header>
 
       {/* Messages List */}
       <ScrollArea ref={scrollRef} className="flex-1 px-4 py-6">
-        <div className="max-w-4xl mx-auto flex flex-col min-h-full">
+        <div className="max-w-3xl mx-auto flex flex-col min-h-full">
           {history.length === 0 && !isHistoryLoading ? (
-            <div className="flex-1 flex flex-col items-center justify-center text-center p-8 mt-12">
-              <div className="w-16 h-16 bg-primary-100 rounded-3xl flex items-center justify-center text-primary-600 mb-4 shadow-inner">
-                <Bot size={32} />
+            <div className="flex-1 flex flex-col items-center justify-center text-center p-8 mt-16 bg-surface/50">
+              <div className="w-20 h-20 bg-tertiary/10 rounded-2xl flex items-center justify-center text-tertiary mb-5 ring-2 ring-tertiary/20 shadow-inner">
+                <Bot size={36} />
               </div>
-              <h2 className="text-xl font-bold text-slate-800 mb-2">Halo! Ada yang bisa saya bantu?</h2>
-              <p className="text-slate-500 text-sm max-w-sm mb-6">
-                Saya adalah asisten belajar AI kamu. Tanyakan apa saja tentang topik <b>{currentTopic?.title}</b> untuk memperdalam pemahamanmu.
+              <h2 className="text-xl font-bold text-primary mb-2">Halo! Saya PLA, asisten belajar kamu 👋</h2>
+              <p className="text-secondary text-sm max-w-sm mb-4">
+                Tanyakan apa saja tentang topik di bawah ini, dan saya akan membantu kamu memahaminya lebih dalam.
               </p>
+              {currentTopic?.title && (
+                <div className="inline-flex items-center gap-2 px-4 py-2 bg-tertiary/5 border border-tertiary/20 rounded-full text-sm font-medium text-tertiary mb-6">
+                  <BookOpen size={14} />
+                  {currentTopic.title}
+                </div>
+              )}
               <SuggestionChips 
                 topicTitle={currentTopic?.title || 'topik ini'} 
                 onChipClick={handleSendMessage} 
@@ -171,21 +162,28 @@ export default function Chat() {
             </div>
           ) : (
             <>
-              {history.map((msg) => (
-                <ChatBubble
-                  key={msg.id}
-                  message={msg.content}
-                  isAI={msg.role === 'assistant'}
-                  sources={msg.sources}
-                  timestamp={msg.created_at}
-                />
-              ))}
+              {history.map((msg, index) => {
+                const isLastAi = msg.role === 'assistant' && 
+                  index === history.length - 1 && 
+                  !sendMutation.isPending;
+                return (
+                  <ChatBubble
+                    key={msg.id}
+                    message={msg.content}
+                    isAI={msg.role === 'assistant'}
+                    sources={msg.sources}
+                    timestamp={msg.created_at}
+                    isLastAiMessage={isLastAi}
+                    onRegenerate={isLastAi ? handleRegenerate : undefined}
+                  />
+                );
+              })}
               
               {sendMutation.isPending && (
                 <div className="mb-4">
                   <div className="flex gap-3 items-start">
-                    <div className="w-8 h-8 rounded-full bg-primary-100 flex items-center justify-center flex-shrink-0 mt-1 border border-primary-200">
-                      <Bot size={16} className="text-primary-600" />
+                    <div className="w-8 h-8 rounded-full bg-tertiary/10 flex items-center justify-center flex-shrink-0 mt-1 border border-primary-200">
+                      <Bot size={16} className="text-tertiary" />
                     </div>
                     <ThinkingIndicator />
                   </div>
@@ -201,6 +199,17 @@ export default function Chat() {
         onSend={handleSendMessage} 
         isLoading={sendMutation.isPending} 
         placeholder={`Tanya tentang ${currentTopic?.title || 'topik ini'}...`}
+      />
+
+      <ChatHistoryDrawer
+        open={historyOpen}
+        onOpenChange={setHistoryOpen}
+        topics={topics}
+        activeTopicId={currentTopicId}
+        onTopicSelect={(topic) => {
+          handleTopicChange(topic.id);
+          setHistoryOpen(false);
+        }}
       />
     </div>
   );

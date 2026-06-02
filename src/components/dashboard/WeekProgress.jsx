@@ -6,8 +6,8 @@ export default function WeekProgress({ weeks = [] }) {
   if (!weeks.length) return null;
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-6 flex flex-col h-full">
-      <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-6">
+    <div className="bg-surface rounded-2xl border border-[var(--border)] p-6 flex flex-col h-full">
+      <h3 className="text-lg font-bold text-primary mb-6">
         Progres Silabus
       </h3>
       
@@ -22,25 +22,25 @@ export default function WeekProgress({ weeks = [] }) {
           
           switch (status) {
             case 'completed':
-              icon = <CheckCircle2 className="w-5 h-5 text-green-500" />;
-              colorClass = 'text-green-700 dark:text-green-400';
-              indicatorClass = 'bg-green-500';
-              bgClass = 'bg-green-100 dark:bg-green-950/30';
+              icon = <CheckCircle2 className="w-5 h-5 text-tertiary" />;
+              colorClass = 'text-tertiary';
+              indicatorClass = 'bg-tertiary';
+              bgClass = 'bg-tertiary/10';
               break;
             case 'active':
             case 'in-progress':
-              icon = <CircleDashed className="w-5 h-5 text-blue-500 animate-[spin_4s_linear_infinite]" />;
-              colorClass = 'text-blue-700 dark:text-blue-400';
-              indicatorClass = 'bg-blue-500';
-              bgClass = 'bg-blue-100 dark:bg-blue-950/30';
+              icon = <CircleDashed className="w-5 h-5 text-tertiary animate-[spin_4s_linear_infinite]" />;
+              colorClass = 'text-secondary';
+              indicatorClass = 'bg-tertiary/50';
+              bgClass = 'bg-secondary/10';
               break;
             case 'locked':
             case 'not-started':
             default:
-              icon = <Circle className="w-5 h-5 text-gray-300 dark:text-gray-600" />;
-              colorClass = 'text-gray-500 dark:text-gray-400';
-              indicatorClass = 'bg-gray-400';
-              bgClass = 'bg-gray-100 dark:bg-gray-800';
+              icon = <Circle className="w-5 h-5 text-secondary/50" />;
+              colorClass = 'text-secondary';
+              indicatorClass = 'bg-secondary';
+              bgClass = 'bg-neutral';
               break;
           }
 

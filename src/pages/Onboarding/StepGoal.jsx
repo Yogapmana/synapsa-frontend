@@ -14,10 +14,10 @@ function PillGroup({ label, options, selected, onSelect }) {
             onClick={() => onSelect(opt.value)}
             className={cn(
               'inline-flex items-center justify-center rounded-full px-4 py-2 text-sm font-medium transition-all',
-              'border border-border hover:border-primary-400',
+              'border border-border hover:border-tertiary/50',
               selected === opt.value
-                ? 'bg-primary-500 text-white border-primary-500 shadow-green'
-                : 'bg-white text-text-secondary hover:bg-primary-50'
+                ? 'bg-tertiary text-white border-tertiary shadow-lg'
+                : 'bg-surface text-text-secondary hover:bg-tertiary/5'
             )}
           >
             {opt.label}
@@ -84,7 +84,7 @@ export default function StepGoal({ data, onChange }) {
       </div>
 
       {isValid && (
-        <p className="text-center text-sm text-primary-600 font-medium">
+        <p className="text-center text-sm text-tertiary font-medium">
           Lanjutkan untuk menambahkan referensi atau langsung mulai belajar!
         </p>
       )}

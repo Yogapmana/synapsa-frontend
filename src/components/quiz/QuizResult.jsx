@@ -29,23 +29,23 @@ export function QuizResult({ result, questions, topicId, sessionId, onRetry }) {
       {isPassed && <ConfettiEffect />}
       
       <Card className="text-center border-none shadow-md overflow-hidden">
-        <div className="h-2 w-full bg-gradient-to-r from-primary-400 to-primary-600" />
+        <div className="h-2 w-full bg-neutral" />
         <CardContent className="pt-8 pb-8">
           <motion.div
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
             transition={{ type: "spring", delay: 0.2 }}
-            className="w-32 h-32 mx-auto rounded-full flex items-center justify-center mb-6 bg-slate-50 border-4 border-primary-100"
+            className="w-32 h-32 mx-auto rounded-full flex items-center justify-center mb-6 bg-neutral border-4 border-primary-100"
           >
-            <div className="text-4xl font-bold text-primary-600">
+            <div className="text-4xl font-bold text-tertiary">
               {percentage}%
             </div>
           </motion.div>
 
-          <h2 className="text-2xl font-bold text-slate-800 mb-2">{feedback.title}</h2>
-          <p className="text-slate-600 mb-6">{feedback.message}</p>
+          <h2 className="text-2xl font-bold text-primary mb-2">{feedback.title}</h2>
+          <p className="text-secondary mb-6">{feedback.message}</p>
           
-          <div className="inline-flex items-center justify-center px-4 py-2 bg-slate-100 rounded-full text-slate-700 font-medium mb-8">
+          <div className="inline-flex items-center justify-center px-4 py-2 bg-neutral rounded-full text-primary font-medium mb-8">
             Kamu menjawab benar {correct_answers} dari {total_questions} soal
           </div>
 
@@ -81,46 +81,46 @@ export function QuizResult({ result, questions, topicId, sessionId, onRetry }) {
         </CardContent>
       </Card>
 
-      <Card className="border-slate-200 shadow-sm">
+      <Card className="border-[var(--border)] shadow-sm">
         <CardContent className="p-6">
-          <h3 className="font-semibold text-lg text-slate-800 mb-4">Pembahasan Soal</h3>
+          <h3 className="font-semibold text-lg text-primary mb-4">Pembahasan Soal</h3>
           
           <div className="space-y-3">
             {questions.map((q, index) => {
               const isCorrect = q.user_answer === q.correct_answer;
               return (
-                <Collapsible key={index} className="border border-slate-200 rounded-xl overflow-hidden">
-                  <CollapsibleTrigger className="flex items-center justify-between w-full p-4 bg-white hover:bg-slate-50 transition-colors">
+                <Collapsible key={index} className="border border-[var(--border)] rounded-xl overflow-hidden">
+                  <CollapsibleTrigger className="flex items-center justify-between w-full p-4 bg-surface hover:bg-surface transition-colors">
                     <div className="flex items-center gap-3 text-left">
                       {isCorrect ? (
-                        <CheckCircle2 className="w-5 h-5 text-green-500 flex-shrink-0" />
+                        <CheckCircle2 className="w-5 h-5 text-tertiary flex-shrink-0" />
                       ) : (
                         <XCircle className="w-5 h-5 text-red-500 flex-shrink-0" />
                       )}
-                      <span className="font-medium text-slate-700 line-clamp-1">
+                      <span className="font-medium text-primary line-clamp-1">
                         Soal {index + 1}: {q.question.substring(0, 50)}...
                       </span>
                     </div>
-                    <ChevronDown className="w-4 h-4 text-slate-400" />
+                    <ChevronDown className="w-4 h-4 text-secondary/70" />
                   </CollapsibleTrigger>
-                  <CollapsibleContent className="p-4 bg-slate-50 border-t border-slate-100">
+                  <CollapsibleContent className="p-4 bg-neutral border-t border-[var(--border)]">
                     <div className="space-y-4">
                       <div>
-                        <p className="text-sm font-semibold text-slate-500 mb-1">Pertanyaan:</p>
-                        <p className="text-slate-800">{q.question}</p>
+                        <p className="text-sm font-semibold text-secondary mb-1">Pertanyaan:</p>
+                        <p className="text-primary">{q.question}</p>
                       </div>
                       
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="p-3 bg-white rounded-lg border border-red-100">
-                          <p className="text-xs font-semibold text-slate-500 mb-1">Jawaban Kamu:</p>
+                        <div className="p-3 bg-surface rounded-lg border border-red-100">
+                          <p className="text-xs font-semibold text-secondary mb-1">Jawaban Kamu:</p>
                           <p className={isCorrect ? 'text-green-600 font-medium' : 'text-red-600 font-medium'}>
                             {q.user_answer || 'Tidak dijawab'}
                           </p>
                         </div>
                         
                         {!isCorrect && (
-                          <div className="p-3 bg-white rounded-lg border border-green-100">
-                            <p className="text-xs font-semibold text-slate-500 mb-1">Jawaban Benar:</p>
+                          <div className="p-3 bg-surface rounded-lg border border-green-100">
+                            <p className="text-xs font-semibold text-secondary mb-1">Jawaban Benar:</p>
                             <p className="text-green-600 font-medium">{q.correct_answer}</p>
                           </div>
                         )}
@@ -128,8 +128,8 @@ export function QuizResult({ result, questions, topicId, sessionId, onRetry }) {
                       
                       {q.explanation && (
                         <div className="pt-2">
-                          <p className="text-sm font-semibold text-slate-500 mb-1">Penjelasan:</p>
-                          <p className="text-slate-700 text-sm">{q.explanation}</p>
+                          <p className="text-sm font-semibold text-secondary mb-1">Penjelasan:</p>
+                          <p className="text-primary text-sm">{q.explanation}</p>
                         </div>
                       )}
                     </div>

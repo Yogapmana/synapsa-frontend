@@ -40,13 +40,13 @@ export default function StepUpload() {
         className={cn(
           'relative flex flex-col items-center justify-center gap-4 rounded-2xl border-2 border-dashed p-12 transition-colors',
           isDragOver
-            ? 'border-primary-400 bg-primary-50'
-            : 'border-border bg-white hover:border-primary-300 hover:bg-primary-50/50',
+            ? 'border-tertiary/50 bg-tertiary/5'
+            : 'border-border bg-surface hover:border-primary-300 hover:bg-tertiary/5/50',
           'opacity-60 cursor-not-allowed'
         )}
       >
-        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary-100">
-          <Upload className="h-8 w-8 text-primary-600" />
+        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-tertiary/10">
+          <Upload className="h-8 w-8 text-tertiary" />
         </div>
 
         <div className="space-y-1 text-center">
@@ -70,12 +70,12 @@ export default function StepUpload() {
 
       <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
         <div className="flex items-start gap-3">
-          <FileText className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
+          <FileText className="h-5 w-5 text-tertiary shrink-0 mt-0.5" />
           <div className="space-y-1">
-            <p className="text-sm font-medium text-amber-900">
+            <p className="text-sm font-medium text-primary">
               Fitur upload segera hadir!
             </p>
-            <p className="text-xs text-amber-700">
+            <p className="text-xs text-tertiary">
               Kamu bisa langsung melanjutkan tanpa upload referensi. PLA akan mencari materi dari sumber terpercaya secara otomatis.
             </p>
           </div>

@@ -5,7 +5,7 @@ export function RAGScoreBar({ metrics }) {
   if (!metrics) return null;
 
   const getColor = (score) => {
-    if (score >= 0.8) return 'bg-green-500';
+    if (score >= 0.8) return 'bg-tertiary';
     if (score >= 0.6) return 'bg-amber-500';
     return 'bg-red-500';
   };

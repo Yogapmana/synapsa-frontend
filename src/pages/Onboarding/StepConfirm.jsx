@@ -4,9 +4,9 @@ import { Card, CardContent } from '@/components/ui/card'
 
 function SummaryItem({ icon: Icon, label, value }) {
   return (
-    <div className="flex items-center gap-3 rounded-xl bg-primary-50 px-4 py-3">
-      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary-100">
-        <Icon className="h-5 w-5 text-primary-600" />
+    <div className="flex items-center gap-3 rounded-xl bg-tertiary/5 px-4 py-3">
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-tertiary/10">
+        <Icon className="h-5 w-5 text-tertiary" />
       </div>
       <div>
         <p className="text-xs font-medium text-muted-foreground">{label}</p>
@@ -33,7 +33,7 @@ export default function StepConfirm({ data }) {
         </p>
       </div>
 
-      <Card className="border-primary-200 bg-white shadow-md">
+      <Card className="border-primary-200 bg-surface shadow-md">
         <CardContent className="space-y-3 p-6">
           <SummaryItem
             icon={Target}
@@ -58,8 +58,8 @@ export default function StepConfirm({ data }) {
         </CardContent>
       </Card>
 
-      <div className="rounded-xl border border-primary-200 bg-primary-50 p-4 text-center">
-        <p className="text-sm text-primary-800">
+      <div className="rounded-xl border border-primary-200 bg-tertiary/5 p-4 text-center">
+        <p className="text-sm text-tertiary">
           PLA akan merancang kurikulum yang disesuaikan dengan target belajarmu. Proses ini membutuhkan beberapa menit.
         </p>
       </div>

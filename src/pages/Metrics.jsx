@@ -108,7 +108,7 @@ export default function Metrics() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Streak Belajar</CardTitle>
-            <Flame className="h-4 w-4 text-orange-500" />
+            <Flame className="h-4 w-4 text-tertiary" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{streak_days || 0} Hari</div>

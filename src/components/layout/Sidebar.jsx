@@ -66,7 +66,7 @@ const Sidebar = () => {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={toggleSidebar}
-            className="fixed inset-0 z-30 bg-slate-900/20 backdrop-blur-sm lg:hidden"
+            className="fixed inset-0 z-30 bg-primary/20 backdrop-blur-sm lg:hidden"
           />
         )}
       </AnimatePresence>
@@ -79,18 +79,24 @@ const Sidebar = () => {
         }}
         transition={shouldReduceMotion ? { duration: 0 } : { duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
         className={cn(
-          "fixed left-0 top-0 z-40 h-screen border-r border-slate-200 dark:border-slate-700 bg-white dark:bg-gray-900 flex flex-col",
+          "fixed left-0 top-0 z-40 h-screen border-r border-[var(--border)] bg-surface flex flex-col",
           isMobile && sidebarCollapsed ? "invisible" : "visible"
         )}
       >
-        <div className="h-14 flex items-center justify-between px-4 border-b border-slate-100">
-          {(!sidebarCollapsed || (isMobile && !sidebarCollapsed)) && (
-            <span className="font-bold text-xl text-primary-600 tracking-tight">PLA System</span>
+        <div className={cn(
+          "h-14 flex items-center px-4 border-b border-secondary/30",
+          sidebarCollapsed ? "justify-center" : "justify-between"
+        )}>
+          {!sidebarCollapsed && (
+            <span className="font-bold text-xl text-primary tracking-tight">PLA System</span>
           )}
           <button
             onClick={toggleSidebar}
             aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-            className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-500 transition-colors ml-auto"
+            className={cn(
+              "p-1.5 rounded-lg hover:bg-secondary/10 text-secondary transition-colors flex-shrink-0",
+              sidebarCollapsed && "mx-auto"
+            )}
           >
             {sidebarCollapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
           </button>
@@ -99,7 +105,7 @@ const Sidebar = () => {
       <nav className="flex-1 py-4 px-3 space-y-1 overflow-y-auto scrollbar-hide">
         {NAV_ITEMS.map((item, idx) => {
           if (item.type === 'separator') {
-            return <div key={`sep-${idx}`} className="my-4 border-t border-slate-100" />;
+            return <div key={`sep-${idx}`} className="my-4 border-t border-secondary/30" />;
           }
 
           const Icon = item.icon;
@@ -112,11 +118,11 @@ const Sidebar = () => {
               className={({ isActive }) => cn(
                 "flex items-center gap-3 px-3 py-2 rounded-xl transition-all duration-200 group relative",
                 isActive 
-                  ? "bg-primary-100 text-primary-700 font-medium" 
-                  : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                  ? "bg-tertiary/10 text-tertiary font-medium" 
+                  : "text-secondary hover:bg-secondary/10 hover:text-primary"
               )}
             >
-              <Icon size={20} className={cn(isActive ? "text-primary-600" : "text-slate-500 group-hover:text-slate-700")} />
+              <Icon size={20} className={cn(isActive ? "text-tertiary" : "text-secondary group-hover:text-primary")} />
         {!sidebarCollapsed && (
                 <motion.span
                   initial={{ opacity: 0 }}
@@ -127,7 +133,7 @@ const Sidebar = () => {
                 </motion.span>
               )}
         {sidebarCollapsed && (
-                <div className="absolute left-14 scale-0 group-hover:scale-100 transition-transform origin-left bg-slate-800 text-white text-xs px-2 py-1 rounded-md whitespace-nowrap z-50">
+                <div className="absolute left-14 scale-0 group-hover:scale-100 transition-transform origin-left bg-primary text-neutral text-xs px-2 py-1 rounded-md whitespace-nowrap z-50">
                   {item.label}
                 </div>
               )}
@@ -136,18 +142,18 @@ const Sidebar = () => {
         })}
       </nav>
 
-      <div className="p-3 border-t border-slate-100 space-y-1">
+      <div className="p-3 border-t border-secondary/30 space-y-1">
         <div className={cn(
           "flex items-center gap-3 px-2 py-2 rounded-xl transition-all",
                 sidebarCollapsed ? "justify-center" : ""
         )}>
-          <div className="w-8 h-8 rounded-full bg-primary-100 flex items-center justify-center text-primary-700 font-bold text-xs flex-shrink-0">
+          <div className="w-8 h-8 rounded-full bg-secondary/20 flex items-center justify-center text-primary font-bold text-xs flex-shrink-0">
             {user?.username?.charAt(0) || 'U'}
           </div>
             {!sidebarCollapsed && (
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-slate-900 truncate">{user?.username || 'User'}</p>
-              <p className="text-xs text-slate-500 truncate">{user?.email || 'user@example.com'}</p>
+              <p className="text-sm font-medium text-primary truncate">{user?.username || 'User'}</p>
+              <p className="text-xs text-secondary truncate">{user?.email || 'user@example.com'}</p>
             </div>
           )}
         </div>
@@ -155,7 +161,7 @@ const Sidebar = () => {
         <button
           onClick={logout}
           className={cn(
-            "flex items-center gap-3 w-full px-3 py-2 rounded-xl text-slate-600 hover:bg-red-50 hover:text-red-600 transition-all duration-200",
+            "flex items-center gap-3 w-full px-3 py-2 rounded-xl text-secondary hover:bg-tertiary/10 hover:text-tertiary transition-all duration-200",
                 sidebarCollapsed ? "justify-center" : ""
           )}
         >

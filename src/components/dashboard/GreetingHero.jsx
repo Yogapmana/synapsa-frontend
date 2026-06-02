@@ -40,48 +40,48 @@ export default function GreetingHero({ username = 'Pelajar', streak = 0, xp = 0 
   return (
     <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
       <div className="space-y-1">
-        <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-100">
+        <h1 className="text-3xl font-bold tracking-tight text-primary">
           {greeting}, {username}! <span aria-hidden="true">🌱</span>
         </h1>
-        <p className="text-gray-500 dark:text-gray-400">
+        <p className="text-secondary">
           Siap untuk melanjutkan petualangan belajarmu hari ini?
         </p>
       </div>
 
       <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-        <div className="flex items-center gap-3 bg-orange-50 dark:bg-orange-950/30 px-4 py-2.5 rounded-2xl border border-orange-100 dark:border-orange-900/50">
+        <div className="flex items-center gap-3 bg-tertiary/10 px-4 py-2.5 rounded-2xl border border-tertiary/20">
           <motion.div
             initial={shouldReduceMotion ? { scale: 1 } : { scale: 0.8 }}
             animate={shouldReduceMotion ? { scale: 1 } : { scale: [0.8, 1.2, 1] }}
             transition={{ repeat: Infinity, duration: 2, repeatType: "reverse" }}
           >
-            <Flame className="w-6 h-6 text-orange-500 fill-orange-500" />
+            <Flame className="w-6 h-6 text-tertiary fill-tertiary" />
           </motion.div>
           <div>
-            <div className="text-xs font-medium text-orange-600/80 dark:text-orange-400/80 uppercase tracking-wider">
+            <div className="text-xs font-medium text-tertiary/80 uppercase tracking-wider">
               Streak
             </div>
-            <div className="text-lg font-bold text-orange-700 dark:text-orange-400 leading-none">
+            <div className="text-lg font-bold text-tertiary leading-none">
               <CountUp value={streak} /> Hari
             </div>
           </div>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 px-4 py-2.5 rounded-2xl border border-gray-200 dark:border-gray-700 min-w-[200px]">
+        <div className="bg-surface px-4 py-2.5 rounded-2xl border border-[var(--border)] min-w-[200px]">
           <div className="flex justify-between items-end mb-2">
             <div>
-              <div className="text-xs font-medium text-blue-600/80 dark:text-blue-400/80 uppercase tracking-wider">
+              <div className="text-xs font-medium text-secondary/80 uppercase tracking-wider">
                 Level {levelInfo.level}
               </div>
-              <div className="text-sm font-bold text-gray-900 dark:text-gray-100">
+              <div className="text-sm font-bold text-primary">
                 {levelInfo.name}
               </div>
             </div>
-            <div className="text-xs font-medium text-gray-500">
+            <div className="text-xs font-medium text-secondary">
               <CountUp value={xp} /> / {levelInfo.max === xp ? 'MAX' : levelInfo.max} XP
             </div>
           </div>
-          <Progress value={progressPercent} className="h-2 bg-gray-100 dark:bg-gray-700" />
+          <Progress value={progressPercent} className="h-2 bg-neutral" />
         </div>
       </div>
     </div>

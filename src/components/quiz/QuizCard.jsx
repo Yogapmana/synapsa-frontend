@@ -15,10 +15,10 @@ export function QuizCard({
   const progressPercent = ((currentIndex + 1) / totalQuestions) * 100;
   
   return (
-    <div className="w-full max-w-2xl mx-auto bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+    <div className="w-full max-w-2xl mx-auto bg-surface rounded-2xl shadow-sm border border-[var(--border)] overflow-hidden">
       <div className="p-6">
         <div className="flex items-center justify-between mb-4">
-          <span className="text-sm font-medium text-slate-500">
+          <span className="text-sm font-medium text-secondary">
             Soal {currentIndex + 1} dari {totalQuestions}
           </span>
         </div>

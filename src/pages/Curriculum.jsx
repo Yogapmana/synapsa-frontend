@@ -28,7 +28,7 @@ export default function Curriculum() {
 
   if (!activeSession || !curriculumData || !topicsData) {
     return (
-      <div className="p-8 max-w-4xl mx-auto text-center text-slate-500">
+      <div className="p-8 max-w-4xl mx-auto text-center text-secondary">
         Belum ada kurikulum yang aktif.
       </div>
     );
@@ -54,25 +54,25 @@ export default function Curriculum() {
     <div className="container max-w-4xl py-10 px-4 md:px-8">
       <div className="mb-10 space-y-6">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-slate-900 mb-2">
+          <h1 className="text-3xl font-bold tracking-tight text-primary mb-2">
             Kurikulum Pembelajaran
           </h1>
-          <p className="text-slate-500 text-lg">
+          <p className="text-secondary text-lg">
             {curriculumJson.title || activeSession.topic}
           </p>
         </div>
 
-        <div className="bg-white p-6 rounded-2xl border shadow-sm space-y-4">
+        <div className="bg-surface p-6 rounded-2xl border shadow-sm space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-slate-500 mb-1">Total Progres</p>
+              <p className="text-sm font-medium text-secondary mb-1">Total Progres</p>
               <div className="flex items-end gap-2">
-                <span className="text-3xl font-bold text-slate-900">{progressPercentage}%</span>
-                <span className="text-slate-500 pb-1">({completedTopics}/{totalTopics} topik)</span>
+                <span className="text-3xl font-bold text-primary">{progressPercentage}%</span>
+                <span className="text-secondary pb-1">({completedTopics}/{totalTopics} topik)</span>
               </div>
             </div>
             
-            <Badge variant="secondary" className="px-3 py-1.5 bg-blue-50 text-blue-700 hover:bg-blue-100 border-blue-100 font-medium">
+            <Badge variant="secondary" className="px-3 py-1.5 bg-tertiary/5 text-secondary hover:bg-secondary/10 border-blue-100 font-medium">
               <Calendar className="w-4 h-4 mr-2" />
               Estimasi selesai: {completionDate}
             </Badge>

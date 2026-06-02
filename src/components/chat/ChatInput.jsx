@@ -28,9 +28,9 @@ const ChatInput = ({ onSend, isLoading, placeholder }) => {
   }, [text]);
 
   return (
-    <div className="p-4 bg-white border-t border-slate-100 shadow-[0_-4px_12px_rgba(0,0,0,0.03)]">
-      <div className="max-w-4xl mx-auto flex gap-3 items-end">
-        <div className="flex-1 bg-slate-50 rounded-2xl border border-slate-200 focus-within:border-primary-400 focus-within:ring-2 focus-within:ring-primary-100 transition-all px-4 py-2">
+    <div className="p-3 md:p-4 bg-surface border-t border-[var(--border)] shadow-[0_-4px_12px_rgba(0,0,0,0.03)]">
+      <div className="max-w-3xl mx-auto flex gap-3 items-end">
+        <div className="flex-1 bg-neutral rounded-2xl border border-[var(--border)] focus-within:border-tertiary/40 focus-within:ring-2 focus-within:ring-tertiary/20 focus-within:shadow-sm focus-within:shadow-tertiary/5 transition-all px-4 py-2">
           <textarea
             ref={textareaRef}
             rows={1}
@@ -46,7 +46,7 @@ const ChatInput = ({ onSend, isLoading, placeholder }) => {
           onClick={handleSend}
           disabled={!text.trim() || isLoading}
           aria-label="Send message"
-          className="rounded-full w-10 h-10 p-0 flex-shrink-0 bg-primary-500 hover:bg-primary-600 shadow-sm"
+          className="rounded-full w-10 h-10 p-0 flex-shrink-0 bg-tertiary hover:bg-tertiary/90 active:bg-tertiary/80 disabled:opacity-50 transition-all duration-150 shadow-sm"
         >
           {isLoading ? (
             <Loader2 className="animate-spin" size={20} />
@@ -54,6 +54,11 @@ const ChatInput = ({ onSend, isLoading, placeholder }) => {
             <Send size={18} />
           )}
         </Button>
+      </div>
+      <div className="max-w-3xl mx-auto mt-1.5">
+        <p className="text-[11px] text-secondary/50 text-right pr-1">
+          Tekan Shift+Enter untuk baris baru
+        </p>
       </div>
     </div>
   );

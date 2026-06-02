@@ -1,19 +1,30 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Leaf } from 'lucide-react';
+import { Leaf, Copy, Check, RefreshCw } from 'lucide-react';
 import MarkdownRenderer from '@/components/common/MarkdownRenderer';
 import SourceAccordion from './SourceAccordion';
 import { format } from 'date-fns';
 
-const ChatBubble = ({ message, isAI, sources, timestamp }) => {
+const ChatBubble = ({ message, isAI, sources, timestamp, isLastAiMessage = false, onRegenerate }) => {
+  const [copied, setCopied] = useState(false);
   const formattedTime = timestamp ? format(new Date(timestamp), 'HH:mm') : '';
 
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(message);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1500);
+    } catch {
+      setCopied(false);
+    }
+  };
+
   return (
-    <div className={`flex flex-col mb-4 ${isAI ? 'items-start' : 'items-end'}`}>
+    <div className={`group flex flex-col mb-4 ${isAI ? 'items-start' : 'items-end'}`}>
       <div className={`flex gap-3 max-w-[90%] ${isAI ? 'flex-row' : 'flex-row-reverse'}`}>
         {isAI && (
-          <div className="w-8 h-8 rounded-full bg-primary-100 flex items-center justify-center flex-shrink-0 mt-1 border border-primary-200">
-            <Leaf size={16} className="text-primary-600" />
+          <div className="w-8 h-8 rounded-full bg-tertiary/10 flex items-center justify-center flex-shrink-0 mt-1 border border-primary-200">
+            <Leaf size={16} className="text-tertiary" />
           </div>
         )}
         
@@ -24,8 +35,8 @@ const ChatBubble = ({ message, isAI, sources, timestamp }) => {
             className={`
               p-3 px-4 shadow-sm
               ${isAI 
-                ? 'bg-slate-50 text-slate-800 border border-slate-200 rounded-tr-[18px] rounded-br-[18px] rounded-bl-[18px] rounded-tl-[4px] max-w-full' 
-                : 'bg-primary-500 text-white border border-primary-600 rounded-tl-[18px] rounded-bl-[18px] rounded-br-[18px] rounded-tr-[4px] max-w-full'
+                ? 'bg-neutral text-primary border border-[var(--border)] rounded-tr-[18px] rounded-br-[18px] rounded-bl-[18px] rounded-tl-[4px] max-w-full' 
+                : 'bg-tertiary text-white border border-tertiary rounded-tl-[18px] rounded-bl-[18px] rounded-br-[18px] rounded-tr-[4px] max-w-full'
               }
             `}
           >
@@ -42,7 +53,28 @@ const ChatBubble = ({ message, isAI, sources, timestamp }) => {
             <SourceAccordion sources={sources} />
           )}
 
-          <span className={`text-[10px] mt-1 text-slate-400 font-medium ${isAI ? 'ml-1' : 'mr-1 text-right'}`}>
+          {isAI && (
+            <div className="flex items-center gap-1 mt-1 ml-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity duration-200">
+              <button
+                onClick={handleCopy}
+                className="p-1.5 rounded-md text-secondary/50 hover:text-secondary hover:bg-neutral/80 transition-colors"
+                aria-label="Salin pesan"
+              >
+                {copied ? <Check size={14} /> : <Copy size={14} />}
+              </button>
+              {isLastAiMessage && onRegenerate && (
+                <button
+                  onClick={onRegenerate}
+                  className="p-1.5 rounded-md text-secondary/50 hover:text-secondary hover:bg-neutral/80 transition-colors"
+                  aria-label="Regenerasi jawaban"
+                >
+                  <RefreshCw size={14} />
+                </button>
+              )}
+            </div>
+          )}
+
+          <span className={`text-[10px] mt-1 text-secondary/70 font-medium ${isAI ? 'ml-1' : 'mr-1 text-right'}`}>
             {formattedTime}
           </span>
         </div>

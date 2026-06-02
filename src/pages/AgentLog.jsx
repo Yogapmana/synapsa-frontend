@@ -26,7 +26,7 @@ export default function AgentLog() {
       <div className="flex items-center gap-3">
         <span
           className={`inline-block size-3 shrink-0 rounded-full ${
-            isConnected ? 'bg-green-500' : 'bg-gray-400'
+            isConnected ? 'bg-tertiary' : 'bg-secondary'
           }`}
         />
         <h1 className="text-xl font-bold">

@@ -164,7 +164,7 @@ export default function AgentLoadingScreen({ sessionId }) {
       <motion.div
         animate={{ scale: [1, 1.1, 1] }}
         transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-        className="flex h-20 w-20 items-center justify-center rounded-2xl bg-primary-500 shadow-green"
+        className="flex h-20 w-20 items-center justify-center rounded-2xl bg-tertiary shadow-lg"
       >
         <Leaf className="h-10 w-10 text-white" />
       </motion.div>
@@ -190,12 +190,12 @@ export default function AgentLoadingScreen({ sessionId }) {
             <div
               key={stage.key}
               className={`flex flex-col items-center gap-1 ${
-                i <= currentStage ? 'text-primary-600' : 'text-muted-foreground/40'
+                i <= currentStage ? 'text-tertiary' : 'text-muted-foreground/40'
               }`}
             >
               <div
                 className={`h-2.5 w-2.5 rounded-full transition-colors ${
-                  i <= currentStage ? 'bg-primary-500' : 'bg-muted'
+                  i <= currentStage ? 'bg-tertiary' : 'bg-muted'
                 }`}
               />
               <span className="text-[10px] font-medium">
@@ -207,12 +207,12 @@ export default function AgentLoadingScreen({ sessionId }) {
       </div>
 
       <div className="w-full max-w-md">
-        <div className="rounded-xl border border-border bg-white p-4 shadow-sm">
+        <div className="rounded-xl border border-border bg-surface p-4 shadow-sm">
           <div className="mb-2 flex items-center justify-between">
             <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               Agent Log
             </h3>
-            <div className={`h-2 w-2 rounded-full ${wsConnected ? 'bg-green-500 animate-pulse' : 'bg-amber-400'}`} />
+            <div className={`h-2 w-2 rounded-full ${wsConnected ? 'bg-tertiary animate-pulse' : 'bg-amber-400'}`} />
           </div>
           <div className="h-40 space-y-1.5 overflow-y-auto font-mono text-xs">
             {logs.length === 0 && (

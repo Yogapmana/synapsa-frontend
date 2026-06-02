@@ -14,12 +14,12 @@ const AppLayout = ({ children }) => {
     const path = location.pathname;
     if (path.includes('/dashboard')) return 'lg:max-w-[1280px]';
     if (path.includes('/modules')) return 'lg:max-w-[720px]';
-    if (path.includes('/chat')) return 'lg:max-w-[900px]';
+    if (path.includes('/chat')) return 'lg:max-w-[1200px]';
     return 'lg:max-w-[1024px]';
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
+    <div className="min-h-screen bg-neutral">
       <Sidebar />
       
       <div 

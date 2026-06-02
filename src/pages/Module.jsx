@@ -53,9 +53,9 @@ export default function Module() {
       <div className="mx-auto max-w-4xl px-4 py-8">
         {generating ? (
           <div className="flex flex-col items-center justify-center space-y-4 py-20">
-            <Loader2 className="h-12 w-12 animate-spin text-primary-600" />
-            <h2 className="text-xl font-semibold text-slate-800">Menyusun materi untuk Anda...</h2>
-            <p className="text-slate-500 max-w-md text-center">
+            <Loader2 className="h-12 w-12 animate-spin text-tertiary" />
+            <h2 className="text-xl font-semibold text-primary">Menyusun materi untuk Anda...</h2>
+            <p className="text-secondary max-w-md text-center">
               Tutor AI sedang mengumpulkan dan menyusun materi pembelajaran. 
               Mohon tunggu sebentar (1-2 menit).
             </p>

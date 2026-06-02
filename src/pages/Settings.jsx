@@ -1,8 +1,6 @@
 import { useCallback, useMemo, useState } from 'react'
 import { format } from 'date-fns'
 import {
-  Moon,
-  SunMedium,
   User,
   Mail,
   Clock3,
@@ -25,9 +23,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
-import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Switch } from '@/components/ui/switch'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import api from '@/api/client'
 import { getQuizHistory } from '@/api/quiz'
@@ -35,14 +31,13 @@ import { getSession, getTopics } from '@/api/learning'
 import { cn } from '@/lib/utils'
 import { useAuthStore } from '@/stores/authStore'
 import { useLearningStore } from '@/stores/learningStore'
-import { useUIStore } from '@/stores/uiStore'
 
 const HOURS_OPTIONS = ['1', '2', '3', '4', '5', '6']
 
 function FieldRow({ icon: Icon, label, value, muted = false }) {
   return (
     <div className="flex items-start gap-3 rounded-xl border border-border/60 bg-background/60 p-4">
-      <div className="mt-0.5 flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-primary">
+      <div className="mt-0.5 flex h-9 w-9 items-center justify-center rounded-full bg-tertiary/10 text-primary">
         <Icon className="h-4 w-4" />
       </div>
       <div className="min-w-0">
@@ -70,8 +65,6 @@ function ComingSoonButton({ children, className, tooltip = 'Coming Soon', ...pro
 
 export default function Settings() {
   const user = useAuthStore((state) => state.user)
-  const darkMode = useUIStore((state) => state.darkMode)
-  const toggleDarkMode = useUIStore((state) => state.toggleDarkMode)
   const activeSession = useLearningStore((state) => state.activeSession)
   const [hoursPerDay, setHoursPerDay] = useState('2')
   const [isExporting, setIsExporting] = useState(false)
@@ -235,30 +228,6 @@ export default function Settings() {
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
-          </CardContent>
-        </Card>
-
-        <Card className="overflow-hidden border-border/70">
-          <CardHeader className="pb-4">
-            <CardTitle>Tampilan</CardTitle>
-            <CardDescription>Sesuaikan mode visual antarmuka.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-between rounded-xl border border-border/60 bg-background/60 p-4">
-              <div className="space-y-1">
-                <Label htmlFor="dark-mode-toggle" className="text-base">
-                  Dark mode
-                </Label>
-                <p className="text-sm text-muted-foreground">
-                  Saat ini: <span className="font-medium text-foreground">{darkMode ? 'Dark' : 'Light'}</span>
-                </p>
-              </div>
-              <div className="flex items-center gap-3">
-                <SunMedium className="h-4 w-4 text-amber-500" />
-                <Switch id="dark-mode-toggle" checked={darkMode} onCheckedChange={toggleDarkMode} />
-                <Moon className="h-4 w-4 text-slate-500" />
-              </div>
-            </div>
           </CardContent>
         </Card>
 

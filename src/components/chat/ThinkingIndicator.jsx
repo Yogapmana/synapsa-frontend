@@ -1,31 +1,30 @@
 import React from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
+import { Leaf } from 'lucide-react';
 
 const ThinkingIndicator = () => {
   const shouldReduceMotion = useReducedMotion();
 
   return (
-    <div className="flex flex-col gap-2 py-2">
-      <div className="flex gap-1.5 px-2">
-        {[0, 1, 2].map((i) => (
-          <motion.div
-            key={i}
-            className="w-2 h-2 bg-primary-400 rounded-full"
-            animate={shouldReduceMotion ? {} : {
-              scale: [1, 1.3, 1],
-            }}
-            transition={{
-              duration: 0.8,
-              repeat: Infinity,
-              delay: i * 0.15,
-              ease: "easeInOut",
-            }}
-          />
-        ))}
+    <div className="flex gap-3 items-center mb-4">
+      <div className="w-8 h-8 rounded-full bg-tertiary/10 flex items-center justify-center flex-shrink-0 border border-primary-200">
+        <Leaf size={16} className="text-tertiary" />
       </div>
-      <p className="text-xs text-slate-500 font-medium ml-1">
-        PLA sedang berpikir...
-      </p>
+      <div className="flex items-center gap-2">
+        <motion.div
+          className="w-2 h-2 bg-tertiary/60 rounded-full"
+          animate={shouldReduceMotion ? {} : {
+            scale: [1, 1.5, 1],
+            opacity: [0.5, 1, 0.5],
+          }}
+          transition={{
+            duration: 1.5,
+            repeat: Infinity,
+            ease: "easeInOut",
+          }}
+        />
+        <span className="text-xs text-secondary font-medium">Sedang berpikir...</span>
+      </div>
     </div>
   );
 };

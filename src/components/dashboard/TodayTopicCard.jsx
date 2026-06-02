@@ -11,14 +11,14 @@ export default function TodayTopicCard({ topic }) {
 
   if (!topic) {
     return (
-      <div className="bg-white dark:bg-gray-800 rounded-2xl border border-dashed border-gray-300 dark:border-gray-700 p-8 flex flex-col items-center justify-center text-center h-full">
-        <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800/50 rounded-full flex items-center justify-center mb-4 text-gray-400">
+      <div className="bg-surface rounded-2xl border border-dashed border-[var(--border)] p-8 flex flex-col items-center justify-center text-center h-full">
+        <div className="w-16 h-16 bg-neutral/50 rounded-full flex items-center justify-center mb-4 text-secondary/70">
           <BookOpen className="w-8 h-8" />
         </div>
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-1">
+        <h3 className="text-lg font-semibold text-primary mb-1">
           Tidak ada topik hari ini
         </h3>
-        <p className="text-sm text-gray-500 dark:text-gray-400 max-w-sm">
+        <p className="text-sm text-secondary max-w-sm">
           Kamu sudah menyelesaikan semua materi untuk hari ini. Waktu yang tepat untuk beristirahat!
         </p>
       </div>
@@ -34,9 +34,9 @@ export default function TodayTopicCard({ topic }) {
   return (
     <motion.div 
       {...hoverProps}
-      className="bg-gradient-to-br from-primary/5 to-primary/10 dark:from-primary/10 dark:to-primary/5 rounded-2xl border border-primary/20 dark:border-primary/20 p-6 flex flex-col h-full relative overflow-hidden"
+      className="bg-tertiary/5/10/5 rounded-2xl border border-tertiary/20 p-6 flex flex-col h-full relative overflow-hidden"
     >
-      <div className="absolute -top-12 -right-12 w-48 h-48 bg-primary/10 dark:bg-primary/20 rounded-full blur-3xl pointer-events-none" />
+      <div className=" rounded-full pointer-events-none" />
       
       <div className="flex items-center gap-2 mb-4">
         <span className="bg-primary text-white text-xs font-bold px-2.5 py-1 rounded-md uppercase tracking-wider">
@@ -44,11 +44,11 @@ export default function TodayTopicCard({ topic }) {
         </span>
       </div>
       
-      <h3 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2 leading-tight">
+      <h3 className="text-2xl font-bold text-primary mb-2 leading-tight">
         {title}
       </h3>
       
-      <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400 mb-6 font-medium">
+      <div className="flex items-center gap-4 text-sm text-secondary mb-6 font-medium">
         <div className="flex items-center gap-1.5">
           <Clock className="w-4 h-4" />
           <span>~{duration_minutes} menit</span>
@@ -58,11 +58,11 @@ export default function TodayTopicCard({ topic }) {
       <div className="mt-auto space-y-4">
         {progress > 0 && (
           <div className="space-y-1.5">
-            <div className="flex justify-between text-xs font-medium text-gray-500 dark:text-gray-400">
+            <div className="flex justify-between text-xs font-medium text-secondary">
               <span>Progress materi</span>
               <span>{Math.round(progress)}%</span>
             </div>
-            <Progress value={progress} className="h-2 bg-white/50 dark:bg-black/20" indicatorClassName="bg-primary" />
+            <Progress value={progress} className="h-2 bg-secondary/10" indicatorClassName="bg-tertiary" />
           </div>
         )}
         

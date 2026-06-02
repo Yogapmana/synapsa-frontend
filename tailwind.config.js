@@ -2,52 +2,48 @@ import typography from '@tailwindcss/typography'
 import defaultTheme from 'tailwindcss/defaultTheme'
 
 export default {
-  darkMode: ['class', 'class'],
   content: ['./index.html', './src/**/*.{js,jsx}'],
   theme: {
   	extend: {
   		fontFamily: {
   			sans: [
-  				'DM Sans',
-                    ...defaultTheme.fontFamily.sans
-                ],
+  				'Source Serif 4',
+  				'Georgia',
+  				...defaultTheme.fontFamily.serif
+  			],
+  			display: ['Caveat', 'cursive'],
+  			serif: ['Source Serif 4', 'Georgia', 'serif'],
+  			label: ['Source Sans 3', 'sans-serif'],
   			mono: [
   				'JetBrains Mono',
-                    ...defaultTheme.fontFamily.mono
-                ]
+  				...defaultTheme.fontFamily.mono
+  			]
   		},
   		colors: {
   			primary: {
-  				'50': '#f0fdf4',
-  				'100': '#dcfce7',
-  				'200': '#bbf7d0',
-  				'300': '#86efac',
-  				'400': '#4ade80',
-  				'500': '#22c55e',
-  				'600': '#16a34a',
-  				'700': '#15803d',
-  				'800': '#166534',
-  				'900': '#14532d'
+  				DEFAULT: '#22201D',
+  				light: '#F7F1E3',
+  				dark: '#22201D'
   			},
-  			agent: {
-  				orchestrator: '#8b5cf6',
-  				planner: '#0d9488',
-  				researcher: '#f97316',
-  				composer: '#ec4899',
-  				tutor: '#3b82f6'
-  			}
+  			secondary: {
+  				DEFAULT: '#7B766D',
+  				light: '#A39E94',
+  				dark: '#5C5750'
+  			},
+  			tertiary: {
+  				DEFAULT: '#C4251C',
+  				light: '#E85D54',
+  				dark: '#9A1E16'
+  			},
+  			neutral: '#F7F1E3',
+  			surface: '#FFFBEF'
   		},
   		borderRadius: {
-  			sm: '6px',
-  			md: '10px',
+  			sm: '4px',
+  			md: '8px',
   			lg: '14px',
   			xl: '18px',
   			'2xl': '24px'
-  		},
-  		boxShadow: {
-  			green: '0 4px 14px rgba(34, 197, 94, 0.25)',
-  			amber: '0 4px 14px rgba(245, 158, 11, 0.25)',
-  			blue: '0 4px 14px rgba(59, 130, 246, 0.25)'
   		},
   		keyframes: {
   			shake: {

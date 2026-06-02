@@ -23,7 +23,7 @@ export default function ModuleTopbar({ module, curriculum, sessionId }) {
   const estimatedMinutes = module?.estimated_read_minutes ?? 0
 
   return (
-    <div className="sticky top-0 z-30 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <div className="sticky top-0 z-30 border-b border-[var(--border)] bg-surface">
       <div className="mx-auto flex h-14 max-w-4xl items-center justify-between px-4">
         <nav className="flex items-center gap-1 text-sm text-muted-foreground" aria-label="Breadcrumb">
           <Link
