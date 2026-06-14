@@ -2,7 +2,6 @@ import React from 'react';
 import { Flame } from 'lucide-react';
 import { motion, useReducedMotion } from 'framer-motion';
 import { LEVEL_NAMES, LEVEL_THRESHOLDS } from '../../utils/constants';
-import { Progress } from '../ui/progress';
 import { CountUp } from './CountUp';
 
 function getTimeGreeting() {
@@ -32,56 +31,57 @@ export default function GreetingHero({ username = 'Pelajar', streak = 0, xp = 0 
   const greeting = getTimeGreeting();
   const levelInfo = getLevelInfo(xp);
   const shouldReduceMotion = useReducedMotion();
-  
+
   const range = levelInfo.max - levelInfo.min;
   const currentProgress = xp - levelInfo.min;
-  const progressPercent = levelInfo.max === xp && levelInfo.max !== 0 ? 100 : (currentProgress / range) * 100;
+  const progressPercent =
+    range <= 0
+      ? 100
+      : (levelInfo.max === xp && levelInfo.max !== 0
+          ? 100
+          : (currentProgress / range) * 100);
 
   return (
-    <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
-      <div className="space-y-1">
-        <h1 className="text-3xl font-bold tracking-tight text-primary">
-          {greeting}, {username}! <span aria-hidden="true">🌱</span>
-        </h1>
-        <p className="text-secondary">
-          Siap untuk melanjutkan petualangan belajarmu hari ini?
-        </p>
-      </div>
-
-      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-        <div className="flex items-center gap-3 bg-tertiary/10 px-4 py-2.5 rounded-2xl border border-tertiary/20">
-          <motion.div
-            initial={shouldReduceMotion ? { scale: 1 } : { scale: 0.8 }}
-            animate={shouldReduceMotion ? { scale: 1 } : { scale: [0.8, 1.2, 1] }}
-            transition={{ repeat: Infinity, duration: 2, repeatType: "reverse" }}
-          >
-            <Flame className="w-6 h-6 text-tertiary fill-tertiary" />
-          </motion.div>
-          <div>
-            <div className="text-xs font-medium text-tertiary/80 uppercase tracking-wider">
-              Streak
-            </div>
-            <div className="text-lg font-bold text-tertiary leading-none">
-              <CountUp value={streak} /> Hari
-            </div>
-          </div>
+    <div className="page-header">
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+        <div className="space-y-1">
+          <h1 className="page-title">
+            {greeting}, {username}
+          </h1>
+          <p className="page-subtitle">
+            Siap untuk melanjutkan petualangan belajarmu hari ini?
+          </p>
         </div>
 
-        <div className="bg-surface px-4 py-2.5 rounded-2xl border border-[var(--border)] min-w-[200px]">
-          <div className="flex justify-between items-end mb-2">
+        <div className="flex items-center gap-3 shrink-0">
+          <div className="flex items-center gap-2.5 bg-tertiary/10 px-4 py-2.5 rounded-xl border border-tertiary/20">
+            <motion.div
+              initial={shouldReduceMotion ? { scale: 1 } : { scale: 0.8 }}
+              animate={shouldReduceMotion ? { scale: 1 } : { scale: [0.8, 1.2, 1] }}
+              transition={{ repeat: Infinity, duration: 2, repeatType: 'reverse' }}
+            >
+              <Flame className="w-5 h-5 text-tertiary fill-tertiary" />
+            </motion.div>
             <div>
-              <div className="text-xs font-medium text-secondary/80 uppercase tracking-wider">
+              <div className="text-[10px] font-label uppercase tracking-wider text-tertiary/80 leading-none">
+                Streak
+              </div>
+              <div className="text-lg font-bold text-tertiary leading-tight">
+                <CountUp value={streak} /> Hari
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2.5 bg-surface px-4 py-2.5 rounded-xl border border-[var(--border)] shadow-warm-xs">
+            <div>
+              <div className="text-[10px] font-label uppercase tracking-wider text-secondary leading-none">
                 Level {levelInfo.level}
               </div>
-              <div className="text-sm font-bold text-primary">
+              <div className="text-sm font-semibold text-primary leading-tight">
                 {levelInfo.name}
               </div>
             </div>
-            <div className="text-xs font-medium text-secondary">
-              <CountUp value={xp} /> / {levelInfo.max === xp ? 'MAX' : levelInfo.max} XP
-            </div>
           </div>
-          <Progress value={progressPercent} className="h-2 bg-neutral" />
         </div>
       </div>
     </div>

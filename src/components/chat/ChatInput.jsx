@@ -1,10 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Loader2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Send, Loader2, Paperclip, Mic } from 'lucide-react';
 
-const ChatInput = ({ onSend, isLoading, placeholder }) => {
+const ChatInput = ({ onSend, onUpload, isLoading, isUploading, placeholder }) => {
   const [text, setText] = useState('');
   const textareaRef = useRef(null);
+  const fileInputRef = useRef(null);
 
   const handleSend = () => {
     if (text.trim() && !isLoading) {
@@ -20,6 +20,14 @@ const ChatInput = ({ onSend, isLoading, placeholder }) => {
     }
   };
 
+  const handleFileChange = (e) => {
+    const file = e.target.files?.[0];
+    if (file && onUpload) {
+      onUpload(file);
+      e.target.value = '';
+    }
+  };
+
   useEffect(() => {
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto';
@@ -27,10 +35,30 @@ const ChatInput = ({ onSend, isLoading, placeholder }) => {
     }
   }, [text]);
 
+  const canSend = text.trim() && !isLoading;
+
   return (
-    <div className="p-3 md:p-4 bg-surface border-t border-[var(--border)] shadow-[0_-4px_12px_rgba(0,0,0,0.03)]">
-      <div className="max-w-3xl mx-auto flex gap-3 items-end">
-        <div className="flex-1 bg-neutral rounded-2xl border border-[var(--border)] focus-within:border-tertiary/40 focus-within:ring-2 focus-within:ring-tertiary/20 focus-within:shadow-sm focus-within:shadow-tertiary/5 transition-all px-4 py-2">
+    <div className="px-4 md:px-6 py-3 bg-bg-primary border-t border-border">
+      <div className="max-w-[850px] mx-auto">
+        <div className="flex items-end gap-2 bg-surface border border-border rounded-2xl px-4 py-2.5 focus-within:border-tertiary focus-within:ring-2 focus-within:ring-tertiary/20 transition-all shadow-warm-xs">
+          <input 
+            type="file" 
+            ref={fileInputRef}
+            onChange={handleFileChange}
+            accept=".pdf,.txt,.md"
+            className="hidden"
+          />
+
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            disabled={isUploading || isLoading}
+            className="p-1.5 text-secondary/40 hover:text-secondary disabled:opacity-50 transition-colors flex-shrink-0 mb-0.5"
+            aria-label="Lampirkan file"
+            tabIndex={-1}
+          >
+            {isUploading ? <Loader2 className="animate-spin text-tertiary" size={18} /> : <Paperclip size={18} />}
+          </button>
+
           <textarea
             ref={textareaRef}
             rows={1}
@@ -38,26 +66,35 @@ const ChatInput = ({ onSend, isLoading, placeholder }) => {
             onChange={(e) => setText(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder={placeholder}
-            className="w-full bg-transparent border-none focus:ring-0 text-[14px] resize-none py-1 max-h-[120px]"
+            className="flex-1 bg-transparent border-none focus:ring-0 focus:outline-none text-[14px] text-primary placeholder:text-secondary/50 resize-none py-1 max-h-[120px] leading-relaxed"
             disabled={isLoading}
           />
+
+          {/* Mic button (dummy) */}
+          <button
+            className="p-1.5 text-secondary/40 hover:text-secondary transition-colors flex-shrink-0 mb-0.5"
+            aria-label="Input suara"
+            tabIndex={-1}
+          >
+            <Mic size={18} />
+          </button>
+
+          <button
+            onClick={handleSend}
+            disabled={!canSend}
+            aria-label="Kirim pesan"
+            className="bg-tertiary text-white rounded-full p-2.5 hover:bg-tertiary-light disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-150 flex-shrink-0 mb-0.5 shadow-sm"
+          >
+            {isLoading ? (
+              <Loader2 className="animate-spin" size={18} />
+            ) : (
+              <Send size={18} />
+            )}
+          </button>
         </div>
-        <Button
-          onClick={handleSend}
-          disabled={!text.trim() || isLoading}
-          aria-label="Send message"
-          className="rounded-full w-10 h-10 p-0 flex-shrink-0 bg-tertiary hover:bg-tertiary/90 active:bg-tertiary/80 disabled:opacity-50 transition-all duration-150 shadow-sm"
-        >
-          {isLoading ? (
-            <Loader2 className="animate-spin" size={20} />
-          ) : (
-            <Send size={18} />
-          )}
-        </Button>
-      </div>
-      <div className="max-w-3xl mx-auto mt-1.5">
-        <p className="text-[11px] text-secondary/50 text-right pr-1">
-          Tekan Shift+Enter untuk baris baru
+
+        <p className="text-[11px] text-secondary/40 text-right mt-1.5 pr-1 font-label">
+          Shift+Enter untuk baris baru
         </p>
       </div>
     </div>

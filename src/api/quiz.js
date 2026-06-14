@@ -6,10 +6,11 @@ export function getQuiz(topicId, numQuestions) {
   }).then((response) => response.data)
 }
 
-export function submitQuiz({ session_id, topic_id, answers, time_spent_seconds, questions_data }) {
+export function submitQuiz({ session_id, topic_id, quiz_id, answers, time_spent_seconds, questions_data }) {
   return api.post('/quiz/submit', {
     session_id,
     topic_id,
+    quiz_id,
     answers,
     time_spent_seconds,
     questions_data,

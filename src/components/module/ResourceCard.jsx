@@ -14,6 +14,12 @@ const TYPE_LABELS = {
   paper: 'Paper',
 }
 
+const TYPE_COLORS = {
+  article: 'bg-secondary/10 text-secondary',
+  video: 'bg-danger/10 text-danger-fg',
+  paper: 'bg-info/10 text-info-fg',
+}
+
 function getDomain(url) {
   try {
     return new URL(url).hostname.replace(/^www\./, '')
@@ -25,6 +31,7 @@ function getDomain(url) {
 export default function ResourceCard({ source }) {
   const Icon = TYPE_ICONS[source.type] || FileText
   const label = TYPE_LABELS[source.type] || 'Sumber'
+  const colorClass = TYPE_COLORS[source.type] || 'bg-secondary/10 text-secondary'
   const domain = getDomain(source.url)
   const shouldReduceMotion = useReducedMotion()
 
@@ -35,7 +42,7 @@ export default function ResourceCard({ source }) {
   }
 
   const hoverProps = shouldReduceMotion ? {} : {
-    whileHover: { y: -2, boxShadow: '0 8px 20px rgba(34,197,94,0.2)' },
+    whileHover: { y: -2 },
     whileTap: { scale: 0.98 }
   }
 
@@ -48,20 +55,17 @@ export default function ResourceCard({ source }) {
     >
       <div className={cn(
         'flex size-10 shrink-0 items-center justify-center rounded-lg',
-        source.type === 'video' && 'bg-red-100 text-red-600',
-        source.type === 'article' && 'bg-secondary/10 text-secondary',
-        source.type === 'paper' && 'bg-secondary/10 text-secondary',
-        !TYPE_ICONS[source.type] && 'bg-neutral text-secondary',
+        colorClass,
       )}>
         <Icon className="size-5" />
       </div>
       <div className="min-w-0 flex-1">
-        <p className="truncate font-medium text-foreground">{source.title}</p>
-        <p className="truncate text-xs text-muted-foreground">
+        <p className="truncate font-medium text-primary">{source.title}</p>
+        <p className="truncate text-xs text-secondary font-label">
           {label}{domain ? ` · ${domain}` : ''}
         </p>
       </div>
-      <ExternalLink className="size-4 shrink-0 text-muted-foreground transition-colors group-hover:text-primary" />
+      <ExternalLink className="size-4 shrink-0 text-secondary/50 transition-colors group-hover:text-tertiary" />
     </motion.button>
   )
 }

@@ -21,9 +21,24 @@
 
     --secondary: 123 118 109;
     --tertiary: 196 37 28;
+    --tertiary-light: 232 93 84;
+    --tertiary-dark: 154 30 22;
     --neutral: 247 241 227;
     --surface: 255 251 239;
     --on-primary: 255 251 239;
+
+    --success: 22 101 52;
+    --success-light: 220 252 231;
+    --success-fg: 22 101 52;
+    --warning: 161 98 7;
+    --warning-light: 254 243 199;
+    --warning-fg: 161 98 7;
+    --info: 29 78 216;
+    --info-light: 219 234 254;
+    --info-fg: 29 78 216;
+    --danger: 196 37 28;
+    --danger-light: 254 226 226;
+    --danger-fg: 153 27 27;
 
     --radius-sm: 4px;
     --radius-md: 8px;
@@ -31,27 +46,222 @@
     --radius-xl: 18px;
     --radius-2xl: 24px;
 
+    --shadow-xs: 0 1px 2px rgba(58, 41, 22, 0.05);
+    --shadow-sm: 0 1px 3px rgba(58, 41, 22, 0.08), 0 1px 2px rgba(58, 41, 22, 0.04);
+    --shadow-md: 0 4px 6px -1px rgba(58, 41, 22, 0.08), 0 2px 4px -2px rgba(58, 41, 22, 0.06);
+    --shadow-lg: 0 10px 15px -3px rgba(58, 41, 22, 0.10), 0 4px 6px -4px rgba(58, 41, 22, 0.06);
+    --shadow-xl: 0 20px 25px -5px rgba(58, 41, 22, 0.12), 0 8px 10px -6px rgba(58, 41, 22, 0.08);
+    --shadow-glow: 0 0 0 4px rgba(196, 37, 28, 0.12);
+
     --sidebar-width: 240px;
-    --sidebar-width-collapsed: 64px;
-    --topbar-height: 56px;
+    --sidebar-width-collapsed: 72px;
+    --topbar-height: 60px;
+
+    /* ─── SEMANTIC TOKENS (Phase 1.4) ───
+     * Aliases to raw tokens above. Components should use these
+     * semantic names instead of raw color values for consistency
+     * and easier theme changes.
+     */
+
+    /* Action hierarchy */
+    --accent: 196 37 28;                  /* primary brand CTA */
+    --accent-hover: 154 30 22;
+    --accent-active: 232 93 84;
+    --accent-subtle: 196 37 28;           /* use with /0.08 opacity */
+    --accent-muted: 196 37 28;            /* use with /0.15 opacity */
+    --accent-fg: 255 251 239;             /* text on accent bg */
+
+    /* Surface hierarchy */
+    --surface-0: 247 241 227;             /* page background */
+    --surface-1: 255 251 239;             /* card background */
+    --surface-2: 238 230 213;             /* nested card / well */
+    --surface-inverse: 34 32 29;          /* dark surface */
+
+    /* Text hierarchy (5 levels) */
+    --text-strong: 34 32 29;              /* heading, emphasis */
+    --text-default: 34 32 29;            /* body */
+    --text-muted: 123 118 109;            /* secondary */
+    --text-subtle: 160 154 143;           /* caption, hint */
+    --text-inverse: 255 251 239;          /* on dark/accent bg */
+    --text-on-accent: 255 251 239;
+
+    /* Border hierarchy */
+    --border-subtle: 196 190 177;         /* with /0.5 opacity */
+    --border-default: 196 190 177;
+    --border-strong: 123 118 109;
+    --border-focus: 196 37 28;            /* focus ring color */
+
+    /* Status — already in :root as --success/--warning/--info/--danger */
+    /* Re-exported here for component code clarity */
+    --status-success: 22 101 52;
+    --status-success-bg: 220 252 231;
+    --status-warning: 161 98 7;
+    --status-warning-bg: 254 243 199;
+    --status-info: 29 78 216;
+    --status-info-bg: 219 234 254;
+    --status-danger: 196 37 28;
+    --status-danger-bg: 254 226 226;
+
+    /* Accessible variants — use for body text, not for large headings/buttons.
+     * Base --accent (#C4251C) is 5.0:1 on cream — passes AA for large text
+     * and AA for UI components, but FAILS AA for small body text (need 4.5:1+).
+     * Use these darker shades when applying accent to body-sized type. */
+    --accent-readable: 154 30 22;        /* #9A1E16 — 7.4:1 on cream, passes AAA body */
+    --text-on-light-subtle: 96 86 72;    /* for text-secondary/50 use cases, this is the safe equivalent */
+
+    /* ─── Phase 2.1: TYPE SCALE TOKENS ───
+     * Modular scale (1.2 ratio) anchored at 16px body.
+     * Use these for new code; Tailwind utilities still work but these
+     * document the intent and let us shift the whole scale in one place. */
+    --font-size-display-2xl: 3.75rem;   /* 60px */
+    --font-size-display-xl:  3rem;       /* 48px */
+    --font-size-display-lg:  2.25rem;    /* 36px */
+    --font-size-display-md:  1.875rem;   /* 30px */
+    --font-size-heading-lg:  1.5rem;     /* 24px */
+    --font-size-heading-md:  1.25rem;    /* 20px */
+    --font-size-heading-sm:  1.125rem;   /* 18px */
+    --font-size-body-lg:     1rem;       /* 16px — default */
+    --font-size-body-md:     0.9375rem;  /* 15px */
+    --font-size-body-sm:     0.875rem;   /* 14px */
+    --font-size-caption:     0.75rem;    /* 12px */
+    --font-size-micro:       0.6875rem;  /* 11px */
+
+    --line-height-tight:     1.15;
+    --line-height-snug:      1.3;
+    --line-height-normal:    1.5;
+    --line-height-relaxed:   1.7;
+    --line-height-loose:     1.8;
+
+    --letter-spacing-tighter: -0.03em;
+    --letter-spacing-tight:   -0.02em;
+    --letter-spacing-normal:  0;
+    --letter-spacing-wide:    0.01em;
+    --letter-spacing-wider:   0.05em;
+
+    /* ─── Phase 2.2: MOTION SYSTEM TOKENS ───
+     * Standard durations and easings. Use these instead of magic numbers
+     * in transition/animation properties. Framer-motion users should set
+     * the spring stiffness/damping below for natural-feeling motion. */
+    --duration-instant:  80ms;   /* micro-feedback (button press) */
+    --duration-fast:     150ms;  /* hover, focus ring */
+    --duration-normal:   250ms;  /* default transitions */
+    --duration-slow:     400ms;  /* page enter, modal open */
+    --duration-slower:   700ms;  /* page leave, celebration */
+
+    --ease-out-quart:    cubic-bezier(0.25, 1, 0.5, 1);    /* entering */
+    --ease-in-quart:     cubic-bezier(0.5, 0, 0.75, 0);    /* exiting */
+    --ease-in-out-quart: cubic-bezier(0.76, 0, 0.24, 1);  /* both */
+    --ease-spring:       cubic-bezier(0.34, 1.56, 0.64, 1); /* overshoot */
+
+    /* Spring defaults for framer-motion — natural but not bouncy. */
+    --spring-stiffness:  320;
+    --spring-damping:    28;
+    --spring-mass:       0.8;
+  }
+
+  .dark {
+    --bg-primary: 28 25 22;
+    --bg-secondary: 22 19 16;
+    --bg-tertiary: 38 34 29;
+    --text-primary: 250 246 238;
+    --text-secondary: 196 188 172;
+    --text-tertiary: 142 134 120;
+    --border: 56 50 42;
+    --border-strong: 96 86 72;
+    --primary: 250 246 238;
+    --secondary: 196 188 172;
+    --tertiary: 232 93 84;
+    --tertiary-light: 244 114 104;
+    --tertiary-dark: 196 37 28;
+    --neutral: 38 34 29;
+    --surface: 28 25 22;
+    --on-primary: 22 19 16;
+    --success: 134 239 172;
+    --success-light: 20 83 45;
+    --warning: 253 224 71;
+    --warning-light: 113 63 18;
+    --info: 147 197 253;
+    --info-light: 30 58 138;
+    --danger: 248 113 113;
+    --danger-light: 127 29 29;
+    --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.4);
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.5), 0 1px 2px rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -2px rgba(0, 0, 0, 0.3);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.6), 0 4px 6px -4px rgba(0, 0, 0, 0.3);
+
+    /* Phase 4.3 — semantic tokens for dark mode (mirror light mode aliases) */
+    --accent: 232 93 84;
+    --accent-hover: 244 114 104;
+    --accent-active: 196 37 28;
+    --accent-subtle: 232 93 84;
+    --accent-muted: 232 93 84;
+    --accent-fg: 22 19 16;
+
+    --surface-0: 22 19 16;        /* page bg */
+    --surface-1: 28 25 22;        /* card bg */
+    --surface-2: 38 34 29;        /* nested card */
+    --surface-inverse: 250 246 238;
+
+    --text-strong: 250 246 238;
+    --text-default: 235 230 220;
+    --text-muted: 196 188 172;
+    --text-subtle: 142 134 120;
+    --text-inverse: 22 19 16;
+    --text-on-accent: 22 19 16;
+
+    --border-subtle: 56 50 42;
+    --border-default: 56 50 42;
+    --border-strong: 96 86 72;
+    --border-focus: 232 93 84;
+
+    /* Status colors stay consistent — already accessible in dark */
+    --accent-readable: 244 114 104;  /* lighter terracotta for body text in dark */
+    --text-on-light-subtle: 196 188 172;
+
+    --sidebar-width: 240px;
+    --sidebar-width-collapsed: 72px;
+    --topbar-height: 60px;
   }
 
   * {
     border-color: rgb(var(--border));
   }
-
   html {
-    font-family: 'Source Serif 4', Georgia, serif;
-  }
-
-  body {
-    margin: 0;
-    min-width: 320px;
-    background-color: rgb(var(--bg-secondary));
-    color: rgb(var(--text-primary));
     font-family: 'Source Serif 4', Georgia, serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    /* Phase fix — prevent horizontal scroll if any descendant briefly
+     * extends past the viewport (e.g., during a width animation). */
+    overflow-x: hidden;
+  }
+  body {
+    margin: 0;
+    min-width: 320px;
+    background-color: rgb(var(--surface-0));
+    color: rgb(var(--text-default));
+    font-family: 'Source Serif 4', Georgia, serif;
+    overflow-x: hidden;
+  }
+
+  /* UI sans-serif — applied via .font-label or button/input class
+   * (we don't override body here so long-form reading stays serif). */
+  .font-display {
+    font-family: 'Fraunces', 'Source Serif 4', Georgia, serif;
+    font-feature-settings: 'ss01', 'ss02';
+    letter-spacing: -0.02em;
+  }
+  .font-serif-content {
+    font-family: 'Source Serif 4', Georgia, serif;
+  }
+  .font-label {
+    font-family: 'Source Sans 3', sans-serif;
+    letter-spacing: 0.01em;
+  }
+  .font-sans-ui {
+    font-family: 'Source Sans 3', system-ui, -apple-system, sans-serif;
+  }
+  .font-mono {
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
   }
 
   ::-webkit-scrollbar {
@@ -77,9 +287,92 @@
     outline-offset: 2px;
     border-radius: var(--radius-sm);
   }
+
+  /* Phase 1.8 — Honor user's reduce-motion preference for CSS animations.
+   * This complements framer-motion's MotionConfig reducedMotion="user"
+   * by also disabling our custom CSS keyframes. */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
 }
 
 @layer components {
+  /* ─── Accessible text utility (Phase 1.5) ───
+   * text-secondary/50 and /60 used in many places pass for decorative
+   * icons/placeholders but FAIL AA for body text. Use this class
+   * when the text carries real information (timestamps, helper text,
+   * captions that users need to read).
+   */
+  .text-subtle-readable {
+    color: rgb(var(--text-on-light-subtle));  /* 7.0:1 on cream */
+  }
+  .text-accent-readable {
+    color: rgb(var(--accent-readable));       /* 7.4:1 on cream */
+  }
+
+  .card-base {
+    background-color: rgb(var(--bg-primary));
+    border: 1px solid rgb(var(--border));
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-xs);
+    transition: box-shadow 200ms ease, border-color 200ms ease, transform 200ms ease;
+  }
+  .card-hover:hover {
+    box-shadow: var(--shadow-md);
+    border-color: rgb(var(--border-strong) / 0.5);
+  }
+  .card-interactive {
+    cursor: pointer;
+  }
+  .card-interactive:hover {
+    transform: translateY(-1px);
+  }
+
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.25rem 0.625rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border-radius: 9999px;
+    line-height: 1;
+    white-space: nowrap;
+  }
+  .pill-success { background: rgb(var(--success-light)); color: rgb(var(--success-fg)); }
+  .pill-warning { background: rgb(var(--warning-light)); color: rgb(var(--warning-fg)); }
+  .pill-info    { background: rgb(var(--info-light));    color: rgb(var(--info-fg));    }
+  .pill-danger  { background: rgb(var(--danger-light));  color: rgb(var(--danger-fg));  }
+  /* Phase 2.4 — extra pill variants for StatusBadge */
+  .pill-neutral { background: rgb(var(--bg-tertiary) / 0.5); color: rgb(var(--text-secondary)); }
+  .pill-accent  { background: rgb(var(--tertiary) / 0.10); color: rgb(var(--tertiary)); }
+  /* Size variants */
+  .pill-sm  { padding: 0.125rem 0.5rem;  font-size: 0.6875rem; }
+  .pill-lg  { padding: 0.5rem 0.875rem;  font-size: 0.875rem;  gap: 0.5rem; }
+
+  .page-header { margin-bottom: 1.75rem; }
+  .page-title {
+    font-family: 'Fraunces', 'Source Serif 4', Georgia, serif;
+    font-size: 1.875rem;
+    line-height: 1.15;
+    font-weight: 700;
+    color: rgb(var(--text-primary));
+    letter-spacing: -0.02em;
+  }
+  .page-subtitle {
+    margin-top: 0.375rem;
+    color: rgb(var(--text-secondary));
+    font-size: 0.95rem;
+    line-height: 1.5;
+  }
+
   .resource-card {
     display: flex;
     align-items: flex-start;
@@ -124,5 +417,212 @@
   .course-card:hover {
     border-color: rgb(var(--tertiary));
     box-shadow: 0 0 0 1px rgb(var(--tertiary) / 0.2), 0 1px 3px rgb(var(--tertiary) / 0.1);
+  }
+
+  /* Module article typography — educational reading experience */
+  .module-content {
+    --tw-prose-body: rgb(var(--text-primary));
+    --tw-prose-headings: rgb(var(--text-primary));
+    --tw-prose-lead: rgb(var(--text-secondary));
+    --tw-prose-links: rgb(var(--tertiary));
+    --tw-prose-bold: rgb(var(--text-primary));
+    --tw-prose-counters: rgb(var(--text-secondary));
+    --tw-prose-bullets: rgb(var(--text-secondary));
+    --tw-prose-hr: rgb(var(--border));
+    --tw-prose-quotes: rgb(var(--text-primary));
+    --tw-prose-quote-borders: rgb(var(--tertiary));
+    --tw-prose-captions: rgb(var(--text-secondary));
+    --tw-prose-code: rgb(var(--text-primary));
+    --tw-prose-pre-code: rgb(var(--text-primary));
+    --tw-prose-pre-bg: rgb(var(--bg-secondary));
+    --tw-prose-th-borders: rgb(var(--border));
+    --tw-prose-td-borders: rgb(var(--border));
+  }
+
+  .module-content h1,
+  .module-content h2,
+  .module-content h3,
+  .module-content h4 {
+    font-family: 'Fraunces', 'Source Serif 4', Georgia, serif;
+    font-feature-settings: 'ss01', 'ss02';
+    letter-spacing: -0.02em;
+    color: rgb(var(--text-primary));
+    scroll-margin-top: 5rem;
+  }
+
+  .module-content h2 {
+    margin-top: 2.5rem;
+    margin-bottom: 1rem;
+    font-size: 1.375rem;
+    font-weight: 700;
+    line-height: 1.3;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid rgb(var(--border));
+  }
+
+  .module-content h3 {
+    margin-top: 2rem;
+    margin-bottom: 0.75rem;
+    font-size: 1.125rem;
+    font-weight: 600;
+    line-height: 1.4;
+  }
+
+  .module-content p {
+    margin-bottom: 1.25rem;
+    line-height: 1.8;
+  }
+
+  .module-content ul,
+  .module-content ol {
+    margin-bottom: 1.25rem;
+    padding-left: 1.5rem;
+  }
+
+  .module-content li {
+    margin-bottom: 0.375rem;
+    line-height: 1.75;
+  }
+
+  .module-content ul li::marker {
+    color: rgb(var(--tertiary));
+  }
+
+  .module-content ol li::marker {
+    color: rgb(var(--text-secondary));
+    font-weight: 600;
+  }
+
+  .module-content strong {
+    color: rgb(var(--text-primary));
+    font-weight: 650;
+  }
+
+  .module-content a {
+    color: rgb(var(--tertiary));
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    text-decoration-thickness: 1px;
+    transition: color 0.15s ease;
+  }
+
+  .module-content a:hover {
+    color: rgb(var(--tertiary-light));
+  }
+
+  .module-content code:not(pre code) {
+    background: rgb(var(--bg-secondary));
+    border: 1px solid rgb(var(--border));
+    padding: 0.125rem 0.375rem;
+    border-radius: var(--radius-sm);
+    font-size: 0.875em;
+    color: rgb(var(--tertiary-dark));
+  }
+
+  .module-content hr {
+    margin: 2rem 0;
+    border-color: rgb(var(--border));
+  }
+
+  .module-content img {
+    border-radius: var(--radius-lg);
+  }
+
+  /* Feedback pill styles */
+  .feedback-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    border-radius: 9999px;
+    border: 1.5px solid rgb(var(--border));
+    background: rgb(var(--bg-primary));
+    color: rgb(var(--text-secondary));
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: 'Source Sans 3', sans-serif;
+    letter-spacing: 0.01em;
+  }
+
+  .feedback-pill:hover {
+    border-color: rgb(var(--border-strong));
+    background: rgb(var(--bg-secondary));
+  }
+
+  .feedback-pill-active-success {
+    background: rgb(var(--success-light));
+    color: rgb(var(--success-fg));
+    border-color: rgb(var(--success-fg) / 0.3);
+  }
+
+  .feedback-pill-active-warning {
+    background: rgb(var(--warning-light));
+    color: rgb(var(--warning-fg));
+    border-color: rgb(var(--warning-fg) / 0.3);
+  }
+
+  .feedback-pill-active-danger {
+    background: rgb(var(--danger-light));
+    color: rgb(var(--danger-fg));
+    border-color: rgb(var(--danger-fg) / 0.3);
+  }
+
+  /* Custom range slider for confidence */
+  .confidence-slider {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 6px;
+    border-radius: 9999px;
+    background: rgb(var(--bg-secondary));
+    outline: none;
+    transition: background 0.2s ease;
+  }
+
+  .confidence-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: rgb(var(--tertiary));
+    border: 3px solid rgb(var(--bg-primary));
+    box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  .confidence-slider::-webkit-slider-thumb:hover {
+    transform: scale(1.15);
+    box-shadow: 0 2px 8px rgba(196, 37, 28, 0.25);
+  }
+
+  .confidence-slider::-moz-range-thumb {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: rgb(var(--tertiary));
+    border: 3px solid rgb(var(--bg-primary));
+    box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+    cursor: pointer;
+  }
+
+  /* Skeleton shimmer */
+  .skeleton-shimmer {
+    background: linear-gradient(
+      90deg,
+      rgb(var(--bg-secondary)) 25%,
+      rgb(var(--bg-tertiary)) 50%,
+      rgb(var(--bg-secondary)) 75%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.5s ease-in-out infinite;
+  }
+
+  @keyframes shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
   }
 }

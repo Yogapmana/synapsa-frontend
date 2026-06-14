@@ -23,20 +23,39 @@ function CodeBlock({ inline, className, children, ...props }) {
   }
 
   if (inline) {
-    return <code className={cn('rounded bg-muted px-1.5 py-0.5 font-mono text-[0.9em]', className)} {...props}>{children}</code>
+    return (
+      <code
+        className={cn(
+          'rounded border border-border bg-bg-secondary px-1.5 py-0.5 font-mono text-[0.9em] text-accent-readable',
+          className
+        )}
+        {...props}
+      >
+        {children}
+      </code>
+    )
   }
 
   return (
-    <div className="group relative my-4 overflow-hidden rounded-lg border bg-muted/40">
-      <div className="flex items-center justify-between border-b bg-background/80 px-4 py-2 text-xs text-muted-foreground">
-        <span>{match?.[1] || 'code'}</span>
-        <Button type="button" variant="ghost" size="sm" onClick={handleCopy}>
-          {copied ? <Check data-icon="inline-start" /> : <Copy data-icon="inline-start" />}
+    <div className="group relative my-6 overflow-hidden rounded-xl border border-border bg-bg-secondary shadow-warm-xs">
+      <div className="flex items-center justify-between border-b border-border bg-bg-tertiary/40 px-4 py-2 text-xs text-secondary font-mono">
+        <span className="uppercase tracking-wider">{match?.[1] || 'code'}</span>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={handleCopy}
+          aria-label={copied ? 'Tersalin' : 'Salin kode'}
+          className="text-secondary hover:text-tertiary"
+        >
+          {copied ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
           {copied ? 'Tersalin' : 'Salin'}
         </Button>
       </div>
-      <pre className="overflow-x-auto p-4 text-sm leading-6">
-        <code className={className} {...props}>{children}</code>
+      <pre className="overflow-x-auto p-4 text-sm leading-relaxed font-mono">
+        <code className={className} {...props}>
+          {children}
+        </code>
       </pre>
     </div>
   )
@@ -140,15 +159,15 @@ function ContentWithImages({ content, className }) {
   }, [content])
 
   const components = useMemo(() => ({
-    blockquote: ({ children }) => <blockquote className="border-l-4 border-primary/40 pl-4 italic text-muted-foreground">{children}</blockquote>,
+    blockquote: ({ children }) => <blockquote className="my-6 border-l-4 border-tertiary/30 bg-tertiary/5 py-3 pr-4 pl-5 italic text-secondary rounded-r-lg">{children}</blockquote>,
     code: CodeBlock,
-    table: ({ children }) => <div className="my-4 w-full overflow-x-auto rounded-lg border"><table className="w-full caption-bottom text-sm">{children}</table></div>,
-    th: ({ children }) => <th className="border-b bg-muted px-3 py-2 text-left font-semibold">{children}</th>,
-    td: ({ children }) => <td className="border-b px-3 py-2 align-top">{children}</td>,
+    table: ({ children }) => <div className="my-6 w-full overflow-x-auto rounded-lg border"><table className="w-full caption-bottom text-sm">{children}</table></div>,
+    th: ({ children }) => <th className="border-b bg-secondary/10 px-4 py-2.5 text-left font-semibold text-primary">{children}</th>,
+    td: ({ children }) => <td className="border-b px-4 py-2.5 align-top">{children}</td>,
   }), [])
 
   return (
-    <div className={cn('module-content prose prose-slate max-w-none', className)}>
+    <div className={cn('module-content prose prose-stone max-w-none font-serif-content leading-[1.8]', className)}>
       {segments.map((segment, i) => {
         if (segment.type === 'image') {
           return <PollinationsImage key={segment.key} src={segment.src} alt={segment.alt} />

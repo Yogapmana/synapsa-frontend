@@ -1,23 +1,27 @@
+import { cn } from '@/lib/utils'
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Leaf, AlertCircle } from 'lucide-react'
+import { Brain, AlertCircle, Loader2, Sparkles, X } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Progress } from '@/components/ui/progress'
 import { Button } from '@/components/ui/button'
+import StepProgress from '@/components/common/StepProgress'
 import { useAuthStore } from '@/stores/authStore'
 import { useLearningStore } from '@/stores/learningStore'
 import { getSession } from '@/api/learning'
 import { AGENT_LABELS, AGENT_COLORS } from '@/utils/constants'
 
 const PIPELINE_STAGES = [
-  { key: 'starting', label: 'Menunggu agent...', agent: null },
-  { key: 'planner', label: 'Planner sedang merancang kurikulum...', agent: 'planner' },
-  { key: 'researcher', label: 'Researcher mencari materi...', agent: 'researcher' },
-  { key: 'composer', label: 'Composer menyusun modul...', agent: 'composer' },
-  { key: 'done', label: 'Selesai!', agent: null },
+  { key: 'starting', label: 'Menunggu agent…', agent: null, description: 'Membangun koneksi ke pipeline.' },
+  { key: 'planner', label: 'Planner sedang merancang kurikulum…', agent: 'planner', description: 'Memecah topik menjadi sub-bab & jadwal personal.' },
+  { key: 'researcher', label: 'Researcher mencari materi…', agent: 'researcher', description: 'Mengambil konten dari web, arXiv, Wikipedia, dan lainnya.' },
+  { key: 'composer', label: 'Composer menyusun modul…', agent: 'composer', description: 'Menyintesis materi menjadi modul Markdown terstruktur.' },
+  { key: 'done', label: 'Selesai!', agent: null, description: 'Mengalihkan ke dashboard.' },
 ]
 
-const MAX_POLL_TIME = 600000 // 10 minutes
+const MAX_POLL_TIME = 600000
+const WS_MAX_RETRIES = 8
+const WS_BASE_RETRY_DELAY = 1000
 
 export default function AgentLoadingScreen({ sessionId }) {
   const [logs, setLogs] = useState([])
@@ -29,12 +33,18 @@ export default function AgentLoadingScreen({ sessionId }) {
   const token = useAuthStore((s) => s.token)
   const setActiveSession = useLearningStore((s) => s.setActiveSession)
   const wsRef = useRef(null)
+  const reconnectTimerRef = useRef(null)
   const pollRef = useRef(null)
   const timerRef = useRef(null)
   const logsEndRef = useRef(null)
+  const seenLogIdsRef = useRef(new Set())
 
-  const addLog = useCallback((message, agent = null) => {
-    setLogs((prev) => [...prev, { id: Date.now() + Math.random(), message, agent, timestamp: new Date() }])
+  const addLog = useCallback((message, agent = null, serverId = null) => {
+    if (serverId) {
+      if (seenLogIdsRef.current.has(serverId)) return
+      seenLogIdsRef.current.add(serverId)
+    }
+    setLogs((prev) => [...prev, { id: serverId || `${Date.now()}-${Math.random()}`, message, agent, timestamp: new Date() }])
   }, [])
 
   useEffect(() => {
@@ -59,30 +69,46 @@ export default function AgentLoadingScreen({ sessionId }) {
     if (!sessionId || !token) return
 
     const wsBase = import.meta.env.VITE_WS_URL || `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}`
-    const wsUrl = `${wsBase}/ws/agent-log/${sessionId}?token=${token}`
+    let ws = null
+    let retryCount = 0
+    let manualClose = false
 
-    try {
-      const ws = new WebSocket(wsUrl)
-      wsRef.current = ws
+    const connect = () => {
+      if (manualClose) return
+      const wsUrl = `${wsBase}/ws/agent-log/${sessionId}?token=${token}`
+      try {
+        ws = new WebSocket(wsUrl)
+        wsRef.current = ws
+      } catch {
+        scheduleReconnect()
+        return
+      }
 
       ws.onopen = () => {
+        retryCount = 0
         setWsConnected(true)
         addLog('Terhubung ke agent pipeline...')
       }
 
       ws.onmessage = (event) => {
+        let data
         try {
-          const data = JSON.parse(event.data)
-          const agentKey = data.agent?.toLowerCase()
-          const agentLabel = AGENT_LABELS[agentKey] || data.agent || 'System'
-          addLog(data.message || 'Memproses...', agentKey)
-
-          if (agentKey === 'planner') setCurrentStage(1)
-          else if (agentKey === 'researcher') setCurrentStage(2)
-          else if (agentKey === 'composer') setCurrentStage(3)
+          data = JSON.parse(event.data)
         } catch {
-          addLog(event.data)
+          addLog(String(event.data))
+          return
         }
+
+        if (data?.type && data.type !== 'log') {
+          return
+        }
+
+        const agentKey = data.agent?.toLowerCase()
+        addLog(data.message || 'Memproses...', agentKey, data.id || null)
+
+        if (agentKey === 'planner') setCurrentStage(1)
+        else if (agentKey === 'researcher') setCurrentStage(2)
+        else if (agentKey === 'composer') setCurrentStage(3)
       }
 
       ws.onerror = () => {
@@ -91,14 +117,31 @@ export default function AgentLoadingScreen({ sessionId }) {
 
       ws.onclose = () => {
         setWsConnected(false)
+        scheduleReconnect()
       }
-    } catch {
-      setWsConnected(false)
     }
 
+    const scheduleReconnect = () => {
+      if (manualClose) return
+      if (retryCount >= WS_MAX_RETRIES) {
+        setError('Koneksi ke agent pipeline terputus. Silakan coba lagi.')
+        return
+      }
+      const delay = WS_BASE_RETRY_DELAY * Math.pow(2, retryCount)
+      retryCount += 1
+      reconnectTimerRef.current = setTimeout(connect, delay)
+    }
+
+    connect()
+
     return () => {
-      if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-        wsRef.current.close()
+      manualClose = true
+      if (reconnectTimerRef.current) {
+        clearTimeout(reconnectTimerRef.current)
+        reconnectTimerRef.current = null
+      }
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.close()
       }
       wsRef.current = null
     }
@@ -140,102 +183,207 @@ export default function AgentLoadingScreen({ sessionId }) {
     logsEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [logs])
 
-  const progressValue = ((currentStage + 1) / PIPELINE_STAGES.length) * 100
+  const progressValue = (currentStage / (PIPELINE_STAGES.length - 1)) * 100
+  const elapsedSec = Math.floor(elapsedTime / 1000)
+  const elapsedLabel = `${Math.floor(elapsedSec / 60)}m ${elapsedSec % 60}s`
+  const currentStageData = PIPELINE_STAGES[currentStage] || PIPELINE_STAGES[0]
+  const [logsCollapsed, setLogsCollapsed] = useState(false)
 
   if (error) {
+    const handleStartOver = () => {
+      // Clear the failed session so the user gets a fresh wizard
+      setActiveSession(null)
+      navigate('/onboarding', { replace: true })
+    }
     return (
-      <div className="flex min-h-[60vh] flex-col items-center justify-center gap-6 py-12">
-        <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-red-50 text-red-500 shadow-sm">
-          <AlertCircle className="h-10 w-10" />
+      <div className="flex min-h-[80vh] items-center justify-center px-4">
+        <div className="w-full max-w-md">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="card-base p-8 md:p-10 text-center space-y-6"
+          >
+            <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-3xl bg-danger/10">
+              <AlertCircle className="h-10 w-10 text-danger" />
+            </div>
+            <div className="space-y-2">
+              <h2 className="font-display text-2xl font-bold text-primary">Ups, Terjadi Kesalahan</h2>
+              <p className="text-secondary max-w-xs mx-auto">{error}</p>
+            </div>
+            <Button
+              onClick={handleStartOver}
+              variant="tertiary"
+              size="lg"
+              className="w-full rounded-xl font-label"
+            >
+              Mulai Ulang dari Awal
+            </Button>
+            <p className="text-xs text-secondary">
+              Sesi sebelumnya akan dihapus. Anda bisa memasukkan topik baru.
+            </p>
+          </motion.div>
         </div>
-        <div className="text-center space-y-2">
-          <h2 className="text-xl font-bold text-foreground">Ups, Terjadi Kesalahan</h2>
-          <p className="text-muted-foreground max-w-xs mx-auto">{error}</p>
-        </div>
-        <Button onClick={() => navigate('/onboarding')} size="lg" className="px-8">
-          Coba Lagi
-        </Button>
       </div>
     )
   }
 
   return (
-    <div className="flex min-h-[60vh] flex-col items-center justify-center gap-8 py-12">
-      <motion.div
-        animate={{ scale: [1, 1.1, 1] }}
-        transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-        className="flex h-20 w-20 items-center justify-center rounded-2xl bg-tertiary shadow-lg"
-      >
-        <Leaf className="h-10 w-10 text-white" />
-      </motion.div>
-
-      <div className="w-full max-w-md space-y-3">
-        <AnimatePresence mode="wait">
-          <motion.p
-            key={currentStage}
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            transition={{ duration: 0.3 }}
-            className="text-center text-lg font-semibold text-foreground"
-          >
-            {PIPELINE_STAGES[currentStage]?.label}
-          </motion.p>
-        </AnimatePresence>
-
-        <Progress value={progressValue} className="h-3" />
-
-        <div className="flex justify-between px-1">
-          {PIPELINE_STAGES.map((stage, i) => (
+    <div className="flex min-h-[80vh] items-center justify-center px-4 py-8">
+      <div className="w-full max-w-2xl space-y-7">
+        {/* Hero illustration with role-aware icon */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.5 }}
+          className="flex flex-col items-center gap-5 text-center"
+        >
+          <div className="relative">
             <div
-              key={stage.key}
-              className={`flex flex-col items-center gap-1 ${
-                i <= currentStage ? 'text-tertiary' : 'text-muted-foreground/40'
-              }`}
-            >
-              <div
-                className={`h-2.5 w-2.5 rounded-full transition-colors ${
-                  i <= currentStage ? 'bg-tertiary' : 'bg-muted'
-                }`}
-              />
-              <span className="text-[10px] font-medium">
-                {stage.agent ? AGENT_LABELS[stage.agent] : (i === 0 ? 'Mulai' : 'Selesai')}
-              </span>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div className="w-full max-w-md">
-        <div className="rounded-xl border border-border bg-surface p-4 shadow-sm">
-          <div className="mb-2 flex items-center justify-between">
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Agent Log
-            </h3>
-            <div className={`h-2 w-2 rounded-full ${wsConnected ? 'bg-tertiary animate-pulse' : 'bg-amber-400'}`} />
-          </div>
-          <div className="h-40 space-y-1.5 overflow-y-auto font-mono text-xs">
-            {logs.length === 0 && (
-              <p className="text-muted-foreground">Menunggu agent...</p>
-            )}
-            {logs.map((log) => (
-              <div key={log.id} className="flex gap-2">
-                <span className="shrink-0 text-muted-foreground">
-                  {log.timestamp.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
-                </span>
-                {log.agent && (
-                  <span
-                    className="shrink-0 font-semibold"
-                    style={{ color: AGENT_COLORS[log.agent] || '#6b7280' }}
-                  >
-                    [{AGENT_LABELS[log.agent] || log.agent}]
-                  </span>
+              aria-hidden="true"
+              className="absolute -inset-6 rounded-full bg-tertiary/10 blur-2xl"
+            />
+            <div className="relative flex h-24 w-24 items-center justify-center rounded-3xl bg-tertiary shadow-warm-lg ring-4 ring-tertiary/15">
+              <motion.div
+                animate={{ rotate: [0, 5, -5, 0] }}
+                transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+              >
+                {currentStageData?.agent === 'planner' && <Brain className="h-12 w-12 text-white" />}
+                {currentStageData?.agent === 'researcher' && <Sparkles className="h-12 w-12 text-white" />}
+                {currentStageData?.agent === 'composer' && <Sparkles className="h-12 w-12 text-white" />}
+                {(!currentStageData?.agent || currentStageData?.key === 'starting') && (
+                  <Loader2 className="h-12 w-12 text-white animate-spin" />
                 )}
-                <span className="text-foreground">{log.message}</span>
-              </div>
-            ))}
-            <div ref={logsEndRef} />
+              </motion.div>
+            </div>
           </div>
+
+          <div className="space-y-2.5">
+            <h1 className="font-display text-3xl font-bold tracking-tight text-primary">
+              PLA sedang menyiapkan kurikulum kamu
+            </h1>
+            <p className="text-sm text-secondary max-w-md mx-auto font-serif-content">
+              {currentStageData?.description || 'Menghubungkan ke agent pipeline…'}
+            </p>
+          </div>
+
+          <div className="flex items-center gap-4 text-xs font-label text-secondary">
+            <span className="inline-flex items-center gap-1.5">
+              <span
+                aria-hidden="true"
+                className={cn(
+                  'h-1.5 w-1.5 rounded-full',
+                  wsConnected ? 'bg-success animate-pulse' : 'bg-warning'
+                )}
+              />
+              {wsConnected ? 'Terhubung' : 'Menghubungkan…'}
+            </span>
+            <span className="text-secondary/40">·</span>
+            <span aria-label={`Elapsed ${elapsedLabel}`}>
+              Elapsed: <span className="font-mono text-primary">{elapsedLabel}</span>
+            </span>
+            <span className="text-secondary/40">·</span>
+            <span>Estimasi maks 10 menit</span>
+          </div>
+        </motion.div>
+
+        {/* Stage list with descriptions */}
+        <div className="card-base p-6">
+          <StepProgress
+            steps={PIPELINE_STAGES.map((s) => ({
+              key: s.key,
+              label: s.label,
+              description: s.description,
+            }))}
+            currentStep={currentStage}
+          />
+        </div>
+
+        {/* Progress bar with cancel option */}
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <span className="font-label text-xs uppercase tracking-wider text-secondary">Progress</span>
+            <span
+              aria-label={`${Math.round(progressValue)} persen selesai`}
+              className="font-display text-sm font-semibold text-tertiary tabular-nums"
+            >
+              {Math.round(progressValue)}%
+            </span>
+          </div>
+          <Progress
+            value={progressValue}
+            className="h-2.5 rounded-full bg-secondary/20"
+            indicatorClassName="bg-tertiary rounded-full transition-all duration-500"
+          />
+        </div>
+
+        {/* Log area — collapsible */}
+        <div className="card-base overflow-hidden">
+          <button
+            type="button"
+            onClick={() => setLogsCollapsed((v) => !v)}
+            aria-expanded={!logsCollapsed}
+            aria-controls="agent-log-list"
+            className="w-full flex items-center justify-between border-b border-border px-4 py-3 hover:bg-secondary/30 transition-colors"
+          >
+            <div className="flex items-center gap-2">
+              <h3 className="font-label text-xs uppercase tracking-wider text-secondary">Agent Log</h3>
+              {logs.length > 0 && (
+                <span className="text-[10px] font-mono text-secondary/60 tabular-nums">
+                  ({logs.length})
+                </span>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              <span
+                aria-hidden="true"
+                className={cn(
+                  'h-1.5 w-1.5 rounded-full',
+                  wsConnected ? 'bg-success animate-pulse' : 'bg-warning'
+                )}
+              />
+              <motion.span
+                animate={{ rotate: logsCollapsed ? 180 : 0 }}
+                className="text-secondary text-xs"
+                aria-hidden="true"
+              >
+                ▾
+              </motion.span>
+            </div>
+          </button>
+          {!logsCollapsed && (
+            <div
+              id="agent-log-list"
+              className="max-h-[300px] overflow-y-auto p-4 font-mono text-xs space-y-1.5"
+            >
+              {logs.length === 0 && (
+                <p className="text-secondary">Menunggu agent…</p>
+              )}
+              <AnimatePresence initial={false}>
+                {logs.map((log) => (
+                  <motion.div
+                    key={log.id}
+                    initial={{ opacity: 0, x: -8 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    className="flex gap-2"
+                  >
+                    <span className="shrink-0 text-secondary/60 tabular-nums">
+                      {log.timestamp.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                    </span>
+                    {log.agent && (
+                      <span
+                        className="shrink-0 font-semibold"
+                        style={{ color: AGENT_COLORS[log.agent] || '#7B766D' }}
+                      >
+                        [{AGENT_LABELS[log.agent] || log.agent}]
+                      </span>
+                    )}
+                    <span className="text-primary">{log.message}</span>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+              <div ref={logsEndRef} />
+            </div>
+          )}
         </div>
       </div>
     </div>

@@ -1,11 +1,12 @@
 import { useState } from 'react'
 import { cn } from '@/lib/utils'
 import { useSubmitSignal } from '@/hooks/useProgress'
+import { ThumbsUp, Meh, ThumbsDown } from 'lucide-react'
 
 const OPTIONS = [
-  { value: 1.0, emoji: '😊', label: 'Paham' },
-  { value: 0.5, emoji: '😐', label: 'Agak Bingung' },
-  { value: 0.0, emoji: '😕', label: 'Tidak Paham' },
+  { value: 1.0, label: 'Paham', icon: ThumbsUp, activeClass: 'feedback-pill-active-success' },
+  { value: 0.5, label: 'Agak Bingung', icon: Meh, activeClass: 'feedback-pill-active-warning' },
+  { value: 0.0, label: 'Tidak Paham', icon: ThumbsDown, activeClass: 'feedback-pill-active-danger' },
 ]
 
 export default function MaterialRating({ sessionId, topicId, onRate }) {
@@ -14,7 +15,7 @@ export default function MaterialRating({ sessionId, topicId, onRate }) {
 
   const handleClick = (option) => {
     setSelected(option.value)
-    
+
     submitSignal({
       session_id: sessionId,
       topic_id: topicId,
@@ -29,25 +30,29 @@ export default function MaterialRating({ sessionId, topicId, onRate }) {
   }
 
   return (
-    <div className="flex flex-col gap-2">
-      <p className="text-sm font-medium text-foreground">Seberapa paham materinya?</p>
-      <div className="flex gap-2">
-        {OPTIONS.map((option) => (
-          <button
-            key={option.value}
-            type="button"
-            onClick={() => handleClick(option)}
-            className={cn(
-              'flex items-center gap-1.5 rounded-lg border px-3 py-2 text-sm transition-colors',
-              selected === option.value
-                ? 'border-primary bg-tertiary/10 text-primary font-medium'
-                : 'border-border bg-background text-foreground hover:border-primary/50 hover:bg-tertiary/5',
-            )}
-          >
-            <span className="text-base">{option.emoji}</span>
-            <span>{option.label}</span>
-          </button>
-        ))}
+    <div className="flex flex-col gap-2.5">
+      <p className="text-sm font-semibold text-primary font-label">
+        Seberapa paham materinya?
+      </p>
+      <div className="flex flex-wrap gap-2">
+        {OPTIONS.map((option) => {
+          const Icon = option.icon
+          const isActive = selected === option.value
+          return (
+            <button
+              key={option.value}
+              type="button"
+              onClick={() => handleClick(option)}
+              className={cn(
+                'feedback-pill',
+                isActive && option.activeClass,
+              )}
+            >
+              <Icon className="size-4" />
+              <span>{option.label}</span>
+            </button>
+          )
+        })}
       </div>
     </div>
   )

@@ -1,6 +1,15 @@
 import React from 'react';
 import { useLocation } from 'react-router-dom';
-import { Menu, Flame, Moon, Sun, Search } from 'lucide-react';
+import { motion } from 'framer-motion';
+import {
+  Menu,
+  Flame,
+  Moon,
+  Sun,
+  Search,
+  Bell,
+  ChevronRight,
+} from 'lucide-react';
 import { useAuthStore } from '../../stores/authStore';
 import { useUIStore } from '../../stores/uiStore';
 import { useLearningStore } from '../../stores/learningStore';
@@ -8,46 +17,116 @@ import { cn } from '../../utils/cn';
 
 const Topbar = () => {
   const { user } = useAuthStore();
-  const { toggleSidebar } = useUIStore();
+  const { toggleSidebar, darkMode, toggleDarkMode } = useUIStore();
   const { streak = 0 } = useLearningStore() || {};
   const location = useLocation();
 
   const getBreadcrumb = () => {
-    const path = location.pathname.split('/').filter(Boolean)[0] || 'dashboard';
-    return path.charAt(0).toUpperCase() + path.slice(1).replace('-', ' ');
+    const segments = location.pathname.split('/').filter(Boolean);
+    const labels = {
+      dashboard: 'Dashboard',
+      curriculum: 'Kurikulum',
+      module: 'Modul',
+      chat: 'Chat Tutor',
+      quiz: 'Kuis',
+      metrics: undefined,
+      'agent-log': 'Agent Log',
+      settings: 'Pengaturan',
+      onboarding: 'Onboarding',
+    };
+    return segments.map((seg) => labels[seg] || seg.replace(/-/g, ' '));
   };
 
+  const breadcrumbs = getBreadcrumb();
+
   return (
-    <header className="sticky top-0 z-30 flex h-14 w-full items-center justify-between border-b border-[var(--border)] bg-surface/80 px-4 backdrop-blur-md">
-      <div className="flex items-center gap-4">
+    <header className="sticky top-0 z-30 flex h-[60px] w-full items-center justify-between border-b border-[var(--border)] bg-surface/80 backdrop-blur-md px-4 lg:px-6">
+      {/* Left section */}
+      <div className="flex items-center gap-3 min-w-0">
         <button
           onClick={toggleSidebar}
-          className="lg:hidden p-2 rounded-lg hover:bg-secondary/10 text-secondary transition-colors"
+          className="lg:hidden p-2 rounded-xl text-secondary hover:text-primary hover:bg-secondary/10 transition-colors duration-150"
+          aria-label="Toggle sidebar"
         >
           <Menu size={20} />
         </button>
-        
-        <div className="flex items-center gap-2 text-sm font-medium text-secondary">
-          <span className="text-secondary/70">PLA</span>
-          <span className="text-secondary/50">/</span>
-          <span className="text-primary">{getBreadcrumb()}</span>
-        </div>
+
+        {/* Breadcrumb */}
+        <nav className="flex items-center gap-1 text-sm min-w-0" aria-label="Breadcrumb">
+          <span className="font-display font-semibold text-tertiary shrink-0">PLA</span>
+          {breadcrumbs.map((crumb, idx) => (
+            <React.Fragment key={idx}>
+              <ChevronRight size={14} className="text-secondary/40 shrink-0" />
+              <span
+                className={cn(
+                  'truncate',
+                  idx === breadcrumbs.length - 1
+                    ? 'font-semibold text-primary'
+                    : 'text-secondary'
+                )}
+              >
+                {crumb}
+              </span>
+            </React.Fragment>
+          ))}
+        </nav>
       </div>
 
-      <div className="flex items-center gap-2 md:gap-4">
-        <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-tertiary/10 text-tertiary border border-tertiary/20">
-          <Flame size={16} fill="currentColor" />
-          <span className="text-sm font-bold">{streak}</span>
+      {/* Right section */}
+      <div className="flex items-center gap-1.5 sm:gap-3">
+        {/* Search bar (dummy) */}
+        <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-secondary/8 border border-[var(--border)] text-secondary max-w-[220px] lg:max-w-[280px]">
+          <Search size={15} className="shrink-0 opacity-50" />
+          <span className="text-sm truncate opacity-60">Cari modul, topik...</span>
+          <kbd className="hidden lg:inline-flex items-center px-1.5 py-0.5 rounded-md bg-secondary/10 text-[10px] font-label text-secondary/60 ml-auto shrink-0">
+            /
+          </kbd>
         </div>
 
-        <div className="h-8 w-[1px] bg-secondary/30 mx-1 hidden sm:block" />
+        {/* Streak badge */}
+        {streak > 0 && (
+          <motion.div
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-tertiary/10 border border-tertiary/20"
+          >
+            <Flame size={16} className="text-tertiary" fill="currentColor" />
+            <span className="text-sm font-bold text-tertiary tabular-nums">{streak}</span>
+          </motion.div>
+        )}
 
-        <button aria-label="Toggle dark mode" className="p-2 rounded-lg hover:bg-secondary/10 text-secondary transition-colors">
-          <Moon size={20} />
+        {/* Notification bell (dummy) */}
+        <button
+          className="relative p-2 rounded-xl text-secondary hover:text-primary hover:bg-secondary/10 transition-colors duration-150"
+          aria-label="Notifikasi"
+        >
+          <Bell size={20} />
+          <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-tertiary ring-2 ring-surface" />
         </button>
 
-        <div className="w-8 h-8 rounded-full bg-secondary/20 flex items-center justify-center text-primary font-bold text-xs ring-2 ring-surface shadow-sm">
-          {user?.username?.charAt(0) || 'U'}
+        {/* Dark mode toggle */}
+        <button
+          aria-label="Toggle dark mode"
+          onClick={toggleDarkMode}
+          className="p-2 rounded-xl text-secondary hover:text-primary hover:bg-secondary/10 transition-colors duration-150"
+        >
+          {darkMode ? <Sun size={20} /> : <Moon size={20} />}
+        </button>
+
+        {/* Divider */}
+        <div className="h-6 w-px bg-[var(--border)] hidden sm:block" />
+
+        {/* Avatar */}
+        <div
+          className={cn(
+            'w-9 h-9 rounded-full flex items-center justify-center shrink-0',
+            'bg-tertiary/10 text-tertiary font-bold text-sm',
+            'ring-2 ring-surface shadow-warm-xs',
+            'cursor-default'
+          )}
+          aria-label={user?.username || 'User'}
+        >
+          {user?.username?.charAt(0)?.toUpperCase() || 'U'}
         </div>
       </div>
     </header>

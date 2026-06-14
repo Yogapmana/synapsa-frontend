@@ -1,7 +1,7 @@
+import { cn } from '@/lib/utils'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { CheckCircle2 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
 import { useCompleteTopic } from '@/hooks/useLearning'
 import MaterialRating from './MaterialRating'
 import SelfAssessment from './SelfAssessment'
@@ -32,28 +32,34 @@ export default function StickyActionBar({ module, sessionId, topicId }) {
   }
 
   return (
-    <div className="sticky bottom-0 z-40 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="mx-auto flex max-w-4xl flex-col gap-4 px-4 py-3 sm:flex-row sm:items-center sm:gap-6">
-        <div className="flex flex-1 flex-col gap-3 sm:flex-row sm:items-center sm:gap-6">
-          <MaterialRating
-            sessionId={sessionId}
-            topicId={topicId}
-            onRate={handleRate}
-          />
-          <SelfAssessment
-            sessionId={sessionId}
-            topicId={topicId}
-            onAssess={handleAssess}
-          />
+    <div className="sticky bottom-0 z-40 border-t border-[var(--border)] bg-surface/95 backdrop-blur-md">
+      <div className="mx-auto max-w-[720px] px-4 py-4 md:px-6">
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:gap-8">
+            <div className="flex-1 space-y-4">
+              <MaterialRating
+                sessionId={sessionId}
+                topicId={topicId}
+                onRate={handleRate}
+              />
+              <SelfAssessment
+                sessionId={sessionId}
+                topicId={topicId}
+                onAssess={handleAssess}
+              />
+            </div>
+          </div>
+          <div className="flex justify-end pt-1">
+            <button
+              onClick={handleComplete}
+              disabled={completing}
+              className="inline-flex items-center gap-2 rounded-xl bg-tertiary px-6 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-tertiary-light active:bg-tertiary-dark disabled:opacity-60 disabled:cursor-not-allowed shadow-warm-sm"
+            >
+              <CheckCircle2 className="size-4" />
+              {completing ? 'Menandai...' : 'Tandai Selesai'}
+            </button>
+          </div>
         </div>
-        <Button
-          onClick={handleComplete}
-          disabled={completing}
-          className="shrink-0"
-        >
-          <CheckCircle2 className="mr-2 size-4" />
-          {completing ? 'Menandai...' : 'Tandai Selesai'}
-        </Button>
       </div>
     </div>
   )

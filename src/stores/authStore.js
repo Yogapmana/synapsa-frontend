@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { useLearningStore } from './learningStore'
 
 const TOKEN_KEY = 'pla_token'
 const USER_KEY = 'pla_user'
@@ -13,6 +14,18 @@ const clearSession = () => {
   if (typeof window === 'undefined') return
   window.localStorage.removeItem(TOKEN_KEY)
   window.localStorage.removeItem(USER_KEY)
+}
+
+const clearStaleUserData = () => {
+  // Bersihkan state non-auth yang masih terikat user lama supaya
+  // akun berikutnya (login/register ulang) tidak mewarisi data sebelumnya.
+  try {
+    useLearningStore.getState().setActiveSession(null)
+  } catch {
+    if (typeof window !== 'undefined') {
+      window.localStorage.removeItem('pla_active_session')
+    }
+  }
 }
 
 const readStoredUser = () => {
@@ -38,6 +51,11 @@ export const useAuthStore = create((set, get) => ({
   isAuthenticated: false,
 
   login: (token, user) => {
+    // Clear any stale learning-session data from the previous user.
+    // Without this, a new user who logs in on the same browser
+    // would inherit the previous user's activeSession and be
+    // skipped past the Onboarding wizard.
+    clearStaleUserData()
     persistSession(token, user)
     set({
       token,
@@ -48,6 +66,7 @@ export const useAuthStore = create((set, get) => ({
 
   logout: () => {
     clearSession()
+    clearStaleUserData()
     set({
       user: null,
       token: null,

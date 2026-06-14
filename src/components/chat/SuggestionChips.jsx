@@ -11,19 +11,21 @@ const SuggestionChips = ({ topicTitle, onChipClick }) => {
   ];
 
   return (
-    <div className="flex flex-col gap-3 py-4">
-      <span className="text-sm font-medium text-secondary">Coba tanyakan:</span>
-      <div className="flex flex-wrap gap-2">
+    <div className="flex flex-col gap-3">
+      <span className="font-label text-xs text-secondary uppercase tracking-wider">
+        Coba tanyakan
+      </span>
+      <div className="flex flex-wrap gap-2.5">
         {suggestions.map((suggestion, index) => (
           <motion.button
             key={index}
-            whileHover={shouldReduceMotion ? {} : { scale: 1.02 }}
-            whileTap={shouldReduceMotion ? {} : { scale: 0.98 }}
+            whileHover={shouldReduceMotion ? {} : { scale: 1.03, y: -1 }}
+            whileTap={shouldReduceMotion ? {} : { scale: 0.97 }}
             onClick={() => onChipClick(suggestion.text)}
-            className="flex items-center gap-2 px-4 py-2 bg-surface border border-[var(--border)] rounded-full text-sm text-primary hover:border-tertiary/40 hover:bg-tertiary/5 hover:text-tertiary transition-colors shadow-sm"
+            className="flex items-center gap-2 px-4 py-2.5 border border-border bg-surface text-primary rounded-full text-sm hover:border-tertiary hover:text-tertiary hover:bg-tertiary/5 transition-all duration-200 shadow-warm-xs"
           >
-            <suggestion.icon size={14} className="flex-shrink-0" />
-            {suggestion.text}
+            <suggestion.icon size={14} className="flex-shrink-0 opacity-60" />
+            <span>{suggestion.text}</span>
           </motion.button>
         ))}
       </div>

@@ -1,6 +1,5 @@
 import React from 'react';
 import { useLocation } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
 import Sidebar from './Sidebar';
 import Topbar from './Topbar';
 import { useUIStore } from '../../stores/uiStore';
@@ -21,28 +20,19 @@ const AppLayout = ({ children }) => {
   return (
     <div className="min-h-screen bg-neutral">
       <Sidebar />
-      
-      <div 
+
+      <div
         className={cn(
           "transition-all duration-250 ease-in-out min-h-screen flex flex-col",
-           sidebarCollapsed ? "pl-0 lg:pl-16" : "pl-0 lg:pl-[240px]"
+          sidebarCollapsed ? "pl-0 lg:pl-16" : "pl-0 lg:pl-[240px]"
         )}
       >
         <Topbar />
-        
+
         <main className="flex-1 p-4 md:p-6 lg:p-8">
+          {/* Page transition handled by <AnimatedRoutes> in App.jsx (Phase 4.1) */}
           <div className={cn("mx-auto w-full", getMaxWidthClass())}>
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={location.pathname}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                transition={{ duration: 0.2 }}
-              >
-                {children}
-              </motion.div>
-            </AnimatePresence>
+            {children}
           </div>
         </main>
       </div>

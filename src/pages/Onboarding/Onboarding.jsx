@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ArrowLeft, ArrowRight, Sparkles, Loader2, Play } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Sparkles, Loader2, Play, Check } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { startLearning } from '@/api/learning'
@@ -12,9 +12,9 @@ import StepConfirm from './StepConfirm'
 import AgentLoadingScreen from './AgentLoadingScreen'
 
 const STEPS = [
-  { id: 'goal', label: 'Target' },
-  { id: 'upload', label: 'Referensi' },
-  { id: 'confirm', label: 'Konfirmasi' },
+  { id: 'goal', label: 'Target', icon: '🎯' },
+  { id: 'upload', label: 'Referensi', icon: '📄' },
+  { id: 'confirm', label: 'Konfirmasi', icon: '✓' },
 ]
 
 const INITIAL_DATA = {
@@ -22,11 +22,28 @@ const INITIAL_DATA = {
   duration_weeks: null,
   level: null,
   hours_per_day: null,
+  files: [],
+}
+
+const slideVariants = {
+  enter: (direction) => ({
+    x: direction > 0 ? 80 : -80,
+    opacity: 0,
+  }),
+  center: {
+    x: 0,
+    opacity: 1,
+  },
+  exit: (direction) => ({
+    x: direction > 0 ? -80 : 80,
+    opacity: 0,
+  }),
 }
 
 export default function Onboarding() {
   const navigate = useNavigate()
   const [step, setStep] = useState(0)
+  const [direction, setDirection] = useState(1)
   const [formData, setFormData] = useState(INITIAL_DATA)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
@@ -39,12 +56,14 @@ export default function Onboarding() {
 
   const handleNext = () => {
     if (step < STEPS.length - 1) {
+      setDirection(1)
       setStep((s) => s + 1)
     }
   }
 
   const handleBack = () => {
     if (step > 0) {
+      setDirection(-1)
       setStep((s) => s - 1)
     }
   }
@@ -93,161 +112,193 @@ export default function Onboarding() {
 
   if (activeSession) {
     return (
-      <div className="flex flex-col items-center justify-center space-y-8 py-12 text-center">
-        <div className="space-y-4">
-          <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-tertiary/10 text-tertiary">
-            <Sparkles className="h-10 w-10" />
-          </div>
-          <h1 className="text-3xl font-bold tracking-tight text-primary sm:text-4xl font-serif">
-            Lanjutkan Sesi Belajar
-          </h1>
-          <p className="mx-auto max-w-md text-lg text-secondary font-serif">
-            Kamu memiliki sesi belajar yang sedang berlangsung. Mari lanjutkan perjalanan belajarmu!
-          </p>
-        </div>
-
-        <div className="w-full max-w-md overflow-hidden rounded-2xl border-[var(--border)] bg-surface p-6 shadow-sm">
-          <div className="space-y-4">
-            <div className="space-y-1">
-              <p className="text-sm font-medium text-secondary font-label">Topik</p>
-              <h3 className="text-xl font-semibold text-primary font-serif">
-                {activeSession.topic}
-              </h3>
+      <div className="flex min-h-[80vh] items-center justify-center px-4">
+        <div className="w-full max-w-md">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="card-base p-8 md:p-10 text-center space-y-6"
+          >
+            <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-3xl bg-tertiary/10">
+              <Sparkles className="h-10 w-10 text-tertiary" />
+            </div>
+            <div className="space-y-2">
+              <h1 className="font-display text-3xl font-bold tracking-tight text-primary">
+                Lanjutkan Sesi Belajar
+              </h1>
+              <p className="text-secondary max-w-sm mx-auto">
+                Kamu memiliki sesi belajar yang sedang berlangsung. Mari lanjutkan perjalanan belajarmu!
+              </p>
             </div>
 
-            <div className="flex items-center justify-center gap-2">
-              <span className={cn(
-                "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium",
-                activeSession.status === 'processing' ? "bg-amber-100 text-amber-800" : "bg-tertiary/10 text-green-800"
-              )}>
-                {activeSession.status === 'processing' ? 'Sedang Diproses' : 'Siap'}
-              </span>
+            <div className="rounded-xl bg-bg-secondary p-5 space-y-3">
+              <div className="space-y-1">
+                <p className="font-label text-xs uppercase tracking-wider text-secondary">Topik</p>
+                <h3 className="font-display text-xl font-semibold text-primary">
+                  {activeSession.topic}
+                </h3>
+              </div>
+              <div className="flex items-center justify-center">
+                <span
+                  className={cn(
+                    'pill',
+                    activeSession.status === 'processing' ? 'pill-warning' : 'pill-success'
+                  )}
+                >
+                  {activeSession.status === 'processing' ? 'Sedang Diproses' : 'Siap'}
+                </span>
+              </div>
             </div>
 
             <Button
               onClick={handleContinueSession}
-              className="w-full gap-2 bg-tertiary hover:bg-tertiary-dark text-white h-12 text-lg font-semibold rounded-xl font-label"
+              variant="tertiary"
+              size="lg"
+              className="w-full gap-2 text-base font-semibold rounded-xl font-label"
             >
               <Play className="h-5 w-5" />
               Lanjut
             </Button>
-          </div>
-        </div>
 
-        <button
-          onClick={() => setActiveSession(null)}
-          className="text-sm font-medium text-secondary hover:text-primary transition-colors font-label"
-        >
-          Atau mulai sesi baru
-        </button>
+            <button
+              onClick={() => setActiveSession(null)}
+              className="text-sm font-medium text-secondary hover:text-primary transition-colors font-label"
+            >
+              Atau mulai sesi baru
+            </button>
+          </motion.div>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="space-y-8">
-      <div className="flex items-center justify-center gap-3">
-        {STEPS.map((s, i) => (
-          <div key={s.id} className="flex items-center gap-3">
-            <div
-              className={cn(
-                'flex h-9 w-9 items-center justify-center rounded-full text-sm font-semibold transition-all',
-                i < step && 'bg-tertiary text-white',
-                i === step && 'bg-tertiary text-white ring-4 ring-tertiary/20',
-                i > step && 'bg-secondary/30 text-secondary'
-              )}
-            >
-              {i < step ? '✓' : i + 1}
-            </div>
-            <span
-              className={cn(
-                'text-sm font-medium font-label hidden sm:inline',
-                i <= step ? 'text-primary' : 'text-secondary'
-              )}
-            >
-              {s.label}
-            </span>
-            {i < STEPS.length - 1 && (
-              <div
-                className={cn(
-                  'h-0.5 w-8 sm:w-12 rounded-full transition-colors',
-                  i < step ? 'bg-tertiary' : 'bg-border'
+    <div className="flex min-h-[80vh] items-center justify-center px-4 py-8">
+      <div className="w-full max-w-3xl">
+        {/* Stepper */}
+        <nav className="mb-10" aria-label="Progress">
+          <ol className="flex items-center justify-center gap-0">
+            {STEPS.map((s, i) => (
+              <li key={s.id} className="flex items-center">
+                <div className="flex items-center gap-2.5">
+                  <div
+                    className={cn(
+                      'flex h-9 w-9 items-center justify-center rounded-full text-sm font-semibold transition-all duration-300',
+                      i < step && 'bg-success text-white',
+                      i === step && 'bg-tertiary text-white ring-4 ring-tertiary/20',
+                      i > step && 'bg-secondary/20 text-secondary'
+                    )}
+                    aria-current={i === step ? 'step' : undefined}
+                  >
+                    {i < step ? <Check className="h-4 w-4" /> : i + 1}
+                  </div>
+                  <span
+                    className={cn(
+                      'text-sm font-medium font-label hidden sm:inline transition-colors',
+                      i <= step ? 'text-primary' : 'text-secondary'
+                    )}
+                  >
+                    {s.label}
+                  </span>
+                </div>
+                {i < STEPS.length - 1 && (
+                  <div
+                    className={cn(
+                      'mx-4 h-0.5 w-12 sm:w-20 rounded-full transition-colors duration-500',
+                      i < step ? 'bg-success' : 'bg-border'
+                    )}
+                  />
                 )}
-              />
-            )}
-          </div>
-        ))}
-      </div>
+              </li>
+            ))}
+          </ol>
+        </nav>
 
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={step}
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: -20 }}
-          transition={{ duration: 0.2 }}
-        >
-          {step === 0 && (
-            <StepGoal data={formData} onChange={updateFormData} />
-          )}
-          {step === 1 && (
-            <StepUpload />
-          )}
-          {step === 2 && (
-            <StepConfirm data={formData} />
-          )}
-        </motion.div>
-      </AnimatePresence>
+        {/* Main Card */}
+        <div className="card-base p-8 md:p-10 shadow-warm-lg">
+          <AnimatePresence mode="wait" custom={direction}>
+            <motion.div
+              key={step}
+              custom={direction}
+              variants={slideVariants}
+              initial="enter"
+              animate="center"
+              exit="exit"
+              transition={{ duration: 0.3, ease: [0.25, 0.46, 0.45, 0.94] }}
+            >
+              {step === 0 && (
+                <StepGoal data={formData} onChange={updateFormData} />
+              )}
+              {step === 1 && (
+                <StepUpload data={formData} onChange={updateFormData} />
+              )}
+              {step === 2 && (
+                <StepConfirm data={formData} />
+              )}
+            </motion.div>
+          </AnimatePresence>
 
-      {error && (
-        <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-center">
-          <p className="text-sm font-medium text-red-800 font-serif">{error}</p>
+          {/* Error */}
+          {error && (
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mt-6 rounded-xl border border-danger/20 bg-danger/10 p-4 text-center"
+            >
+              <p className="text-sm font-medium text-danger">{error}</p>
+            </motion.div>
+          )}
         </div>
-      )}
 
-      <div className="flex items-center justify-between pt-4">
-        {step > 0 ? (
-          <Button
-            variant="ghost"
-            onClick={handleBack}
-            disabled={loading}
-            className="gap-2"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Kembali
-          </Button>
-        ) : (
-          <div />
-        )}
+        {/* Footer Buttons */}
+        <div className="mt-6 flex items-center justify-between">
+          {step > 0 ? (
+            <Button
+              variant="ghost"
+              onClick={handleBack}
+              disabled={loading}
+              className="gap-2 font-label"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Kembali
+            </Button>
+          ) : (
+            <div />
+          )}
 
-        {step < STEPS.length - 1 ? (
-          <Button
-            onClick={handleNext}
-            disabled={step === 0 && !isStep1Valid}
-            className="gap-2"
-          >
-            Lanjut
-            <ArrowRight className="h-4 w-4" />
-          </Button>
-        ) : (
-          <Button
-            onClick={handleStart}
-            disabled={loading}
-            className="gap-2 bg-tertiary hover:bg-tertiary-dark text-white shadow-sm h-14 px-8 text-lg font-semibold rounded-xl font-label"
-          >
-            {loading ? (
-              <>
-                <Loader2 className="h-5 w-5 animate-spin" />
-                Memulai...
-              </>
-            ) : (
-              <>
-                <Sparkles className="h-5 w-5" />
-                Mulai Belajar!
-              </>
-            )}
-          </Button>
-        )}
+          {step < STEPS.length - 1 ? (
+            <Button
+              onClick={handleNext}
+              disabled={step === 0 && !isStep1Valid}
+              variant="tertiary"
+              className="gap-2 font-label"
+            >
+              Lanjut
+              <ArrowRight className="h-4 w-4" />
+            </Button>
+          ) : (
+            <Button
+              onClick={handleStart}
+              disabled={loading}
+              variant="tertiary"
+              size="lg"
+              className="gap-2 shadow-warm-glow-tertiary text-base font-semibold rounded-xl font-label px-8"
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                  Memulai...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="h-5 w-5" />
+                  Mulai Belajar Sekarang
+                </>
+              )}
+            </Button>
+          )}
+        </div>
       </div>
     </div>
   )

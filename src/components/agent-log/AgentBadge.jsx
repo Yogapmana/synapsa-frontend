@@ -1,15 +1,26 @@
-import { AGENT_COLORS, AGENT_LABELS } from '@/utils/constants'
+import { AGENT_LABELS } from '@/utils/constants'
+import { cn } from '@/lib/utils'
 
-const agentKeys = Object.keys(AGENT_COLORS)
+const AGENT_STYLES = {
+  orchestrator: 'bg-secondary/15 text-secondary',
+  planner: 'bg-info/15 text-info-fg',
+  researcher: 'bg-tertiary/15 text-tertiary',
+  composer: 'bg-warning/15 text-warning-fg',
+  tutor: 'bg-success/15 text-success-fg',
+}
+
+const agentKeys = Object.keys(AGENT_LABELS)
 
 export default function AgentBadge({ agent }) {
-  const color = AGENT_COLORS[agent] ?? '#6b7280'
   const label = AGENT_LABELS[agent] ?? agent
+  const style = AGENT_STYLES[agent] ?? 'bg-secondary/15 text-secondary'
 
   return (
     <span
-      className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold text-white"
-      style={{ backgroundColor: color }}
+      className={cn(
+        'inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold',
+        style
+      )}
     >
       {label}
     </span>

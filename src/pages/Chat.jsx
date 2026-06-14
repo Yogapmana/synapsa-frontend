@@ -1,24 +1,28 @@
+import { cn } from '@/lib/utils'
 import React, { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useLearningStore } from '@/stores/learningStore';
-import { sendMessage, getHistory } from '@/api/chat';
+import { sendMessage, getHistory, uploadDocument } from '@/api/chat';
 import { getTopics } from '@/api/learning';
 import ChatBubble from '@/components/chat/ChatBubble';
 import ChatInput from '@/components/chat/ChatInput';
 import SuggestionChips from '@/components/chat/SuggestionChips';
 import ThinkingIndicator from '@/components/chat/ThinkingIndicator';
 import ChatHistoryDrawer from '@/components/chat/ChatHistoryDrawer';
-import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Bot, History, BookOpen } from 'lucide-react';
+import StatusBadge from '@/components/common/StatusBadge';
+import Avatar from '@/components/common/Avatar';
+import { History, BookOpen, Sparkles } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export default function Chat() {
   const queryClient = useQueryClient();
   const { activeSession, activeTopic, setActiveTopic } = useLearningStore();
   const scrollRef = useRef(null);
-  
-  const [currentTopicId, setCurrentTopicId] = useState(activeTopic?.id || null);
+  const messagesEndRef = useRef(null);
+
+  const [currentTopicId, setCurrentTopicId] = useState(activeTopic?.id ?? null);
   const [historyOpen, setHistoryOpen] = useState(false);
+  const [uploadToast, setUploadToast] = useState(null);
 
   const { data: topics = [] } = useQuery({
     queryKey: ['topics', activeSession?.id],
@@ -50,16 +54,16 @@ export default function Chat() {
     onMutate: async (newMessage) => {
       await queryClient.cancelQueries({ queryKey: ['chat', currentTopicId] });
       const previousHistory = queryClient.getQueryData(['chat', currentTopicId]);
-      
+
       const optimisticMessage = {
         id: 'optimistic-user',
         role: 'user',
         content: newMessage,
         created_at: new Date().toISOString()
       };
-      
+
       queryClient.setQueryData(['chat', currentTopicId], (old = []) => [...old, optimisticMessage]);
-      
+
       return { previousHistory };
     },
     onError: (err, newMessage, context) => {
@@ -82,17 +86,31 @@ export default function Chat() {
     },
   });
 
+  const uploadMutation = useMutation({
+    mutationFn: (file) => uploadDocument(file, activeSession?.id, currentTopicId),
+    onSuccess: (data) => {
+      setUploadToast({ type: 'success', message: 'Dokumen berhasil diunggah dan diindeks!' });
+      setTimeout(() => setUploadToast(null), 4000);
+    },
+    onError: (err) => {
+      setUploadToast({ type: 'error', message: err.response?.data?.detail || 'Gagal mengunggah dokumen' });
+      setTimeout(() => setUploadToast(null), 4000);
+    }
+  });
+
+  // Auto-scroll to bottom on new messages
   useEffect(() => {
-    if (scrollRef.current) {
-      const scrollContainer = scrollRef.current.querySelector('[data-radix-scroll-area-viewport]');
-      if (scrollContainer) {
-        scrollContainer.scrollTop = scrollContainer.scrollHeight;
-      }
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
   }, [history, sendMutation.isPending]);
 
   const handleSendMessage = (content) => {
     sendMutation.mutate(content);
+  };
+
+  const handleUploadDocument = (file) => {
+    uploadMutation.mutate(file);
   };
 
   const handleTopicChange = (topicId) => {
@@ -110,96 +128,142 @@ export default function Chat() {
     }
   };
 
+  const isEmpty = history.length === 0 && !isHistoryLoading;
+
   return (
-    <div className="flex flex-col h-[calc(100vh-56px)] bg-neutral overflow-hidden">
-      {/* Chat Header */}
-      <header className="px-6 py-3 bg-surface border-b border-[var(--border)] flex items-center justify-between shadow-sm z-10">
+    <div className="flex flex-col h-[calc(100vh-56px)] bg-bg-secondary overflow-hidden">
+      {/* ── Chat Header (self-contained, not from Topbar) ── */}
+      <header className="px-4 md:px-6 py-3 bg-bg-primary border-b border-border flex items-center justify-between z-10 shadow-warm-xs">
         <div className="flex items-center gap-3">
-          <button 
-            onClick={() => setHistoryOpen(true)} 
-            aria-label="Riwayat topik" 
-            className="p-2 text-secondary/70 hover:text-tertiary hover:bg-tertiary/5 rounded-full transition-colors"
-          >
-            <History size={20} />
-          </button>
-          <div className="flex flex-col">
-            <div className="flex items-center gap-2">
-              <h1 className="text-lg font-bold text-primary">Tanya PLA</h1>
-              <Badge className="bg-tertiary/5 text-tertiary border-primary-200 hover:bg-tertiary/5 flex items-center gap-1.5 px-2 py-0.5">
-                <span className="w-1.5 h-1.5 bg-tertiary rounded-full animate-pulse" />
+          <Avatar role="tutor" variant="ring" size="md" label="Avatar PLA Tutor" />
+          <div className="flex flex-col min-w-0">
+            <div className="flex items-center gap-2.5">
+              <h1 className="font-display font-bold text-lg text-primary tracking-tight">
+                PLA Tutor
+              </h1>
+              <StatusBadge variant="success" className="flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 bg-success rounded-full animate-pulse" />
                 RAG Aktif
-              </Badge>
+              </StatusBadge>
             </div>
-            <span className="text-sm font-medium text-tertiary truncate max-w-[200px]">
-              {currentTopic?.title || 'Pilih topik'}
-            </span>
+            {currentTopic?.title && (
+              <span className="font-label text-xs text-secondary truncate max-w-[240px] mt-0.5">
+                Topik: {currentTopic.title}
+              </span>
+            )}
           </div>
         </div>
+
+        <button
+          onClick={() => setHistoryOpen(true)}
+          aria-label="Riwayat topik"
+          className="p-2.5 text-secondary hover:text-tertiary hover:bg-tertiary/5 rounded-xl transition-colors"
+        >
+          <History size={20} />
+        </button>
       </header>
 
-      {/* Messages List */}
-      <ScrollArea ref={scrollRef} className="flex-1 px-4 py-6">
-        <div className="max-w-3xl mx-auto flex flex-col min-h-full">
-          {history.length === 0 && !isHistoryLoading ? (
-            <div className="flex-1 flex flex-col items-center justify-center text-center p-8 mt-16 bg-surface/50">
-              <div className="w-20 h-20 bg-tertiary/10 rounded-2xl flex items-center justify-center text-tertiary mb-5 ring-2 ring-tertiary/20 shadow-inner">
-                <Bot size={36} />
-              </div>
-              <h2 className="text-xl font-bold text-primary mb-2">Halo! Saya PLA, asisten belajar kamu 👋</h2>
-              <p className="text-secondary text-sm max-w-sm mb-4">
-                Tanyakan apa saja tentang topik di bawah ini, dan saya akan membantu kamu memahaminya lebih dalam.
-              </p>
-              {currentTopic?.title && (
-                <div className="inline-flex items-center gap-2 px-4 py-2 bg-tertiary/5 border border-tertiary/20 rounded-full text-sm font-medium text-tertiary mb-6">
-                  <BookOpen size={14} />
-                  {currentTopic.title}
-                </div>
-              )}
-              <SuggestionChips 
-                topicTitle={currentTopic?.title || 'topik ini'} 
-                onChipClick={handleSendMessage} 
-              />
-            </div>
-          ) : (
-            <>
-              {history.map((msg, index) => {
-                const isLastAi = msg.role === 'assistant' && 
-                  index === history.length - 1 && 
-                  !sendMutation.isPending;
-                return (
-                  <ChatBubble
-                    key={msg.id}
-                    message={msg.content}
-                    isAI={msg.role === 'assistant'}
-                    sources={msg.sources}
-                    timestamp={msg.created_at}
-                    isLastAiMessage={isLastAi}
-                    onRegenerate={isLastAi ? handleRegenerate : undefined}
-                  />
-                );
-              })}
-              
-              {sendMutation.isPending && (
-                <div className="mb-4">
-                  <div className="flex gap-3 items-start">
-                    <div className="w-8 h-8 rounded-full bg-tertiary/10 flex items-center justify-center flex-shrink-0 mt-1 border border-primary-200">
-                      <Bot size={16} className="text-tertiary" />
-                    </div>
-                    <ThinkingIndicator />
-                  </div>
-                </div>
-              )}
-            </>
-          )}
-        </div>
-      </ScrollArea>
+      {/* ── Chat Area ── */}
+      <div className="flex-1 overflow-y-auto" ref={scrollRef}>
+        <div className="max-w-[850px] mx-auto px-4 md:px-6 py-6 min-h-full flex flex-col">
 
-      {/* Input Area */}
-      <ChatInput 
-        onSend={handleSendMessage} 
-        isLoading={sendMutation.isPending} 
-        placeholder={`Tanya tentang ${currentTopic?.title || 'topik ini'}...`}
-      />
+          <AnimatePresence mode="wait">
+            {isEmpty ? (
+              /* ── Empty State ── */
+              <motion.div
+                key="empty"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                className="flex-1 flex flex-col items-center justify-center text-center py-16"
+              >
+                <div className="w-20 h-20 rounded-2xl bg-tertiary/10 flex items-center justify-center text-tertiary mb-6 ring-2 ring-tertiary/15 shadow-warm-sm">
+                  <Sparkles size={36} />
+                </div>
+
+                <h2 className="font-display font-bold text-2xl text-primary mb-2">
+                  Halo! Saya PLA, asisten belajar kamu 👋
+                </h2>
+                <p className="text-secondary text-sm max-w-md mb-6 leading-relaxed">
+                  Tanyakan apa saja tentang topik ini, dan saya akan membantu kamu memahaminya lebih dalam.
+                </p>
+
+                {currentTopic?.title && (
+                  <div className="inline-flex items-center gap-2 px-4 py-2 bg-tertiary/5 border border-tertiary/15 rounded-full text-sm font-medium text-tertiary mb-8">
+                    <BookOpen size={14} />
+                    {currentTopic.title}
+                  </div>
+                )}
+
+                <SuggestionChips
+                  topicTitle={currentTopic?.title || 'topik ini'}
+                  onChipClick={handleSendMessage}
+                />
+              </motion.div>
+            ) : (
+              /* ── Messages ── */
+              <motion.div
+                key="messages"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="flex-1 flex flex-col gap-1"
+              >
+                {history.map((msg, index) => {
+                  const isLastAi = msg.role === 'assistant' &&
+                    index === history.length - 1 &&
+                    !sendMutation.isPending;
+                  return (
+                    <ChatBubble
+                      key={msg.id}
+                      messageId={msg.id}
+                      message={msg.content}
+                      isAI={msg.role === 'assistant'}
+                      sources={msg.sources}
+                      timestamp={msg.created_at}
+                      isLastAiMessage={isLastAi}
+                      onRegenerate={isLastAi ? handleRegenerate : undefined}
+                      rag_faithfulness={msg.rag_faithfulness}
+                      rag_answer_relevancy={msg.rag_answer_relevancy}
+                    />
+                  );
+                })}
+
+                {sendMutation.isPending && <ThinkingIndicator />}
+
+                <div ref={messagesEndRef} />
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      </div>
+
+      {/* ── Input Area (sticky bottom) ── */}
+      <div className="relative">
+        <AnimatePresence>
+          {uploadToast && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 10 }}
+              className={cn(
+                "absolute -top-12 left-1/2 -translate-x-1/2 px-4 py-2 rounded-full text-sm font-medium shadow-warm-md z-20 flex items-center gap-2",
+                uploadToast.type === 'success' ? "bg-success/10 text-success border border-success/20" : "bg-danger/10 text-danger border border-danger/20"
+              )}
+            >
+              {uploadToast.type === 'success' ? <Sparkles size={16} /> : null}
+              {uploadToast.message}
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        <ChatInput
+          onSend={handleSendMessage}
+          onUpload={handleUploadDocument}
+          isLoading={sendMutation.isPending}
+          isUploading={uploadMutation.isPending}
+          placeholder={`Tanya tentang ${currentTopic?.title || 'topik ini'}...`}
+        />
+      </div>
 
       <ChatHistoryDrawer
         open={historyOpen}

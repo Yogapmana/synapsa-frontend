@@ -96,6 +96,7 @@ export default function Quiz() {
       const res = await submitQuiz.mutateAsync({
         session_id: sessionId,
         topic_id: topicId,
+        quiz_id: quizData.quiz_id,  // cache key — replay-safe grading
         answers: formattedAnswers,
         time_spent_seconds: timeSpentSeconds,
         questions_data: quizData.questions

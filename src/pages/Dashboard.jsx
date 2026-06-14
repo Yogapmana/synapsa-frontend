@@ -1,21 +1,35 @@
-import React, { useEffect, useState } from 'react';
+import { cn } from '@/lib/utils'
+import React, { useEffect, useState, useMemo } from 'react';
 import { useAuthStore } from '../stores/authStore';
 import { useLearningStore } from '../stores/learningStore';
-import { getSessions, getCurriculum, getTopics } from '../api/learning';
+import { getCurriculum, getTopics } from '../api/learning';
 import { getQuizHistory } from '../api/quiz';
+import { motion } from 'framer-motion';
 
 import GreetingHero from '../components/dashboard/GreetingHero';
-import StatCards from '../components/dashboard/StatCards';
-import TodayTopicCard from '../components/dashboard/TodayTopicCard';
-import WeekProgress from '../components/dashboard/WeekProgress';
-import FeedbackBanner from '../components/dashboard/FeedbackBanner';
+import { StatCards } from '../components/data/StatCards';
+import RAGASWidget from '../components/data/RAGASWidget';
+import { getRagasSummary } from '../api/chat';
+import ContinueLearningHero from '../components/dashboard/ContinueLearningHero';
 import RecentActivity from '../components/dashboard/RecentActivity';
+import QuickActions from '../components/dashboard/QuickActions';
+import FeedbackBanner from '../components/dashboard/FeedbackBanner';
 import { Skeleton } from '../components/ui/skeleton';
+
+const stagger = {
+  hidden: { opacity: 0 },
+  show: { opacity: 1, transition: { staggerChildren: 0.06 } },
+};
+
+const fadeUp = {
+  hidden: { opacity: 0, y: 16 },
+  show: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 300, damping: 26 } },
+};
 
 export default function Dashboard() {
   const { user } = useAuthStore();
   const { activeSession, streak } = useLearningStore();
-  
+
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState({
     curriculum: null,
@@ -35,7 +49,7 @@ export default function Dashboard() {
             getTopics(activeSession.id).catch(() => []),
             getQuizHistory(activeSession.id).catch(() => []),
           ]);
-          
+
           setData({
             curriculum: currData || null,
             topics: Array.isArray(topicsData) ? topicsData : (topicsData?.topics || []),
@@ -49,81 +63,36 @@ export default function Dashboard() {
         setLoading(false);
       }
     }
-    
+
     loadDashboardData();
   }, [activeSession]);
 
-  if (loading) {
-    return (
-      <div className="max-w-6xl mx-auto space-y-8">
-        <Skeleton className="h-32 w-full rounded-2xl" />
-        <Skeleton className="h-28 w-full rounded-2xl" />
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2 space-y-8">
-            <Skeleton className="h-64 w-full rounded-2xl" />
-          </div>
-          <div className="space-y-8">
-            <Skeleton className="h-64 w-full rounded-2xl" />
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   const { curriculum, topics, quizHistory, feedbackMessage } = data;
-  
+
   const completedTopicsCount = topics.filter(t => t.status === 'completed').length;
-  let xp = (completedTopicsCount * 10) + (streak * 5);
-  
-  let totalQuizScore = 0;
-  quizHistory.forEach(q => {
-    const scoreValue = q.score > 1 ? q.score : q.score * 100;
-    totalQuizScore += scoreValue;
-    if (scoreValue >= 90) xp += 30;
-    else if (scoreValue >= 75) xp += 20;
-    else xp += 5;
-  });
-  
+  const xp = (completedTopicsCount * 10) + ((streak || 0) * 5);
+
   const avgQuizScore = quizHistory.length > 0
     ? Math.round(quizHistory.reduce((sum, q) => {
-      const scoreVal = q.score > 1 ? q.score : q.score * 100;
-      return sum + scoreVal;
-    }, 0) / quizHistory.length)
+        const scoreVal = q.score > 1 ? q.score : q.score * 100;
+        return sum + scoreVal;
+      }, 0) / quizHistory.length)
     : 0;
-  
-  const stats = [
-    { label: 'Topik Selesai', value: `${completedTopicsCount}/${topics.length || 0}`, subtext: 'Dari total silabus' },
-    { label: 'Rata-rata Kuis', value: avgQuizScore, subtext: `${quizHistory.length} kuis diambil` },
-    { label: 'Materi Dikurasi', value: topics.length || 0, subtext: 'Disusun oleh Planner' },
-    { label: 'Streak Hari', value: streak || 0, subtext: 'Pertahankan!' },
-  ];
 
-  const todayTopic = topics.find(t => t.status === 'active') || 
-                     topics.find(t => t.status === 'locked' || !t.status);
+  const totalStudyMinutes = topics
+    .filter(t => t.status === 'completed')
+    .reduce((sum, t) => sum + (t.duration_minutes || 0), 0);
+  const studyHoursThisWeek = Math.round((totalStudyMinutes / 60) * 10) / 10;
 
-  const weeks = topics.reduce((acc, topic, i) => {
-    const weekIdx = topic.week_number ? topic.week_number - 1 : Math.floor(i / 3);
-    if (!acc[weekIdx]) {
-      acc[weekIdx] = {
-        id: `week-${weekIdx}`,
-        title: `Minggu ${weekIdx + 1}`,
-        topics: [],
-        status: 'not-started',
-      };
-    }
-    acc[weekIdx].topics.push(topic);
-    return acc;
-  }, []).map(week => {
-    const completed = week.topics.filter(t => t.status === 'completed').length;
-    const active = week.topics.some(t => t.status === 'active');
-    const progress = (completed / week.topics.length) * 100;
-    
-    return {
-      ...week,
-      progress,
-      status: completed === week.topics.length ? 'completed' : active || completed > 0 ? 'active' : 'not-started'
-    };
-  });
+  const stats = useMemo(() => [
+    { label: 'Streak Hari', value: streak || 0, subtext: 'Pertahankan!', icon: 'Flame' },
+    { label: 'Topik Selesai', value: `${completedTopicsCount}/${topics.length || 0}`, subtext: 'Dari total silabus', icon: 'BookOpen' },
+    { label: 'Waktu Belajar', value: `${studyHoursThisWeek}j`, subtext: 'Total dari topik selesai', icon: 'Clock' },
+    { label: 'Skor Kuis', value: avgQuizScore, subtext: `${quizHistory.length} kuis diambil`, icon: 'Target' },
+  ], [streak, completedTopicsCount, topics.length, studyHoursThisWeek, avgQuizScore, quizHistory.length]);
+
+  const todayTopic = topics.find(t => t.status === 'active') ||
+                      topics.find(t => t.status === 'locked' || !t.status);
 
   const activities = quizHistory.map(q => {
     const displayScore = q.score > 1 ? q.score : Math.round(q.score * 100);
@@ -131,43 +100,96 @@ export default function Dashboard() {
       id: q.id,
       type: 'quiz',
       title: `Kuis: ${q.topic_title || 'Topik'}`,
-      description: `Skor: ${displayScore} - Waktu: ${Math.round(q.time_spent_seconds / 60)} menit`,
+      description: `Skor: ${displayScore} — ${Math.round((q.time_spent_seconds || 0) / 60)} menit`,
       time: new Date(q.created_at || Date.now()).toLocaleDateString('id-ID'),
+      score: displayScore,
     };
   }).slice(0, 5);
 
-  return (
-    <div className="max-w-7xl mx-auto pb-12">
-      <GreetingHero 
-        username={user?.username || 'Pelajar'} 
-        streak={streak} 
-        xp={xp} 
-      />
-      
-      <FeedbackBanner 
-        message={feedbackMessage} 
-        isVisible={showFeedback && !!feedbackMessage}
-        onDismiss={() => setShowFeedback(false)}
-      />
-
-      <StatCards stats={stats} />
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2 space-y-8 flex flex-col">
-          <div className="flex-1">
-            <TodayTopicCard topic={todayTopic} />
-          </div>
+  if (loading) {
+    return (
+      <div className="max-w-6xl mx-auto space-y-6">
+        <Skeleton className="h-20 w-full rounded-xl" />
+        <Skeleton className="h-48 w-full rounded-xl" />
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {[0, 1, 2, 3].map(i => (
+            <Skeleton key={i} className="h-28 rounded-xl" />
+          ))}
         </div>
-
-        <div className="space-y-8 flex flex-col">
-          <div className="h-[300px]">
-            <WeekProgress weeks={weeks} />
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2">
+            <Skeleton className="h-80 rounded-xl" />
           </div>
-          <div className="h-[350px]">
-            <RecentActivity activities={activities} />
-          </div>
+          <Skeleton className="h-80 rounded-xl" />
         </div>
       </div>
-    </div>
+    );
+  }
+
+  const hasSession = activeSession?.id;
+
+  return (
+    <motion.div
+      variants={stagger}
+      initial="hidden"
+      animate="show"
+      className="max-w-6xl mx-auto space-y-6"
+    >
+      {/* 1. Page header — greeting */}
+      <motion.div variants={fadeUp}>
+        <GreetingHero
+          username={user?.username || 'Pelajar'}
+          streak={streak}
+          xp={xp}
+        />
+      </motion.div>
+
+      {/* Feedback banner */}
+      {showFeedback && feedbackMessage && (
+        <motion.div variants={fadeUp}>
+          <FeedbackBanner
+            message={feedbackMessage}
+            isVisible={showFeedback && !!feedbackMessage}
+            onDismiss={() => setShowFeedback(false)}
+          />
+        </motion.div>
+      )}
+
+      {/* 2. Hero "Continue Learning" card */}
+      <motion.div variants={fadeUp}>
+        <ContinueLearningHero
+          topic={todayTopic}
+          session={activeSession}
+          hasSession={hasSession}
+          completedTopics={completedTopicsCount}
+          totalTopics={topics.length}
+        />
+      </motion.div>
+
+      {/* 3. Stats grid — 4 kolom */}
+      <motion.div variants={fadeUp}>
+        <StatCards stats={stats} />
+      </motion.div>
+
+      {/* 3b. RAGAS quality widget (RAG faithfulness + relevancy) */}
+      {activeSession?.id && (
+        <motion.div variants={fadeUp}>
+          <RAGASWidget
+            sessionId={activeSession.id}
+            // widget fetches via the api directly — see RAGASWidget.jsx
+          />
+        </motion.div>
+      )}
+
+      {/* 4. Two-column: Recent Activity (2/3) + Quick Actions (1/3) */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <motion.div variants={fadeUp} className="lg:col-span-2">
+          <RecentActivity activities={activities} />
+        </motion.div>
+        <motion.div variants={fadeUp}>
+          <QuickActions hasSession={hasSession} />
+        </motion.div>
+      </div>
+    </motion.div>
   );
 }
