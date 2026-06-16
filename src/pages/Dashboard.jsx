@@ -35,7 +35,6 @@ export default function Dashboard() {
     curriculum: null,
     topics: [],
     quizHistory: [],
-    feedbackMessage: null,
   });
   const [showFeedback, setShowFeedback] = useState(true);
 
@@ -54,11 +53,10 @@ export default function Dashboard() {
             curriculum: currData || null,
             topics: Array.isArray(topicsData) ? topicsData : (topicsData?.topics || []),
             quizHistory: Array.isArray(quizData) ? quizData : [],
-            feedbackMessage: activeSession?.feedback_action || null,
           });
         }
       } catch {
-        setData({ curriculum: null, topics: [], quizHistory: [], feedbackMessage: null });
+        setData({ curriculum: null, topics: [], quizHistory: [] });
       } finally {
         setLoading(false);
       }
@@ -67,7 +65,7 @@ export default function Dashboard() {
     loadDashboardData();
   }, [activeSession]);
 
-  const { curriculum, topics, quizHistory, feedbackMessage } = data;
+  const { curriculum, topics, quizHistory } = data;
 
   const completedTopicsCount = topics.filter(t => t.status === 'completed').length;
   const xp = (completedTopicsCount * 10) + ((streak || 0) * 5);
@@ -103,8 +101,37 @@ export default function Dashboard() {
       description: `Skor: ${displayScore} — ${Math.round((q.time_spent_seconds || 0) / 60)} menit`,
       time: new Date(q.created_at || Date.now()).toLocaleDateString('id-ID'),
       score: displayScore,
+      // Used by RecentActivity to link each row to the per-topic
+      // history page (`/progress/topic/:topicId`).
+      topicId: q.topic_id,
     };
   }).slice(0, 5);
+
+  const latestFeedbackTopic = useMemo(() => {
+    return [...topics].reverse().find(t => t.feedback_action && t.feedback_action !== "continue" && t.status === "completed");
+  }, [topics]);
+
+  const feedbackData = useMemo(() => {
+    if (!latestFeedbackTopic) return null;
+    const action = latestFeedbackTopic.feedback_action;
+    const score = latestFeedbackTopic.mastery_score ? Math.round(latestFeedbackTopic.mastery_score * 100) : null;
+    
+    let title = "Evaluasi Adaptive Learning";
+    let message = `Sistem mendeteksi tingkat pemahaman Anda.`;
+    
+    if (action === "repeat") {
+      title = "Pemahaman Perlu Ditingkatkan";
+      message = `Skor penguasaan Anda pada materi terakhir adalah ${score}%. Sistem merekomendasikan Anda untuk mengulang materi yang disederhanakan. Silakan klik 'Lanjut Belajar' untuk memulai ulang.`;
+    } else if (action === "review") {
+      title = "Sesi Review Ditambahkan";
+      message = `Skor penguasaan Anda pada materi terakhir adalah ${score}%. Agar pemahaman lebih kuat, sebuah topik Review khusus telah disisipkan ke dalam jadwal Anda.`;
+    } else if (action === "accelerate") {
+      title = "Anda Sangat Cepat!";
+      message = `Skor penguasaan Anda adalah ${score}%. Anda memahami materi dengan sangat baik! Jadwal telah dipercepat untuk menyesuaikan kemampuan Anda.`;
+    }
+
+    return { title, message, action };
+  }, [latestFeedbackTopic]);
 
   if (loading) {
     return (
@@ -145,11 +172,13 @@ export default function Dashboard() {
       </motion.div>
 
       {/* Feedback banner */}
-      {showFeedback && feedbackMessage && (
+      {showFeedback && feedbackData && (
         <motion.div variants={fadeUp}>
-          <FeedbackBanner
-            message={feedbackMessage}
-            isVisible={showFeedback && !!feedbackMessage}
+          <FeedbackBanner 
+            title={feedbackData?.title}
+            message={feedbackData?.message} 
+            action={feedbackData?.action}
+            isVisible={showFeedback && !!feedbackData}
             onDismiss={() => setShowFeedback(false)}
           />
         </motion.div>

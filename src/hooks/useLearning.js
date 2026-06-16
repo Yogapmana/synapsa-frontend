@@ -1,5 +1,15 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { completeTopic, getCurriculum, getModule, getSessions, getTopics, startLearning } from '../api/learning'
+import {
+  getMindmap,
+  regenerateMindmap,
+  getMindmapData,
+  getConceptGraph,
+  regenerateConceptGraph,
+  getCurriculumDetail,
+  getMermaidMindmap,
+  regenerateMermaidMindmap,
+} from '../api/curriculum'
 import { SESSION_STATUSES, hasActiveSession } from '../stores/learningStore'
 
 const SESSION_STATUS_PRIORITY = {
@@ -78,6 +88,143 @@ export function useStartLearning() {
     mutationFn: (config) => startLearning(config),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['active-session'] })
+    },
+  })
+}
+
+// --------------------------------------------------------------------------- //
+// Mind Map hooks
+// --------------------------------------------------------------------------- //
+
+/**
+ * Fetch the AI-generated Mermaid mind map for a learning session.
+ * Cached on the server side (in `curricula.mindmap_json`).
+ *
+ * NOTE: kept for backward compatibility / export-to-Mermaid use cases.
+ * The interactive MindMapView v2 uses `useMindmapData` instead.
+ */
+export function useMindmap(sessionId, options = {}) {
+  return useQuery({
+    queryKey: ['mindmap', sessionId],
+    queryFn: () => getMindmap(sessionId),
+    enabled: !!sessionId && (options.enabled ?? true),
+    // Mind maps are large — give them an hour of staleness
+    staleTime: 60 * 60 * 1000,
+    ...options,
+  })
+}
+
+/**
+ * Fetch structured curriculum data for the interactive (non-Mermaid) mind
+ * map view. Cheap & deterministic — no LLM, no cache.
+ */
+export function useMindmapData(sessionId, options = {}) {
+  return useQuery({
+    queryKey: ['mindmap-data', sessionId],
+    queryFn: () => getMindmapData(sessionId),
+    enabled: !!sessionId && (options.enabled ?? true),
+    staleTime: 5 * 60 * 1000,  // 5 min
+    ...options,
+  })
+}
+
+/**
+ * Force-regenerate the Mermaid mind map (bypasses server cache).
+ * Used by the "Buat Ulang" button on the legacy Mermaid view.
+ */
+export function useRegenerateMindmap() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (sessionId) => regenerateMindmap(sessionId),
+    onSuccess: (_, sessionId) => {
+      queryClient.invalidateQueries({ queryKey: ['mindmap', sessionId] })
+    },
+  })
+}
+
+// --------------------------------------------------------------------------- //
+// Concept graph hooks
+// --------------------------------------------------------------------------- //
+
+/**
+ * Fetch the structured concept graph (root → cluster → concept → topic →
+ * resource) for the "Konsep" mind map view. Cached on the server side.
+ *
+ * First request after a replan may take 15-45s while the LLM extracts
+ * concepts week-by-week. The query's default timeout is 60s to accommodate.
+ */
+export function useConceptGraph(sessionId, options = {}) {
+  return useQuery({
+    queryKey: ['concept-graph', sessionId],
+    queryFn: () => getConceptGraph(sessionId),
+    enabled: !!sessionId && (options.enabled ?? true),
+    staleTime: 60 * 60 * 1000,  // 1 hr — graph rarely changes
+    ...options,
+  })
+}
+
+/**
+ * Force-regenerate the concept graph. Used by the "Buat Ulang" button.
+ */
+export function useRegenerateConceptGraph() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (sessionId) => regenerateConceptGraph(sessionId),
+    onSuccess: (_, sessionId) => {
+      queryClient.invalidateQueries({ queryKey: ['concept-graph', sessionId] })
+    },
+  })
+}
+
+/**
+ * Fetch the curriculum detail (curriculum + topics + search_queries) for
+ * the ConceptDetailPanel side panel.
+ */
+export function useCurriculumDetail(sessionId, options = {}) {
+  return useQuery({
+    queryKey: ['curriculum-detail', sessionId],
+    queryFn: () => getCurriculumDetail(sessionId),
+    enabled: !!sessionId && (options.enabled ?? true),
+    staleTime: 5 * 60 * 1000,
+    ...options,
+  })
+}
+
+/**
+ * Fetch the Mermaid v11 mindmap syntax for the dark-themed Konsep view.
+ * Same cache as the concept graph (one DB row, one LLM build) but the
+ * endpoint returns the pre-rendered syntax string ready for
+ * ``mermaid.render()``.
+ */
+export function useMermaidMindmap(sessionId, options = {}) {
+  return useQuery({
+    queryKey: ['mermaid-mindmap', sessionId],
+    queryFn: () => getMermaidMindmap(sessionId),
+    enabled: !!sessionId && (options.enabled ?? true),
+    // The syntax rarely changes; 1hr is a safe staleness window.
+    // The endpoint itself is fast — only the LLM build (which writes
+    // to the concept_graph_json cache) is slow, and that runs once
+    // per cache-miss.
+    staleTime: 60 * 60 * 1000,
+    ...options,
+  })
+}
+
+/**
+ * Force-regenerate the underlying concept graph (and therefore the
+ * Mermaid syntax). Used by the "Buat Ulang" button on the Mermaid view.
+ */
+export function useRegenerateMermaidMindmap() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (sessionId) => regenerateMermaidMindmap(sessionId),
+    onSuccess: (_, sessionId) => {
+      // Invalidate BOTH queries — they share the same backend cache.
+      queryClient.invalidateQueries({ queryKey: ['mermaid-mindmap', sessionId] })
+      queryClient.invalidateQueries({ queryKey: ['concept-graph', sessionId] })
     },
   })
 }

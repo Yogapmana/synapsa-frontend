@@ -1,0 +1,108 @@
+import api from './client'
+
+/**
+ * Get the AI-generated Mermaid mind map for a learning session.
+ * Returns the cached mind map if available, otherwise generates one
+ * (and caches it for future calls).
+ *
+ * NOTE: kept for backward compatibility / export-to-Mermaid use cases.
+ * The interactive MindMapView v2 uses `getMindmapData` instead.
+ */
+export function getMindmap(sessionId) {
+  return api.get(`/curriculum/${sessionId}/mindmap`).then((r) => r.data)
+}
+
+/**
+ * Force-regenerate the Mermaid mind map, bypassing the cache.
+ */
+export function regenerateMindmap(sessionId) {
+  return api
+    .post(`/curriculum/${sessionId}/mindmap/regenerate`)
+    .then((r) => r.data)
+}
+
+/**
+ * Get structured curriculum data (weeks + topics) for the interactive
+ * mind map view. Cheap, deterministic, no LLM, no cache.
+ *
+ * @param {string} sessionId - UUID
+ * @returns {Promise<{
+ *   session_id: string,
+ *   course_title: string,
+ *   total_weeks: number,
+ *   total_topics: number,
+ *   completed_topics: number,
+ *   weeks: Array<{
+ *     week_number: number,
+ *     title: string,
+ *     total_duration_minutes: number,
+ *     completed_count: number,
+ *     active_topic_id: string | null,
+ *     topics: Array<{
+ *       id: string, title: string, week_number: number,
+ *       day_number: number, status: string, duration_minutes: number
+ *     }>
+ *   }>
+ * }>}
+ */
+export function getMindmapData(sessionId) {
+  return api.get(`/curriculum/${sessionId}/mindmap-data`).then((r) => r.data)
+}
+
+/**
+ * Get the structured concept graph (root → cluster → concept → topic →
+ * resource) for the "Konsep" mind map view. Cached on the server side in
+ * ``curricula.concept_graph_json``. First request after a replan may take
+ * 15-45s while the LLM extracts concepts week-by-week.
+ *
+ * @param {string} sessionId - UUID
+ * @param {{force?: boolean}} [options] - Pass {force:true} to bypass cache
+ */
+export function getConceptGraph(sessionId, options = {}) {
+  const params = options.force ? { force: 'true' } : {}
+  return api
+    .get(`/curriculum/${sessionId}/concept-graph`, { params })
+    .then((r) => r.data)
+}
+
+/**
+ * Force-regenerate the concept graph. Used by the "Buat Ulang" button.
+ */
+export function regenerateConceptGraph(sessionId) {
+  return api
+    .post(`/curriculum/${sessionId}/concept-graph/regenerate`)
+    .then((r) => r.data)
+}
+
+/**
+ * Get curriculum detail (curriculum + topics with search_queries). Used
+ * by the ConceptDetailPanel side panel to render topic/resource lists for
+ * a selected concept.
+ */
+export function getCurriculumDetail(sessionId) {
+  return api.get(`/curriculum/${sessionId}/detail`).then((r) => r.data)
+}
+
+/**
+ * Get the Mermaid v11 mindmap syntax for the dark-themed Konsep view.
+ * The endpoint shares the same backend cache as ``getConceptGraph`` but
+ * returns a pre-shaped Mermaid string ready for ``mermaid.render()``.
+ *
+ * @param {string} sessionId - UUID
+ * @param {{force?: boolean}} [options] - Pass {force:true} to bypass cache
+ */
+export function getMermaidMindmap(sessionId, options = {}) {
+  const params = options.force ? { force: 'true' } : {}
+  return api
+    .get(`/curriculum/${sessionId}/mermaid-mindmap`, { params })
+    .then((r) => r.data)
+}
+
+/**
+ * Force-regenerate the Mermaid mindmap (bypasses the shared cache).
+ */
+export function regenerateMermaidMindmap(sessionId) {
+  return api
+    .post(`/curriculum/${sessionId}/mermaid-mindmap/regenerate`)
+    .then((r) => r.data)
+}

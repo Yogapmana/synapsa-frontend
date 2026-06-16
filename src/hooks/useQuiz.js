@@ -1,5 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { getQuiz, getQuizHistory, submitQuiz } from '../api/quiz'
+import {
+  getQuiz,
+  getQuizHistory,
+  getQuizHistoryByTopic,
+  getQuizAttemptDetail,
+  submitQuiz,
+} from '../api/quiz'
 
 export function useQuiz(topicId, numQuestions = 5) {
   return useQuery({
@@ -18,6 +24,11 @@ export function useSubmitQuiz() {
       const sessionId = variables?.sessionId ?? variables?.session_id
       if (sessionId) {
         queryClient.invalidateQueries({ queryKey: ['quiz-results', sessionId] })
+        // Also invalidate per-topic views (so the "Attempt N of M"
+        // page refreshes after a new submission).
+        queryClient.invalidateQueries({
+          queryKey: ['quiz-results-by-topic', sessionId],
+        })
       }
     },
   })
@@ -28,5 +39,21 @@ export function useQuizHistory(sessionId) {
     queryKey: ['quiz-results', sessionId],
     queryFn: () => getQuizHistory(sessionId),
     enabled: !!sessionId,
+  })
+}
+
+export function useQuizHistoryByTopic(sessionId, topicId) {
+  return useQuery({
+    queryKey: ['quiz-results-by-topic', sessionId, topicId],
+    queryFn: () => getQuizHistoryByTopic(sessionId, topicId),
+    enabled: !!sessionId && !!topicId,
+  })
+}
+
+export function useQuizAttemptDetail(attemptId) {
+  return useQuery({
+    queryKey: ['quiz-attempt', attemptId],
+    queryFn: () => getQuizAttemptDetail(attemptId),
+    enabled: !!attemptId,
   })
 }

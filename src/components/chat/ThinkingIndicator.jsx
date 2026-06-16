@@ -2,7 +2,7 @@ import React from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 import { Leaf } from 'lucide-react';
 
-const ThinkingIndicator = () => {
+const ThinkingIndicator = ({ message }) => {
   const shouldReduceMotion = useReducedMotion();
 
   const dotVariants = shouldReduceMotion
@@ -24,8 +24,13 @@ const ThinkingIndicator = () => {
       <div className="w-9 h-9 rounded-full bg-tertiary/10 border border-tertiary/20 flex items-center justify-center flex-shrink-0">
         <Leaf size={16} className="text-tertiary" />
       </div>
-      <div className="bg-surface border border-border rounded-2xl rounded-tl-sm px-5 py-4">
-        <div className="flex items-center gap-1.5">
+      <div className="bg-surface border border-border rounded-2xl rounded-tl-sm px-5 py-3 flex flex-col gap-2 min-w-[120px]">
+        {message && (
+          <span className="text-xs font-medium text-secondary animate-pulse">
+            {message}
+          </span>
+        )}
+        <div className="flex items-center gap-1.5 mt-1">
           {[0, 1, 2].map((i) => (
             <motion.span
               key={i}

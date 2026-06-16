@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, Loader2, Paperclip, Mic } from 'lucide-react';
 
-const ChatInput = ({ onSend, onUpload, isLoading, isUploading, placeholder }) => {
+const ChatInput = ({ onSend, onUpload, isLoading, isUploading, placeholder, hideUpload = false }) => {
   const [text, setText] = useState('');
   const textareaRef = useRef(null);
   const fileInputRef = useRef(null);
@@ -38,26 +38,34 @@ const ChatInput = ({ onSend, onUpload, isLoading, isUploading, placeholder }) =>
   const canSend = text.trim() && !isLoading;
 
   return (
-    <div className="px-4 md:px-6 py-3 bg-bg-primary border-t border-border">
+    // Transparent outer wrapper so the page bg (cream) shows through —
+    // matches the rest of the Chat page and the AppLayout's bg-neutral.
+    // The inner textarea card (below) keeps its own bg-surface so the
+    // input is visually distinct from the page.
+    <div className="px-4 md:px-6 py-3 bg-transparent border-t border-border-subtle">
       <div className="max-w-[850px] mx-auto">
-        <div className="flex items-end gap-2 bg-surface border border-border rounded-2xl px-4 py-2.5 focus-within:border-tertiary focus-within:ring-2 focus-within:ring-tertiary/20 transition-all shadow-warm-xs">
-          <input 
-            type="file" 
-            ref={fileInputRef}
-            onChange={handleFileChange}
-            accept=".pdf,.txt,.md"
-            className="hidden"
-          />
+        <div className="flex items-end gap-2 bg-surface border border-border-subtle rounded-2xl px-4 py-2.5 focus-within:border-tertiary focus-within:ring-2 focus-within:ring-tertiary/20 transition-all shadow-warm-xs">
+          {!hideUpload && (
+            <>
+              <input 
+                type="file" 
+                ref={fileInputRef}
+                onChange={handleFileChange}
+                accept=".pdf,.txt,.md"
+                className="hidden"
+              />
 
-          <button
-            onClick={() => fileInputRef.current?.click()}
-            disabled={isUploading || isLoading}
-            className="p-1.5 text-secondary/40 hover:text-secondary disabled:opacity-50 transition-colors flex-shrink-0 mb-0.5"
-            aria-label="Lampirkan file"
-            tabIndex={-1}
-          >
-            {isUploading ? <Loader2 className="animate-spin text-tertiary" size={18} /> : <Paperclip size={18} />}
-          </button>
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isUploading || isLoading}
+                className="p-1.5 text-secondary/40 hover:text-secondary disabled:opacity-50 transition-colors flex-shrink-0 mb-0.5"
+                aria-label="Lampirkan file"
+                tabIndex={-1}
+              >
+                {isUploading ? <Loader2 className="animate-spin text-tertiary" size={18} /> : <Paperclip size={18} />}
+              </button>
+            </>
+          )}
 
           <textarea
             ref={textareaRef}

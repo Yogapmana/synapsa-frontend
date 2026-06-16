@@ -74,7 +74,7 @@ export default function RecentActivity({ activities = [] }) {
         ) : (
           <div className="divide-y divide-[var(--border)]">
             {activities.map((activity, index) => {
-              const { type, title, description, time, score } = activity;
+              const { type, title, description, time, score, topicId } = activity;
               const config = TYPE_CONFIG[type] || TYPE_CONFIG.quiz;
               const Icon = config.icon;
 
@@ -85,11 +85,15 @@ export default function RecentActivity({ activities = [] }) {
                 ? getScoreLabel(score)
                 : config.defaultLabel;
 
-              return (
-                <div
-                  key={activity.id || index}
-                  className="flex items-start gap-3.5 p-4 hover:bg-surface/60 transition-colors group"
-                >
+              // Quiz rows link to the per-topic history page (so the
+              // user can review each attempt). Other activity types
+              // fall back to the dashboard.
+              const itemHref = type === 'quiz' && topicId
+                ? `/progress/topic/${encodeURIComponent(topicId)}`
+                : null;
+
+              const content = (
+                <>
                   <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${config.bgClass}`}>
                     <Icon className={`w-4.5 h-4.5 ${config.colorClass}`} />
                   </div>
@@ -112,6 +116,23 @@ export default function RecentActivity({ activities = [] }) {
                       </span>
                     </div>
                   </div>
+                </>
+              );
+
+              return itemHref ? (
+                <Link
+                  key={activity.id || index}
+                  to={itemHref}
+                  className="flex items-start gap-3.5 p-4 hover:bg-surface/60 transition-colors group"
+                >
+                  {content}
+                </Link>
+              ) : (
+                <div
+                  key={activity.id || index}
+                  className="flex items-start gap-3.5 p-4 hover:bg-surface/60 transition-colors group"
+                >
+                  {content}
                 </div>
               );
             })}

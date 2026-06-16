@@ -17,6 +17,34 @@ export function submitQuiz({ session_id, topic_id, quiz_id, answers, time_spent_
   }).then((response) => response.data)
 }
 
+/**
+ * All quiz attempts for a learning session.
+ * Backend now returns enriched records (topic_title, time_spent_seconds,
+ * attempt_number) so the frontend doesn't need a second roundtrip
+ * to fetch Topic.title for each row.
+ */
 export function getQuizHistory(sessionId) {
   return api.get(`/quiz/history/${sessionId}`).then((response) => response.data)
+}
+
+/**
+ * All quiz attempts for ONE topic within a session, ordered oldest
+ * first. Used by the per-topic history page to show "Attempt 1 of
+ * 3" progression. Returns:
+ *   { topic_id, topic_title, attempts: [...] }
+ */
+export function getQuizHistoryByTopic(sessionId, topicId) {
+  return api
+    .get(`/quiz/history/${sessionId}/topic/${topicId}`)
+    .then((response) => response.data)
+}
+
+/**
+ * Single attempt detail, including the full `answers_detail` payload
+ * (which question was right/wrong, what the user picked vs. the
+ * correct answer). Used by the "Review" action on the per-topic
+ * history page.
+ */
+export function getQuizAttemptDetail(attemptId) {
+  return api.get(`/quiz/attempt/${attemptId}`).then((response) => response.data)
 }

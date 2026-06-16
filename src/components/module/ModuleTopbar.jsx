@@ -3,25 +3,28 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Clock, ArrowRight, BookOpen, ChevronLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { useCurriculum, useTopics } from '@/hooks/useLearning'
 
 /**
  * ModuleTopbar — sticky top bar for the module reading page.
  *
- * Phase fix (post-redesign):
- *   - Removed the "Kurikulum › Minggu X › Module" breadcrumb (too noisy,
- *     duplicated the page-header info, made the page feel "tidak nyatu").
- *   - Now shows just the module title (centered or right-aligned) plus
- *     a "Mulai Kuis" button that appears after 80% scroll, plus a thin
- *     progress bar at the bottom.
- *   - Back-to-curriculum moved to a subtle icon button on the far left
- *     (more discoverable, less noisy than text breadcrumb).
+ * Phase fix (post-`tempelan` redesign):
+ *   - Removed the white card background (`bg-surface/95`) and the
+ *     `border-b` so the topbar no longer reads as a separate "card"
+ *     glued onto the page. The topbar now blends with the cream page
+ *     background.
+ *   - Removed the reading progress bar (red/gray 1px line) at the
+ *     bottom — the user reported it as "gk perlu ada garis merah" (no
+ *     need for the red line). Progress is already shown in the
+ *     Curriculum page's MindMap; duplicating it on every module page
+ *     is unnecessary chrome.
+ *   - Kept a very subtle `backdrop-blur` for readability when content
+ *     scrolls under it (frosted-glass effect, no solid color).
+ *   - The topbar is now just the back button, the title, the time
+ *     pill, and the "Mulai Kuis" button (after 80% scroll) — nothing
+ *     else, nothing more.
  */
-
-export default function ModuleTopbar({ module, sessionId }) {
+export default function ModuleTopbar({ module }) {
   const [showQuizButton, setShowQuizButton] = useState(false)
-  const { data: curriculumData } = useCurriculum(sessionId)
-  const { data: topicsData } = useTopics(sessionId)
 
   useEffect(() => {
     const handleScroll = () => {
@@ -33,25 +36,10 @@ export default function ModuleTopbar({ module, sessionId }) {
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
-  const curriculumJson = curriculumData?.curriculum_json || {}
-  const weeks = curriculumJson.weeks || []
-  const weekNumber = module?.week_number ?? module?.week ?? 1
-  const currentWeek = weeks.find((w) => (w.week_number ?? w.week) === weekNumber)
-
-  const topics = Array.isArray(topicsData) ? topicsData : topicsData?.topics || []
-  const weekTopics = topics.filter(
-    (t) => (t.week_number ?? t.week) === weekNumber
-  )
-  const topicIndex = weekTopics.findIndex(
-    (t) => t.topic_id === module?.topic_id || t.id === module?.topic_id
-  )
-  const topicPosition = topicIndex >= 0 ? topicIndex + 1 : 0
-  const totalWeekTopics = weekTopics.length
-
   const estimatedMinutes = module?.estimated_read_minutes ?? 0
 
   return (
-    <div className="sticky top-0 z-30 border-b border-[var(--border)] bg-surface/95 backdrop-blur-md">
+    <div className="sticky top-0 z-30 backdrop-blur-sm">
       <div className="mx-auto flex h-14 max-w-[860px] items-center justify-between gap-3 px-4 md:px-6">
         {/* Back to curriculum (icon-only, more compact than breadcrumb) */}
         <Link
@@ -102,25 +90,6 @@ export default function ModuleTopbar({ module, sessionId }) {
           )}
         </div>
       </div>
-
-      {/* Reading progress bar (single source of truth — no duplicate in article header) */}
-      {totalWeekTopics > 0 && topicPosition > 0 && (
-        <div className="mx-auto max-w-[860px] px-4 md:px-6 pb-2">
-          <div
-            className="h-1 rounded-full bg-secondary/20 overflow-hidden"
-            role="progressbar"
-            aria-valuenow={topicPosition}
-            aria-valuemin={0}
-            aria-valuemax={totalWeekTopics}
-            aria-label={`Topik ${topicPosition} dari ${totalWeekTopics}`}
-          >
-            <div
-              className="h-full rounded-full bg-tertiary transition-all duration-500"
-              style={{ width: `${(topicPosition / totalWeekTopics) * 100}%` }}
-            />
-          </div>
-        </div>
-      )}
     </div>
   )
 }

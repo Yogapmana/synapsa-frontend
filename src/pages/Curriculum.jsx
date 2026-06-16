@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useCallback } from 'react'
+import React, { useMemo, useRef, useCallback, useState, Suspense } from 'react'
 import { useActiveSession, useCurriculum, useTopics } from '@/hooks/useLearning'
 import { useLearningStore } from '@/stores/learningStore'
 import { TopicNode } from '@/components/curriculum/TopicNode'
@@ -15,6 +15,9 @@ import {
   Calendar,
   Target,
   Trophy,
+  Brain,
+  Network,
+  ArrowLeft,
 } from 'lucide-react'
 import { motion, useReducedMotion } from 'framer-motion'
 import { cn } from '@/lib/utils'
@@ -23,6 +26,10 @@ import PageHeader from '@/components/common/PageHeader'
 import StatusBadge from '@/components/common/StatusBadge'
 import { Button } from '@/components/ui/button'
 import { useNavigate } from 'react-router-dom'
+
+// Lazy-load the AI mind map view — Mermaid is heavy (~700KB across all
+// diagram types) and only needed when the user toggles to that view.
+const MindMapView = React.lazy(() => import('@/components/curriculum/MindMapView'))
 
 /**
  * Curriculum page (Phase polish)
@@ -55,6 +62,11 @@ export default function Curriculum() {
   const streak = useLearningStore((s) => s.streak)
   const weekRefs = useRef({})
   const shouldReduceMotion = useReducedMotion()
+
+  // 'roadmap' = original JourneyMap + Week Grid
+  // 'mindmap' = AI-generated Mermaid diagram
+  const [viewMode, setViewMode] = useState('roadmap')
+  const [selectedWeek, setSelectedWeek] = useState(null)
 
   const { data: curriculumData, isLoading: isLoadingCurriculum } = useCurriculum(sessionId)
   const { data: topicsData, isLoading: isLoadingTopics } = useTopics(sessionId)
@@ -192,11 +204,38 @@ export default function Curriculum() {
         title="Kurikulum"
         subtitle={courseTitle}
         actions={
-          streak > 0 && (
-            <StatusBadge variant="accent" icon={Flame} size="lg">
-              {streak} hari berturut
-            </StatusBadge>
-          )
+          <div className="flex items-center gap-2 flex-wrap justify-end">
+            {/* View mode toggle */}
+            <div
+              role="tablist"
+              aria-label="Pilih tampilan kurikulum"
+              className="inline-flex items-center gap-1 p-1 bg-surface-1 border border-border-subtle rounded-xl"
+            >
+              <ViewTab
+                active={viewMode === 'roadmap'}
+                onClick={() => {
+                  setViewMode('roadmap')
+                  setSelectedWeek(null)
+                }}
+                icon={Network}
+                label="Roadmap"
+              />
+              <ViewTab
+                active={viewMode === 'mindmap'}
+                onClick={() => {
+                  setViewMode('mindmap')
+                  setSelectedWeek(null)
+                }}
+                icon={Brain}
+                label="Peta Konsep"
+              />
+            </div>
+            {streak > 0 && (
+              <StatusBadge variant="accent" icon={Flame} size="lg">
+                {streak} hari berturut
+              </StatusBadge>
+            )}
+          </div>
         }
       />
 
@@ -307,56 +346,163 @@ export default function Curriculum() {
         </motion.div>
       )}
 
-      {/* ─── Journey Map ─── */}
-      {journeyWeeks.length > 0 && (
+      {/* ─── View: Mind Map (Overview | Konsep sub-modes handled inside) ─── */}
+      {viewMode === 'mindmap' && (
         <motion.div
-          initial={{ opacity: 0, y: 12 }}
+          key="mindmap-view"
+          initial={shouldReduceMotion ? {} : { opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, delay: 0.1 }}
+          transition={{ duration: 0.35, ease: [0.25, 1, 0.5, 1] }}
         >
-          <JourneyMap weeks={journeyWeeks} onSelectWeek={handleSelectWeek} />
+          <Suspense fallback={<MindMapLoadingSkeleton />}>
+            <MindMapView sessionId={sessionId} courseTitle={courseTitle} />
+          </Suspense>
         </motion.div>
       )}
 
-      {/* ─── Week Grid ─── */}
-      <motion.div
-        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
-        variants={shouldReduceMotion ? { hidden: {}, visible: {} } : stagger}
-        initial="hidden"
-        animate="visible"
-      >
-        {weeks.map((week, i) => (
-          <div
-            key={week.week_number ?? i}
-            ref={(el) => {
-              if (el) weekRefs.current[week.week_number ?? i] = el
-            }}
-            className="scroll-mt-24"
-          >
-            <WeekCard
-              week={week}
-              topics={topicsByWeek[week.week_number] || []}
-              weekIndex={i}
-              isActive={week.week_number === activeWeekNumber}
-            />
-          </div>
-        ))}
-      </motion.div>
+      {/* ─── View: Roadmap (JourneyMap + Week Grid) ─── */}
+      {viewMode === 'roadmap' && (
+        <motion.div
+          key="roadmap-view"
+          initial={shouldReduceMotion ? {} : { opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35, ease: [0.25, 1, 0.5, 1] }}
+          className="space-y-7"
+        >
+          {/* ─── Journey Map ─── */}
+          {journeyWeeks.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: 0.1 }}
+            >
+              <JourneyMap weeks={journeyWeeks} onSelectWeek={handleSelectWeek} />
+            </motion.div>
+          )}
 
-      {/* Empty state when no weeks */}
-      {weeks.length === 0 && (
-        <div className="card-base p-12 text-center">
-          <div className="mx-auto w-16 h-16 rounded-2xl bg-tertiary/10 text-tertiary flex items-center justify-center mb-4">
-            <Calendar size={28} />
-          </div>
-          <h3 className="font-display font-semibold text-xl text-primary">
-            Kurikulum kosong
-          </h3>
-          <p className="text-secondary mt-2 max-w-sm mx-auto">
-            Kurikulum ini belum memiliki minggu/topik. Coba mulai ulang onboarding.
-          </p>
-        </div>
+          {/* ─── Week Grid or Week Detail ─── */}
+          {selectedWeek ? (
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              className="space-y-6"
+            >
+              <div className="flex flex-col gap-4">
+                <Button
+                  variant="ghost"
+                  onClick={() => setSelectedWeek(null)}
+                  className="w-fit -ml-2 text-secondary hover:text-primary gap-2"
+                >
+                  <ArrowLeft size={16} />
+                  Kembali ke Daftar Minggu
+                </Button>
+                
+                <div className="card-base p-6 border-tertiary/20 bg-gradient-to-br from-tertiary/[0.02] to-transparent">
+                  <h2 className="text-2xl font-display font-bold text-primary mb-2">
+                    Minggu {selectedWeek.week_number}: {selectedWeek.title || 'Topik Belajar'}
+                  </h2>
+                  <p className="text-secondary font-label text-sm mb-6">
+                    Pilih modul di bawah ini untuk mulai belajar.
+                  </p>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {(topicsByWeek[selectedWeek.week_number] || []).map((topic) => (
+                      <div key={topic.id} className="bg-surface border border-border/50 rounded-xl">
+                        <TopicNode topic={topic} />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          ) : (
+            <motion.div
+              className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 items-start"
+              variants={shouldReduceMotion ? { hidden: {}, visible: {} } : stagger}
+              initial="hidden"
+              animate="visible"
+            >
+              {weeks.map((week, i) => (
+                <div
+                  key={week.week_number ?? i}
+                  ref={(el) => {
+                    if (el) weekRefs.current[week.week_number ?? i] = el
+                  }}
+                  className="scroll-mt-24"
+                >
+                  <WeekCard
+                    week={week}
+                    topics={topicsByWeek[week.week_number] || []}
+                    weekIndex={i}
+                    isActive={week.week_number === activeWeekNumber}
+                    onClick={(w) => setSelectedWeek(w)}
+                  />
+                </div>
+              ))}
+            </motion.div>
+          )}
+
+          {/* Empty state when no weeks */}
+          {weeks.length === 0 && (
+            <div className="card-base p-12 text-center">
+              <div className="mx-auto w-16 h-16 rounded-2xl bg-tertiary/10 text-tertiary flex items-center justify-center mb-4">
+                <Calendar size={28} />
+              </div>
+              <h3 className="font-display font-semibold text-xl text-primary">
+                Kurikulum kosong
+              </h3>
+              <p className="text-secondary mt-2 max-w-sm mx-auto">
+                Kurikulum ini belum memiliki minggu/topik. Coba mulai ulang onboarding.
+              </p>
+            </div>
+          )}
+        </motion.div>
       )}
+    </div>
+  )
+}
+
+/**
+ * Toggle button used in the view-mode switcher (Roadmap | Peta Konsep).
+ */
+function ViewTab({ active, onClick, icon: Icon, label }) {
+  return (
+    <button
+      type="button"
+      role="tab"
+      aria-selected={active}
+      onClick={onClick}
+      className={cn(
+        'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-label font-medium',
+        'transition-all duration-200 focus:outline-none focus-visible:ring-2',
+        'focus-visible:ring-tertiary focus-visible:ring-offset-1',
+        active
+          ? 'bg-surface-0 text-primary shadow-warm-sm'
+          : 'text-secondary hover:text-primary hover:bg-surface-0/50'
+      )}
+    >
+      <Icon size={13} aria-hidden="true" />
+      <span>{label}</span>
+    </button>
+  )
+}
+
+/**
+ * Loading skeleton for the lazy-loaded MindMapView (Suspense fallback).
+ */
+function MindMapLoadingSkeleton() {
+  return (
+    <div className="card-base p-5 md:p-7 space-y-4" aria-busy="true">
+      <div className="flex items-start justify-between gap-4">
+        <div className="space-y-2 flex-1">
+          <Skeleton className="h-5 w-32 rounded-full" />
+          <Skeleton className="h-7 w-2/3" />
+          <Skeleton className="h-4 w-3/4" />
+        </div>
+        <Skeleton className="h-9 w-28 rounded-xl" />
+      </div>
+      <Skeleton className="h-[420px] w-full rounded-2xl" />
     </div>
   )
 }

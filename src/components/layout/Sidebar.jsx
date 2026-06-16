@@ -50,7 +50,7 @@ const EXPANDED_WIDTH = 240;
 const NAV_ITEMS = [
   { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard', section: 'utama' },
   { label: 'Kurikulum', icon: CalendarDays, path: '/curriculum', section: 'utama' },
-  { label: 'Chat Tutor', icon: MessageCircle, path: '/chat', section: 'utama' },
+  { label: 'Chatbot', icon: MessageCircle, path: '/chat', section: 'utama' },
   { label: 'Agent Log', icon: Cpu, path: '/agent-log', section: 'lainnya' },
   { label: 'Pengaturan', icon: Settings, path: '/settings', section: 'lainnya' },
 ];
