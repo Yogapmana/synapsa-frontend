@@ -1,6 +1,7 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { MessageCircle, Sparkles, Send } from 'lucide-react'
+import { MessageCircle, Sparkles, Send, ChevronLeft, ChevronRight } from 'lucide-react'
+import { motion } from 'framer-motion'
 import { cn } from '@/lib/utils'
 import { sendMessage, getHistory } from '@/api/chat'
 import ChatBubble from '@/components/chat/ChatBubble'
@@ -31,11 +32,23 @@ import ThinkingIndicator from '@/components/chat/ThinkingIndicator'
  * up with it — so it never "floats" past the page footer.
  */
 
-const PANEL_WIDTH = 420 // px
+const EXPANDED_WIDTH = 420 // px — full chat panel
+const COLLAPSED_WIDTH = 56 // px — narrow icon rail
 
 export default function ModuleChatPanel({ sessionId, topicId, moduleTitle }) {
   const queryClient = useQueryClient()
   const scrollRef = useRef(null)
+
+  // Collapse/expand state. Defaults to expanded (matches the
+  // previous always-visible design). When collapsed, the panel
+  // shrinks to a narrow icon rail so the article can use the
+  // reclaimed space for reading. The user toggles via a chevron
+  // button in the header (collapse) or at the top of the rail
+  // (expand).
+  //
+  // State is local — resets on page navigation. If persistence
+  // is needed later, lift to useUIStore next to `sidebarCollapsed`.
+  const [isCollapsed, setIsCollapsed] = useState(false)
 
   const { data: history = [], isLoading } = useQuery({
     queryKey: ['chat', 'module', topicId],
@@ -101,9 +114,10 @@ export default function ModuleChatPanel({ sessionId, topicId, moduleTitle }) {
   }
 
   return (
-    <aside
+    <motion.aside
       role="complementary"
       aria-label={`Tutor AI untuk ${moduleTitle || 'modul ini'}`}
+      aria-expanded={!isCollapsed}
       className={cn(
         'shrink-0',
         'flex flex-col',
@@ -117,20 +131,50 @@ export default function ModuleChatPanel({ sessionId, topicId, moduleTitle }) {
         // main row, the panel scrolls up with it (no floating
         // past the page footer).
         'sticky top-14',
+        // `overflow-hidden` so the inner content (CollapsedRail or
+        // full panel) doesn't bleed outside the animated width
+        // during the spring transition. Without it, the messages
+        // area would briefly extend past the panel border.
+        'overflow-hidden',
       )}
+      initial={false}
+      // Animate the width between the full panel and the icon rail.
+      // The spring (320/32) gives a snappy but not jarring motion
+      // that matches the rest of the app's transitions.
+      animate={{ width: isCollapsed ? COLLAPSED_WIDTH : EXPANDED_WIDTH }}
+      transition={{ type: 'spring', stiffness: 320, damping: 32 }}
       style={{
-        width: PANEL_WIDTH,
         height: 'calc(100vh - 3.5rem)',
       }}
     >
-      {/* Sidebar header — sticks to the top of the column. */}
+      {isCollapsed ? (
+        <CollapsedRail onExpand={() => setIsCollapsed(false)} />
+      ) : (
+        <>
+      {/* Sidebar header — sticks to the top of the column. The
+          chevron-right button on the left collapses the panel
+          (shrinks it back to the icon rail on the right). */}
       <div
         className={cn(
-          'flex items-center gap-3 shrink-0',
-          'px-4 py-3 border-b border-border-subtle',
+          'flex items-center gap-2 shrink-0',
+          'px-3 py-3 border-b border-border-subtle',
           'bg-surface-1',
         )}
       >
+        <button
+          type="button"
+          onClick={() => setIsCollapsed(true)}
+          className={cn(
+            'p-1.5 rounded-lg shrink-0',
+            'text-secondary hover:text-primary hover:bg-secondary/10',
+            'transition-colors duration-150',
+            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-tertiary',
+          )}
+          aria-label="Tutup Tutor AI"
+          title="Tutup Tutor AI"
+        >
+          <ChevronRight size={16} />
+        </button>
         <div
           className={cn(
             'flex size-8 items-center justify-center rounded-lg shrink-0',
@@ -214,7 +258,72 @@ export default function ModuleChatPanel({ sessionId, topicId, moduleTitle }) {
           Shift+Enter untuk baris baru
         </p>
       </div>
-    </aside>
+        </>
+      )}
+    </motion.aside>
+  )
+}
+
+/**
+ * CollapsedRail — narrow icon rail shown when the chat panel is
+ * collapsed. Just a chevron-left button (to expand) and a centered
+ * Sparkles icon + rotated "Tutor AI" label, so the user can still
+ * tell where the chat went. Width is `COLLAPSED_WIDTH` (56px).
+ *
+ * The label is rotated 90° via CSS `writing-mode: vertical-rl` +
+ * `transform: rotate(180deg)`. This makes the text read top-to-
+ * bottom along the rail, matching the way vertical text is rendered
+ * in design tools (Figma "Rotate 90° CCW"). The rotation flip
+ * (180°) puts the text in the natural reading orientation (top →
+ * bottom, not bottom → top).
+ */
+function CollapsedRail({ onExpand }) {
+  return (
+    <div className="flex flex-col h-full items-center">
+      {/* Expand button — top of the rail. Chevron points LEFT (←)
+          toward where the full panel will appear when expanded. */}
+      <button
+        type="button"
+        onClick={onExpand}
+        className={cn(
+          'mt-3 p-1.5 rounded-lg shrink-0',
+          'text-secondary hover:text-primary hover:bg-secondary/10',
+          'transition-colors duration-150',
+          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-tertiary',
+        )}
+        aria-label="Buka Tutor AI"
+        title="Buka Tutor AI"
+      >
+        <ChevronLeft size={16} />
+      </button>
+
+      {/* Icon + vertical label — fills the middle of the rail. */}
+      <div className="flex-1 flex flex-col items-center justify-center gap-3">
+        <div
+          className={cn(
+            'size-10 rounded-xl flex items-center justify-center',
+            'bg-tertiary/15 text-tertiary',
+          )}
+          aria-hidden="true"
+        >
+          <Sparkles size={20} />
+        </div>
+        <span
+          className={cn(
+            'text-[10px] font-label font-bold uppercase tracking-widest',
+            'text-tertiary select-none',
+          )}
+          style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}
+        >
+          Tutor AI
+        </span>
+      </div>
+
+      {/* Spacer at the bottom mirrors the input area in the expanded
+          view, so the icon stays vertically centered regardless of
+          the rail's height. */}
+      <div className="h-3 shrink-0" aria-hidden="true" />
+    </div>
   )
 }
 

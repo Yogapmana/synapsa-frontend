@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useActiveSession } from '@/hooks/useLearning'
-import { useQuizHistoryByTopic } from '@/hooks/useQuiz'
+import { useQuizHistoryByTopic, useQuizAttemptDetail } from '@/hooks/useQuiz'
 import { useCompleteTopic } from '@/hooks/useLearning'
 import { Skeleton } from '@/components/ui/skeleton'
 import EmptyState from '@/components/common/EmptyState'
@@ -23,7 +23,8 @@ import {
   Inbox,
   Sparkles,
   X,
-} from 'lucide-react'
+  HelpCircle,
+} from 'lucide-react';
 import { cn } from '@/lib/utils'
 import { format } from 'date-fns'
 import { id as idLocale } from 'date-fns/locale'
@@ -77,7 +78,17 @@ export default function QuizHistoryByTopic() {
   const { data, isLoading } = useQuizHistoryByTopic(sessionId, decodedTopicId)
   const completeTopic = useCompleteTopic()
 
-  const [reviewAttemptIdx, setReviewAttemptIdx] = useState(null)
+  // Holds the full attempt object the user is currently reviewing
+  // (including its DB id, so ReviewModal can lazy-fetch the full
+  // detail with `answers_detail`).
+  // Fix: previously this was a numeric index (`reviewAttemptIdx`) and
+  // ReviewModal read `answers_detail` straight from the list payload,
+  // but the by-topic list endpoint intentionally omits `answers_detail`
+  // (keeps the list payload small). The result was that *every* attempt
+  // rendered as an empty state, even ones with valid answer data. The
+  // single-attempt endpoint `GET /quiz/attempt/{id}` returns the full
+  // detail — we now call it on demand when the modal opens.
+  const [reviewAttempt, setReviewAttempt] = useState(null)
 
   const attempts = data?.attempts || []
   const topicTitle = data?.topic_title || 'Topik'
@@ -215,7 +226,12 @@ export default function QuizHistoryByTopic() {
                   attempt={a}
                   index={idx}
                   total={attempts.length}
-                  onReview={() => setReviewAttemptIdx(idx)}
+                  // Pass the whole attempt (with its DB id) so the
+                  // ReviewModal can lazy-fetch the full detail
+                  // containing `answers_detail`.
+                  onReview={() =>
+                    setReviewAttempt({ attempt: a, number: idx + 1 })
+                  }
                 />
               ))}
             </ol>
@@ -225,12 +241,12 @@ export default function QuizHistoryByTopic() {
 
       {/* Review modal — shows the answers_detail for a single attempt. */}
       <AnimatePresence>
-        {reviewAttemptIdx !== null && attempts[reviewAttemptIdx] && (
+        {reviewAttempt && (
           <ReviewModal
-            attempt={attempts[reviewAttemptIdx]}
-            attemptNumber={reviewAttemptIdx + 1}
+            attempt={reviewAttempt.attempt}
+            attemptNumber={reviewAttempt.number}
             topicTitle={topicTitle}
-            onClose={() => setReviewAttemptIdx(null)}
+            onClose={() => setReviewAttempt(null)}
           />
         )}
       </AnimatePresence>
@@ -424,14 +440,37 @@ function AttemptRow({ attempt, index, total, onReview }) {
 /**
  * ReviewModal — question-by-question breakdown for a single attempt.
  *
- * Pulls `answers_detail` from the attempt (we have it via the by-topic
- * endpoint). Shows each question's index, the user's selected answer,
- * and the correct answer — with a green/red check.
+ * The by-topic list endpoint intentionally omits `answers_detail` to
+ * keep the list payload small, so we lazy-fetch the full detail on
+ * mount via `useQuizAttemptDetail(attempt.id)`. While the detail is
+ * loading we render a skeleton; once loaded, we show each question's
+ * index, the user's selected answer, and the correct answer with a
+ * green/red check. React Query dedupes by attempt id, so re-opening
+ * the same review is a cache hit (no extra network roundtrip).
  */
 function ReviewModal({ attempt, attemptNumber, topicTitle, onClose }) {
-  const answers = attempt.answers_detail || []
-  const total = answers.length
-  const correct = answers.filter((a) => a.is_correct).length
+  // Lazy-fetch the full attempt (has answers_detail). `enabled` is
+  // implicit in the hook (it only fires when attemptId is truthy).
+  const {
+    data: detail,
+    isLoading: detailLoading,
+    error: detailError,
+  } = useQuizAttemptDetail(attempt?.id)
+
+  // Merge: prefer the detail payload but fall back to the list-row
+  // data so the header (topic title, date, score count) can render
+  // immediately without waiting for the detail roundtrip. This keeps
+  // the modal from looking "blank" during the ~100ms load.
+  const fullAttempt = detail || attempt
+  const answers = fullAttempt.answers_detail || []
+  // Use the authoritative totals from the detail row (which always
+  // match what's in the DB). While loading, the list-row values
+  // (`attempt.total_questions` / `attempt.correct_answers`) are
+  // accurate too, so the header never shows "0/0".
+  const totalQuestions =
+    fullAttempt.total_questions ?? attempt.total_questions ?? answers.length
+  const correctAnswers =
+    fullAttempt.correct_answers ?? attempt.correct_answers ?? 0
 
   return (
     <motion.div
@@ -455,8 +494,8 @@ function ReviewModal({ attempt, attemptNumber, topicTitle, onClose }) {
               Review — Percobaan #{attemptNumber}
             </h2>
             <p className="text-xs text-secondary font-label truncate">
-              {topicTitle} • {formatDate(attempt.created_at, false)} •{' '}
-              {correct}/{total} benar
+              {topicTitle} • {formatDate(fullAttempt.created_at, false)} •{' '}
+              {correctAnswers}/{totalQuestions} benar
             </p>
           </div>
           <button
@@ -469,10 +508,17 @@ function ReviewModal({ attempt, attemptNumber, topicTitle, onClose }) {
         </header>
 
         <div className="flex-1 overflow-y-auto p-5 space-y-3">
-          {answers.length === 0 ? (
+          {detailLoading ? (
+            <ReviewDetailSkeleton />
+          ) : detailError ? (
+            <ReviewErrorState
+              error={detailError}
+              topicId={fullAttempt?.topic_id}
+            />
+          ) : answers.length === 0 ? (
             <EmptyReviewState
-              attempt={attempt}
-              topicId={attempt?.topic_id}
+              attempt={fullAttempt}
+              topicId={fullAttempt?.topic_id}
             />
           ) : (
             answers.map((a) => (
@@ -518,6 +564,67 @@ function ReviewModal({ attempt, attemptNumber, topicTitle, onClose }) {
         </div>
       </motion.div>
     </motion.div>
+  )
+}
+
+/**
+ * ReviewDetailSkeleton — placeholder shown while the single-attempt
+ * detail is fetching. Mirrors the real card layout so the modal
+ * doesn't jump in size once data lands.
+ */
+function ReviewDetailSkeleton() {
+  return (
+    <div
+      className="space-y-3"
+      role="status"
+      aria-live="polite"
+      aria-label="Memuat detail jawaban"
+    >
+      {[0, 1, 2].map((i) => (
+        <div
+          key={i}
+          className="rounded-xl border border-border-subtle p-4 space-y-2.5"
+        >
+          <div className="flex items-center gap-2">
+            <Skeleton className="size-4 rounded-full skeleton-shimmer" />
+            <Skeleton className="h-3 w-32 skeleton-shimmer" />
+          </div>
+          <Skeleton className="h-3 w-full skeleton-shimmer" />
+          <Skeleton className="h-3 w-3/4 skeleton-shimmer" />
+        </div>
+      ))}
+    </div>
+  )
+}
+
+/**
+ * ReviewErrorState — shown when the detail fetch fails (network blip
+ * or 5xx). Gives the user a clear "what now" path: either retry via
+ * the API or jump back to the quiz retake flow.
+ */
+function ReviewErrorState({ error, topicId }) {
+  return (
+    <div className="flex flex-col items-center justify-center text-center py-10 px-4">
+      <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-4 bg-danger-light text-danger-fg">
+        <HelpCircle size={26} />
+      </div>
+      <h3 className="font-display font-semibold text-base text-primary mb-2">
+        Gagal memuat detail
+      </h3>
+      <p className="text-sm text-secondary max-w-md leading-relaxed mb-5">
+        Tidak dapat mengambil detail percobaan ini dari server.
+        Coba tutup dan buka kembali modal Review.
+      </p>
+      {topicId && (
+        <Link
+          to={`/quiz/${encodeURIComponent(topicId)}`}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-tertiary text-white text-xs font-label font-semibold hover:bg-tertiary-dark transition-colors"
+        >
+          <RotateCcw size={12} />
+          Coba Lagi untuk Rekam Ulang
+        </Link>
+      )}
+    </div>
   )
 }
 

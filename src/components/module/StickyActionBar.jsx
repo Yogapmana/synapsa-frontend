@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { CheckCircle2, Sparkles } from 'lucide-react'
-import { useCompleteTopic } from '@/hooks/useLearning'
 import { useSubmitSignal } from '@/hooks/useProgress'
 import { cn } from '@/lib/utils'
 import MaterialRating from './MaterialRating'
@@ -26,7 +25,7 @@ import SelfAssessment from './SelfAssessment'
  */
 export default function StickyActionBar({ module, sessionId, topicId }) {
   const navigate = useNavigate()
-  const completeTopic = useCompleteTopic()
+
   const submitSignalMutation = useSubmitSignal()
   const [completing, setCompleting] = useState(false)
 
@@ -38,22 +37,20 @@ export default function StickyActionBar({ module, sessionId, topicId }) {
     submitSignalMutation.mutate(data)
   }
 
-  const handleComplete = async () => {
-    setCompleting(true)
-    try {
-      await completeTopic.mutateAsync({ sessionId, topicId })
-      navigate(`/quiz/${topicId}`)
-    } catch {
-      setCompleting(false)
-    }
+  const handleComplete = () => {
+    navigate(`/quiz/${topicId}?session=${sessionId}`)
   }
 
   return (
+    // Not sticky — this bar just sits at the bottom of the article
+    // column. The user said "biarkan di bawah aja" (just leave it at
+    // the bottom), so it follows the article content naturally. The
+    // mt-12 gives breathing room from the article body above; the
+    // inner card has its own border + bg so the bar reads as a
+    // distinct unit without needing a sticky gradient overlay.
     <div
       className={cn(
-        'sticky bottom-0 z-30',
-        // Soft separation from the page — gradient fade up, no hard border.
-        'bg-gradient-to-t from-surface-0 via-surface-0/95 to-surface-0/0',
+        'relative z-30 mt-12',
         'pt-6 pb-4 md:pb-5',
       )}
     >
@@ -98,7 +95,7 @@ export default function StickyActionBar({ module, sessionId, topicId }) {
               )}
             >
               <CheckCircle2 className="size-4" />
-              {completing ? 'Menandai…' : 'Tandai Selesai'}
+              {completing ? 'Memuat…' : 'Lanjut ke Kuis'}
             </button>
             <p className="hidden sm:block text-[11px] font-label text-text-subtle text-center leading-tight">
               Lalu otomatis ke kuis

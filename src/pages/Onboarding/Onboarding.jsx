@@ -90,6 +90,7 @@ export default function Onboarding() {
         level: formData.level,
         hours_per_day: formData.hours_per_day,
         language: 'id',
+        files: formData.files,
       })
 
       setActiveSession(session)

@@ -111,11 +111,28 @@ const Sidebar = () => {
         transition={transition}
         aria-label="Main navigation"
         className={cn(
-          'fixed left-0 top-0 z-40 h-screen flex flex-col',
+          // `h-screen flex flex-col` keeps the aside exactly viewport
+          // tall (it's `fixed` so it doesn't depend on the parent).
+          // The brand header (h-[60px]), nav, streak badge, and user
+          // profile are all `shrink-0` so they stay pinned. Only the
+          // <nav> below has `flex-1 overflow-y-auto` — when there are
+          // many items, ONLY the nav scrolls, the footer (profile +
+          // logout) stays visible.
+          //
+          // Why no `overflow-y-auto` here? Previously the aside had
+          // `overflow-y-auto`, which meant the ENTIRE aside (logo,
+          // nav, profile) scrolled together when content was too
+          // tall. That made the user profile "scroll out of view"
+          // when the nav was long, and created a vertical scrollbar
+          // next to the page content (the "navbar bisa ke scroll"
+          // bug). The fix: no outer scroll. The nav inside is the
+          // only thing that can scroll.
+          'fixed left-0 top-0 z-40 h-screen flex flex-col min-h-0',
           'border-r border-[var(--border)] bg-surface',
-          // overflow-y only — never x. The body is the only horizontal scroll
-          // owner; tooltips live inside the aside (no left-full).
-          'overflow-y-auto overflow-x-hidden',
+          // Belt-and-suspenders: even though children handle their
+          // own overflow, keep x hidden so a tooltip overflow can't
+          // produce a horizontal scrollbar on the aside itself.
+          'overflow-x-hidden',
           // On mobile when "closed" (translated off-screen), hide entirely
           isMobile && sidebarCollapsed && 'invisible'
         )}
@@ -167,9 +184,19 @@ const Sidebar = () => {
         </div>
 
         {/* ── Navigation ── */}
+        {/*
+          `min-h-0` is the magic that lets `overflow-y-auto` actually
+          work inside a flex parent. Without it, the flex parent's
+          min-content size is its tallest child, so a tall nav list
+          prevents the parent from shrinking — and `overflow-y-auto`
+          never gets a chance to engage (there's nothing to overflow).
+          With `min-h-0`, the parent is allowed to shrink below its
+          content, the nav list's natural height exceeds the parent,
+          and the scrollbar appears as expected.
+        */}
         <nav
           aria-label="Primary"
-          className="flex-1 py-3 px-2.5 overflow-y-auto overflow-x-hidden"
+          className="flex-1 min-h-0 py-3 px-2.5 overflow-y-auto overflow-x-hidden"
         >
           {/* Section: Utama */}
           <NavGroup

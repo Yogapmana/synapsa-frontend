@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useParams } from 'react-router-dom'
 import { useLearningStore } from '@/stores/learningStore'
 import { useModule, useTopics } from '@/hooks/useLearning'
@@ -128,6 +128,17 @@ export default function Module() {
   const { activeSession } = useLearningStore()
   const sessionId = activeSession?.id
 
+  // The Module page is the SCROLL CONTAINER — not the page itself.
+  // The AppLayout locks the page at h-screen overflow-hidden so
+  // the body never gets a scrollbar. That means sticky elements
+  // (the chat panel at top-14, the bottom action bar at bottom-0,
+  // the topbar at top-0) need a scrollable ancestor INSIDE the
+  // module. This `scrollContainerRef` is attached to the root div
+  // and passed to ModuleTopbar so the topbar's 80%-scroll quiz
+  // button can read the right `scrollTop` / `scrollHeight` pair
+  // (it can't use `window.scrollY` because the body doesn't scroll).
+  const scrollContainerRef = useRef(null)
+
   const { data: module, isLoading, error, refetch } = useModule(sessionId, topicId)
   const { data: topicsData } = useTopics(sessionId)
 
@@ -170,8 +181,32 @@ export default function Module() {
   const moduleTitle = module?.title
 
   return (
-    <div className="flex min-h-screen flex-col">
-      <ModuleTopbar module={module} />
+    // ── Module page as its own scroll container ─────────────────
+    // The root is `h-full overflow-y-auto` (NOT `min-h-screen`):
+    //   - `h-full` fills the AppLayout main area exactly (no growth
+    //     past the parent — the parent is `h-screen overflow-hidden`
+    //     so the body never gets a page scrollbar).
+    //   - `overflow-y-auto` makes THIS div the scroll container.
+    //     All sticky descendants (ModuleTopbar, ModuleChatPanel,
+    //     StickyActionBar) stick relative to this scroll, not the
+    //     page. The user gets one scrollbar (this one) and the
+    //     chat stays visible while the article scrolls past.
+    //   - `flex flex-col` stacks the topbar (56px) above the main
+    //     row. The main row is `flex-1` so it fills the remaining
+    //     vertical space; the article inside it is `flex-1` and
+    //     the chat panel is the fixed-width sibling.
+    //
+    // Article content is NOT modified — the ModuleArticle,
+    // ModuleContent, ResourceCard, CourseCard components are all
+    // untouched. Only the wrapping scroll container is new.
+    <div
+      ref={scrollContainerRef}
+      className="flex h-full flex-col overflow-y-auto"
+    >
+      <ModuleTopbar
+        module={module}
+        scrollContainerRef={scrollContainerRef}
+      />
 
       <ReadingTracker
         sessionId={sessionId}
@@ -215,10 +250,11 @@ export default function Module() {
           )}
         </main>
 
-        {/* Chat panel — always visible (no toggle). Sticky to the top
-            of the viewport, fixed height, internal scroll for long
-            conversations. The article reflows to make room. Only
-            rendered once the module is loaded. */}
+        {/* Chat panel — sticky `top-14` (defined in ModuleChatSlider).
+            It works now because the parent chain (root → main row →
+            aside) all sit inside the scroll container above. As the
+            user scrolls, the chat stays at 56px from the top of the
+            Module page's viewport. */}
         {module && (
           <ModuleChatPanel
             sessionId={sessionId}

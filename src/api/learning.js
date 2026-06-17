@@ -1,13 +1,25 @@
 import api from './client'
 
-export function startLearning({ topic, duration_weeks, level, hours_per_day, language }) {
-  return api.post('/learning/start', {
-    topic,
-    duration_weeks,
-    level,
-    hours_per_day,
-    language,
-  }).then((response) => response.data)
+export function startLearning(data) {
+  const formData = new FormData();
+  formData.append('topic', data.topic);
+  formData.append('duration_weeks', data.duration_weeks);
+  formData.append('level', data.level);
+  formData.append('hours_per_day', data.hours_per_day);
+  formData.append('language', data.language || 'id');
+  
+  // Append files if they exist
+  if (data.files && data.files.length > 0) {
+    data.files.forEach(file => {
+      formData.append('files', file);
+    });
+  }
+
+  return api.post('/learning/start', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  }).then((response) => response.data);
 }
 
 export function getSessions() {

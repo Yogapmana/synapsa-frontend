@@ -23,18 +23,40 @@ import { Button } from '@/components/ui/button'
  *     pill, and the "Mulai Kuis" button (after 80% scroll) — nothing
  *     else, nothing more.
  */
-export default function ModuleTopbar({ module }) {
+export default function ModuleTopbar({ module, scrollContainerRef }) {
   const [showQuizButton, setShowQuizButton] = useState(false)
 
+  // Listen to the Module page's own scroll container (NOT window).
+  // After the AppLayout change, the page body never scrolls — the
+  // Module root does. So `window.scrollY` would always be 0 and the
+  // "Mulai Kuis" button would never appear. We attach the scroll
+  // listener to the ref'd container instead, and use its
+  // `scrollTop` / `scrollHeight` for the percentage calc.
+  //
+  // The effect re-runs when the ref changes (it doesn't, in practice,
+  // but we cover the case anyway) and cleans up the listener on
+  // unmount or ref change.
   useEffect(() => {
+    const el = scrollContainerRef?.current
+    if (!el) return
+
     const handleScroll = () => {
-      const scrollPercent =
-        window.scrollY / (document.documentElement.scrollHeight - window.innerHeight)
+      const scrollable = el.scrollHeight - el.clientHeight
+      if (scrollable <= 0) {
+        // Nothing to scroll — short module. Don't show the button
+        // (the user is already "at 100%" but the bottom action bar
+        // is the primary CTA in that case).
+        setShowQuizButton(false)
+        return
+      }
+      const scrollPercent = el.scrollTop / scrollable
       setShowQuizButton(scrollPercent >= 0.8)
     }
-    window.addEventListener('scroll', handleScroll, { passive: true })
-    return () => window.removeEventListener('scroll', handleScroll)
-  }, [])
+
+    handleScroll() // run once on mount in case the user lands at the bottom
+    el.addEventListener('scroll', handleScroll, { passive: true })
+    return () => el.removeEventListener('scroll', handleScroll)
+  }, [scrollContainerRef])
 
   const estimatedMinutes = module?.estimated_read_minutes ?? 0
 

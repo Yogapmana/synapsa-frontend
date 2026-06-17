@@ -18,7 +18,7 @@ export function QuizResult({ result, questions, topicId, sessionId, onRetry }) {
     (f) => percentage >= f.min && percentage <= f.max
   ) || QUIZ_FEEDBACK[QUIZ_FEEDBACK.length - 1];
 
-  const isPassed = percentage >= 75;
+  const isPassed = percentage >= 60;
 
   return (
     <motion.div
@@ -66,9 +66,10 @@ export function QuizResult({ result, questions, topicId, sessionId, onRetry }) {
                 }
                 navigate('/curriculum');
               }}
+              disabled={!isPassed}
               className="w-full"
             >
-              Lanjut Topik Berikutnya
+              {isPassed ? "Lanjut Topik Berikutnya" : "Lulus Kuis (Min 60%) untuk Lanjut"}
             </Button>
             <Button
               variant="ghost"
