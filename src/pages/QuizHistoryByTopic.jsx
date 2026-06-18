@@ -8,6 +8,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import EmptyState from '@/components/common/EmptyState'
 import PageHeader from '@/components/common/PageHeader'
 import StatusBadge from '@/components/common/StatusBadge'
+import DecoNumerals from '@/components/common/DecoNumerals'
 import {
   ArrowLeft,
   Trophy,
@@ -24,26 +25,11 @@ import {
   Sparkles,
   X,
   HelpCircle,
-} from 'lucide-react';
+  BarChart3,
+} from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { format } from 'date-fns'
 import { id as idLocale } from 'date-fns/locale'
-
-/**
- * QuizHistoryByTopic — per-topic attempt history at /progress/topic/:topicId.
- *
- * Shows every attempt the user has made on a single topic, with:
- *   - Attempt # (1, 2, 3, ...) and the date
- *   - Score with pill (Sangat Baik / Baik / Cukup / Perlu Review)
- *   - Time spent on that attempt
- *   - Trend (improving / declining / flat) vs. the first attempt
- *   - A "Review" button that opens a modal with the question-by-
- *     question breakdown (which Qs were right/wrong)
- *   - A "Coba Lagi" button (re-takes the quiz for this topic)
- *
- * Plus a sparkline-style "score progression" header so the user
- * can see at a glance if they're getting better.
- */
 
 function getScorePill(percentage) {
   if (percentage == null) return { variant: 'neutral', label: '—' }
@@ -78,16 +64,6 @@ export default function QuizHistoryByTopic() {
   const { data, isLoading } = useQuizHistoryByTopic(sessionId, decodedTopicId)
   const completeTopic = useCompleteTopic()
 
-  // Holds the full attempt object the user is currently reviewing
-  // (including its DB id, so ReviewModal can lazy-fetch the full
-  // detail with `answers_detail`).
-  // Fix: previously this was a numeric index (`reviewAttemptIdx`) and
-  // ReviewModal read `answers_detail` straight from the list payload,
-  // but the by-topic list endpoint intentionally omits `answers_detail`
-  // (keeps the list payload small). The result was that *every* attempt
-  // rendered as an empty state, even ones with valid answer data. The
-  // single-attempt endpoint `GET /quiz/attempt/{id}` returns the full
-  // detail — we now call it on demand when the modal opens.
   const [reviewAttempt, setReviewAttempt] = useState(null)
 
   const attempts = data?.attempts || []
@@ -123,44 +99,58 @@ export default function QuizHistoryByTopic() {
         topicId: decodedTopicId,
       })
     } catch {
-      // completeTopic may 409 if topic not completed. The user just
-      // wants to retake the quiz — fall back to navigating.
+      // completeTopic may 409 if topic not completed
     }
     window.location.href = `/quiz/${encodeURIComponent(decodedTopicId)}`
   }
 
   return (
-    <div className="max-w-5xl mx-auto space-y-6">
+    <div className="max-w-5xl mx-auto">
       <Link
         to="/progress"
-        className="inline-flex items-center gap-1.5 text-sm text-secondary hover:text-primary font-label transition-colors"
+        className="inline-flex items-center gap-1.5 text-sm text-secondary hover:text-primary font-label transition-colors mb-6"
       >
         <ArrowLeft size={14} />
         Kembali ke Riwayat Kuis
       </Link>
 
-      <PageHeader
-        title={topicTitle}
-        subtitle={`Riwayat kuis per topik — ${attempts.length} percobaan.`}
-        icon={Trophy}
-        breadcrumbs={[
-          { label: 'Dashboard', to: '/dashboard' },
-          { label: 'Riwayat Kuis', to: '/progress' },
-          { label: topicTitle },
-        ]}
-        action={
-          <button
-            onClick={handleRetry}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-tertiary text-white text-sm font-label font-semibold hover:bg-tertiary-dark transition-colors shadow-warm-sm"
-          >
-            <RotateCcw size={14} />
-            Coba Lagi
-          </button>
-        }
-      />
+      <div className="relative rounded-3xl p-6 md:p-8 mb-6 gradient-mesh-warm overflow-hidden">
+        <DecoNumerals number="03" position="top-right" />
+        <DecoNumerals number="03" position="bottom-left" tone="secondary" />
+
+        <div className="relative z-10">
+          <div className="eyebrow mb-4">Detail — Per Topik</div>
+
+          <PageHeader
+            title={topicTitle}
+            subtitle={`Riwayat kuis per topik — ${attempts.length} percobaan.`}
+            icon={Trophy}
+            breadcrumbs={[
+              { label: 'Dashboard', to: '/dashboard' },
+              { label: 'Riwayat Kuis', to: '/progress' },
+              { label: topicTitle },
+            ]}
+            action={
+              attempts.length > 0 ? (
+                <button
+                  onClick={handleRetry}
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-tertiary text-white text-sm font-label font-semibold hover:bg-tertiary-dark transition-colors shadow-warm-sm"
+                >
+                  <RotateCcw size={14} />
+                  Coba Lagi
+                </button>
+              ) : null
+            }
+          />
+        </div>
+      </div>
 
       {isLoading ? (
-        <Skeleton className="h-64 w-full rounded-2xl skeleton-shimmer" />
+        <div className="space-y-4">
+          {[0, 1, 2].map((i) => (
+            <Skeleton key={i} className="h-32 w-full rounded-2xl skeleton-shimmer" />
+          ))}
+        </div>
       ) : attempts.length === 0 ? (
         <EmptyState
           icon={Inbox}
@@ -172,7 +162,7 @@ export default function QuizHistoryByTopic() {
       ) : (
         <>
           {/* Summary strip */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-6">
             <SummaryTile
               label="Skor Terbaik"
               value={`${summary.best}%`}
@@ -188,7 +178,7 @@ export default function QuizHistoryByTopic() {
             <SummaryTile
               label="Total Percobaan"
               value={attempts.length}
-              icon={Calendar}
+              icon={BarChart3}
               tone="neutral"
             />
             <SummaryTile
@@ -208,9 +198,8 @@ export default function QuizHistoryByTopic() {
           {/* Score progression sparkline */}
           <ScoreProgression attempts={attempts} />
 
-          {/* Attempt list — chronological, oldest first so the
-              "improvement over time" story reads top → bottom. */}
-          <div className="card-base overflow-hidden">
+          {/* Attempt list */}
+          <div className="card-hero overflow-hidden">
             <div className="p-5 border-b border-border-subtle flex items-center justify-between">
               <h2 className="font-display font-semibold text-primary">
                 Riwayat Percobaan
@@ -226,9 +215,6 @@ export default function QuizHistoryByTopic() {
                   attempt={a}
                   index={idx}
                   total={attempts.length}
-                  // Pass the whole attempt (with its DB id) so the
-                  // ReviewModal can lazy-fetch the full detail
-                  // containing `answers_detail`.
                   onReview={() =>
                     setReviewAttempt({ attempt: a, number: idx + 1 })
                   }
@@ -239,7 +225,7 @@ export default function QuizHistoryByTopic() {
         </>
       )}
 
-      {/* Review modal — shows the answers_detail for a single attempt. */}
+      {/* Review modal */}
       <AnimatePresence>
         {reviewAttempt && (
           <ReviewModal
@@ -255,7 +241,7 @@ export default function QuizHistoryByTopic() {
 }
 
 /**
- * SummaryTile — single stat card for the per-topic header.
+ * SummaryTile — editorial-styled stat card.
  */
 function SummaryTile({ label, value, icon: Icon, tone = 'neutral' }) {
   const toneClass = {
@@ -266,7 +252,8 @@ function SummaryTile({ label, value, icon: Icon, tone = 'neutral' }) {
     neutral: 'bg-tertiary/10 text-tertiary',
   }[tone]
   return (
-    <div className="card-base p-4 md:p-5 flex items-center gap-3">
+    <div className="relative card-hero p-4 md:p-5 flex items-center gap-3 overflow-hidden">
+      <DecoNumerals number="03" position="top-right" className="!opacity-[0.03] scale-75" />
       <div
         className={cn(
           'w-10 h-10 rounded-xl flex items-center justify-center shrink-0',
@@ -277,7 +264,14 @@ function SummaryTile({ label, value, icon: Icon, tone = 'neutral' }) {
       </div>
       <div className="min-w-0">
         <p className="text-xs text-secondary font-label">{label}</p>
-        <p className="font-display font-bold text-xl text-primary tabular-nums">
+        <p
+          className={cn(
+            'font-display font-bold text-xl tabular-nums',
+            typeof value === 'string' && value.includes('%')
+              ? 'text-gradient-tertiary'
+              : 'text-primary'
+          )}
+        >
           {value}
         </p>
       </div>
@@ -286,9 +280,7 @@ function SummaryTile({ label, value, icon: Icon, tone = 'neutral' }) {
 }
 
 /**
- * ScoreProgression — inline sparkline that visualises the user's
- * score over time. Built from divs (no extra dep). Shows the score
- * trend at a glance.
+ * ScoreProgression — inline sparkline with editorial card.
  */
 function ScoreProgression({ attempts }) {
   if (attempts.length < 2) return null
@@ -308,68 +300,70 @@ function ScoreProgression({ attempts }) {
     .join(' ')
 
   return (
-    <div className="card-base p-5">
-      <div className="flex items-center justify-between mb-3">
-        <h3 className="font-display font-semibold text-primary text-base">
-          Progression Skor
-        </h3>
-        <span className="text-xs text-secondary font-label">
-          {percentages[0]}% → {percentages[percentages.length - 1]}%
-        </span>
+    <div className="relative card-hero p-5 mb-6 overflow-hidden">
+      <DecoNumerals number="03" position="top-right" className="!opacity-[0.03] scale-75" />
+      <div className="relative z-10">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="font-display font-semibold text-primary text-base">
+            Progression Skor
+          </h3>
+          <span className="text-xs text-secondary font-label">
+            {percentages[0]}% → {percentages[percentages.length - 1]}%
+          </span>
+        </div>
+        <svg
+          viewBox={`0 0 ${width} ${height}`}
+          className="w-full h-20"
+          preserveAspectRatio="none"
+          aria-label="Score progression chart"
+        >
+          <line
+            x1="0"
+            x2={width}
+            y1={height - ((60 - min) / (max - min)) * height}
+            y2={height - ((60 - min) / (max - min)) * height}
+            stroke="rgb(var(--border))"
+            strokeDasharray="4 4"
+            strokeWidth="1"
+          />
+          <path
+            d={pathD}
+            fill="none"
+            stroke="rgb(var(--tertiary))"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          {points.map((pt, i) => (
+            <g key={i}>
+              <circle
+                cx={pt.x}
+                cy={pt.y}
+                r="4"
+                fill="rgb(var(--tertiary))"
+                stroke="rgb(var(--bg-primary))"
+                strokeWidth="2"
+              />
+              <text
+                x={pt.x}
+                y={pt.y - 8}
+                textAnchor="middle"
+                fontSize="10"
+                fontWeight="600"
+                fill="rgb(var(--text-secondary))"
+              >
+                {pt.p}%
+              </text>
+            </g>
+          ))}
+        </svg>
       </div>
-      <svg
-        viewBox={`0 0 ${width} ${height}`}
-        className="w-full h-20"
-        preserveAspectRatio="none"
-        aria-label="Score progression chart"
-      >
-        {/* Grid line at 60% (the "Cukup" threshold) */}
-        <line
-          x1="0"
-          x2={width}
-          y1={height - ((60 - min) / (max - min)) * height}
-          y2={height - ((60 - min) / (max - min)) * height}
-          stroke="rgb(var(--border))"
-          strokeDasharray="4 4"
-          strokeWidth="1"
-        />
-        <path
-          d={pathD}
-          fill="none"
-          stroke="rgb(var(--tertiary))"
-          strokeWidth="2.5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-        {points.map((pt, i) => (
-          <g key={i}>
-            <circle
-              cx={pt.x}
-              cy={pt.y}
-              r="4"
-              fill="rgb(var(--tertiary))"
-              stroke="rgb(var(--bg-primary))"
-              strokeWidth="2"
-            />
-            <text
-              x={pt.x}
-              y={pt.y - 8}
-              textAnchor="middle"
-              fontSize="10"
-              fontWeight="600"
-              fill="rgb(var(--text-secondary))"
-            >
-              {pt.p}%
-            </text>
-          </g>
-        ))}
-      </svg>
     </div>
   )
 }
 
 /**
- * AttemptRow — single attempt in the per-topic list.
+ * AttemptRow — single attempt with editorial styling.
  */
 function AttemptRow({ attempt, index, total, onReview }) {
   const pill = getScorePill(attempt.percentage)
@@ -379,16 +373,16 @@ function AttemptRow({ attempt, index, total, onReview }) {
   return (
     <li
       className={cn(
-        'flex items-center gap-4 p-4 transition-colors',
-        isLatest && 'bg-tertiary/[0.04]'
+        'flex items-center gap-4 p-4 transition-colors group',
+        isLatest && 'bg-tertiary/[0.03]'
       )}
     >
       <div
         className={cn(
-          'w-12 h-12 rounded-xl flex flex-col items-center justify-center shrink-0 font-bold tabular-nums',
+          'w-12 h-12 rounded-xl flex flex-col items-center justify-center shrink-0 font-bold tabular-nums transition-colors',
           isLatest
             ? 'bg-tertiary text-white'
-            : 'bg-surface-1 text-secondary border border-border-subtle'
+            : 'bg-surface-1 text-secondary border border-border-subtle group-hover:border-tertiary/30'
         )}
       >
         <span className="text-[10px] uppercase tracking-wider font-label opacity-80">
@@ -428,7 +422,7 @@ function AttemptRow({ attempt, index, total, onReview }) {
 
       <button
         onClick={onReview}
-        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-sm font-label font-semibold text-secondary hover:text-primary hover:bg-surface-1 border border-border-subtle transition-colors shrink-0"
+        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-sm font-label font-semibold text-secondary hover:text-primary hover:bg-surface-1 border border-border-subtle hover:border-tertiary/30 transition-colors shrink-0"
       >
         Review
         <ChevronRight size={14} />
@@ -438,35 +432,17 @@ function AttemptRow({ attempt, index, total, onReview }) {
 }
 
 /**
- * ReviewModal — question-by-question breakdown for a single attempt.
- *
- * The by-topic list endpoint intentionally omits `answers_detail` to
- * keep the list payload small, so we lazy-fetch the full detail on
- * mount via `useQuizAttemptDetail(attempt.id)`. While the detail is
- * loading we render a skeleton; once loaded, we show each question's
- * index, the user's selected answer, and the correct answer with a
- * green/red check. React Query dedupes by attempt id, so re-opening
- * the same review is a cache hit (no extra network roundtrip).
+ * ReviewModal — question-by-question breakdown with editorial card style.
  */
 function ReviewModal({ attempt, attemptNumber, topicTitle, onClose }) {
-  // Lazy-fetch the full attempt (has answers_detail). `enabled` is
-  // implicit in the hook (it only fires when attemptId is truthy).
   const {
     data: detail,
     isLoading: detailLoading,
     error: detailError,
   } = useQuizAttemptDetail(attempt?.id)
 
-  // Merge: prefer the detail payload but fall back to the list-row
-  // data so the header (topic title, date, score count) can render
-  // immediately without waiting for the detail roundtrip. This keeps
-  // the modal from looking "blank" during the ~100ms load.
   const fullAttempt = detail || attempt
   const answers = fullAttempt.answers_detail || []
-  // Use the authoritative totals from the detail row (which always
-  // match what's in the DB). While loading, the list-row values
-  // (`attempt.total_questions` / `attempt.correct_answers`) are
-  // accurate too, so the header never shows "0/0".
   const totalQuestions =
     fullAttempt.total_questions ?? attempt.total_questions ?? answers.length
   const correctAnswers =
@@ -490,8 +466,9 @@ function ReviewModal({ attempt, attemptNumber, topicTitle, onClose }) {
       >
         <header className="flex items-center justify-between gap-3 p-5 border-b border-border-subtle">
           <div className="min-w-0">
+            <div className="eyebrow !text-[10px] mb-1">Review Jawaban</div>
             <h2 className="font-display font-semibold text-lg text-primary truncate">
-              Review — Percobaan #{attemptNumber}
+              Percobaan #{attemptNumber}
             </h2>
             <p className="text-xs text-secondary font-label truncate">
               {topicTitle} • {formatDate(fullAttempt.created_at, false)} •{' '}
@@ -525,10 +502,10 @@ function ReviewModal({ attempt, attemptNumber, topicTitle, onClose }) {
               <div
                 key={a.question_index}
                 className={cn(
-                  'rounded-xl border p-4',
+                  'rounded-xl border border-l-4 p-4',
                   a.is_correct
-                    ? 'border-success/30 bg-success-light/40'
-                    : 'border-danger/30 bg-danger-light/40'
+                    ? 'border-success/20 border-l-success bg-success-light'
+                    : 'border-danger/20 border-l-danger bg-danger-light',
                 )}
               >
                 <div className="flex items-center gap-2 mb-1.5">
@@ -567,11 +544,6 @@ function ReviewModal({ attempt, attemptNumber, topicTitle, onClose }) {
   )
 }
 
-/**
- * ReviewDetailSkeleton — placeholder shown while the single-attempt
- * detail is fetching. Mirrors the real card layout so the modal
- * doesn't jump in size once data lands.
- */
 function ReviewDetailSkeleton() {
   return (
     <div
@@ -597,11 +569,6 @@ function ReviewDetailSkeleton() {
   )
 }
 
-/**
- * ReviewErrorState — shown when the detail fetch fails (network blip
- * or 5xx). Gives the user a clear "what now" path: either retry via
- * the API or jump back to the quiz retake flow.
- */
 function ReviewErrorState({ error, topicId }) {
   return (
     <div className="flex flex-col items-center justify-center text-center py-10 px-4">
@@ -628,17 +595,6 @@ function ReviewErrorState({ error, topicId }) {
   )
 }
 
-/**
- * EmptyReviewState — shown when the attempt has no `answers_detail`
- * (typically because the backend graded the quiz against 0 questions,
- * e.g. the LLM failed to parse the MCQ JSON and `tutor_generate_quiz`
- * returned `[]`, or the cache expired and the fallback `questions_data`
- * was also empty).
- *
- * Instead of a dead-end "details not available" message, we explain
- * WHY + offer a "Coba Lagi" link so the user can re-take the quiz
- * and get a properly recorded attempt.
- */
 function EmptyReviewState({ attempt, topicId }) {
   const total = attempt?.total_questions ?? 0
   const correct = attempt?.correct_answers ?? 0

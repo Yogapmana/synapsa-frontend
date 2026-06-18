@@ -13,6 +13,7 @@ import StickyActionBar from '@/components/module/StickyActionBar'
 import ReadingTracker from '@/components/module/ReadingTracker'
 import ModuleChatPanel from '@/components/module/ModuleChatSlider'
 import { BookOpen, GraduationCap, Loader2 } from 'lucide-react'
+import ReadingProgressBar from '@/components/module/ReadingProgressBar'
 
 /**
  * Module page
@@ -77,7 +78,20 @@ function ModuleArticle({ module }) {
   const courses = module.courses ?? []
 
   return (
-    <article className="mx-auto max-w-[720px] px-4 md:px-6 pt-8 md:pt-10 pb-4">
+    <article className="relative mx-auto max-w-[720px] px-4 md:px-6 pt-8 md:pt-10 pb-4">
+      {/* Decorative oversized numeral — small enough to NOT overlap content */}
+      <span
+        aria-hidden="true"
+        className="absolute top-2 -left-2 font-display text-[4rem] font-black italic text-tertiary/[0.05] leading-none pointer-events-none select-none hidden md:block"
+      >
+        ✦
+      </span>
+
+      {/* Eyebrow — establishes editorial hierarchy */}
+      <div className="mb-3">
+        <span className="eyebrow">Materi Pembelajaran</span>
+      </div>
+
       {/* Article body — title is shown in the sticky topbar above and as
           the first H1 in the markdown body itself. No duplicate H1 here
           (Phase fix — the H1 was rendering twice in a row). */}
@@ -87,7 +101,10 @@ function ModuleArticle({ module }) {
           They're part of the reading experience, not a floating rail. */}
       {sources.length > 0 && (
         <section className="mt-16 pt-8 border-t border-border">
-          <h2 className="mb-4 flex items-center gap-2 text-lg font-display font-semibold text-primary">
+          <div className="mb-5">
+            <span className="eyebrow">Rujukan</span>
+          </div>
+          <h2 className="mb-5 flex items-center gap-2.5 text-xl font-display font-bold text-primary tracking-tight">
             <BookOpen className="size-5 text-tertiary" aria-hidden="true" />
             Sumber yang Digunakan
           </h2>
@@ -105,9 +122,12 @@ function ModuleArticle({ module }) {
       {/* External courses — also at the end, after sources */}
       {courses.length > 0 && (
         <section className="mt-12 pt-8 border-t border-border">
-          <h2 className="mb-4 flex items-center gap-2 text-lg font-display font-semibold text-primary">
+          <div className="mb-5">
+            <span className="eyebrow">Pelajari Lebih Dalam</span>
+          </div>
+          <h2 className="mb-5 flex items-center gap-2.5 text-xl font-display font-bold text-primary tracking-tight">
             <GraduationCap className="size-5 text-tertiary" aria-hidden="true" />
-            Pelajari Lebih Dalam
+            Kursus & Materi Terkait
           </h2>
           <div className="space-y-2.5">
             {courses.map((course, i) => (
@@ -181,40 +201,21 @@ export default function Module() {
   const moduleTitle = module?.title
 
   return (
-    // ── Module page as its own scroll container ─────────────────
-    // The root is `h-full overflow-y-auto` (NOT `min-h-screen`):
-    //   - `h-full` fills the AppLayout main area exactly (no growth
-    //     past the parent — the parent is `h-screen overflow-hidden`
-    //     so the body never gets a page scrollbar).
-    //   - `overflow-y-auto` makes THIS div the scroll container.
-    //     All sticky descendants (ModuleTopbar, ModuleChatPanel,
-    //     StickyActionBar) stick relative to this scroll, not the
-    //     page. The user gets one scrollbar (this one) and the
-    //     chat stays visible while the article scrolls past.
-    //   - `flex flex-col` stacks the topbar (56px) above the main
-    //     row. The main row is `flex-1` so it fills the remaining
-    //     vertical space; the article inside it is `flex-1` and
-    //     the chat panel is the fixed-width sibling.
-    //
-    // Article content is NOT modified — the ModuleArticle,
-    // ModuleContent, ResourceCard, CourseCard components are all
-    // untouched. Only the wrapping scroll container is new.
-    <div
+    <div 
       ref={scrollContainerRef}
-      className="flex h-full flex-col overflow-y-auto"
+      className="flex h-full relative overflow-y-auto items-start"
     >
-      <ModuleTopbar
-        module={module}
-        scrollContainerRef={scrollContainerRef}
-      />
+      {/* Article container — flex-1 takes remaining width. */}
+      <div className="flex-1 min-w-0 flex flex-col relative">
+        <ReadingProgressBar scrollContainerRef={scrollContainerRef} />
+        <ModuleTopbar module={module} scrollContainerRef={scrollContainerRef} />
 
-      <ReadingTracker
-        sessionId={sessionId}
-        topicId={topicId}
-        estimatedMinutes={module?.estimated_read_minutes}
-      />
+        <ReadingTracker
+          sessionId={sessionId}
+          topicId={topicId}
+          estimatedMinutes={module?.estimated_read_minutes}
+        />
 
-      <div className="flex flex-1">
         <main className="flex-1 min-w-0">
           {isLoading || generating ? (
             <>{generating ? <GeneratingState /> : <ModuleSkeleton />}</>
@@ -249,20 +250,20 @@ export default function Module() {
             </>
           )}
         </main>
-
-        {/* Chat panel — sticky `top-14` (defined in ModuleChatSlider).
-            It works now because the parent chain (root → main row →
-            aside) all sit inside the scroll container above. As the
-            user scrolls, the chat stays at 56px from the top of the
-            Module page's viewport. */}
-        {module && (
-          <ModuleChatPanel
-            sessionId={sessionId}
-            topicId={topicId}
-            moduleTitle={moduleTitle}
-          />
-        )}
       </div>
+
+      {/* Chat panel — OUTSIDE the article scroll container.
+          This lets it be sticky relative to the page viewport
+          instead of scrolling with the article. It sits to the
+          right of the article and stays in place as the user
+          scrolls through the content. */}
+      {module && (
+        <ModuleChatPanel
+          sessionId={sessionId}
+          topicId={topicId}
+          moduleTitle={moduleTitle}
+        />
+      )}
     </div>
   )
 }

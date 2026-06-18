@@ -5,8 +5,8 @@ import {
   LayoutDashboard,
   CalendarDays,
   MessageCircle,
+  History,
   Settings,
-  Cpu,
   ChevronLeft,
   ChevronRight,
   LogOut,
@@ -51,7 +51,7 @@ const NAV_ITEMS = [
   { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard', section: 'utama' },
   { label: 'Kurikulum', icon: CalendarDays, path: '/curriculum', section: 'utama' },
   { label: 'Chatbot', icon: MessageCircle, path: '/chat', section: 'utama' },
-  { label: 'Agent Log', icon: Cpu, path: '/agent-log', section: 'lainnya' },
+  { label: 'Riwayat Kuis', icon: History, path: '/progress', section: 'lainnya' },
   { label: 'Pengaturan', icon: Settings, path: '/settings', section: 'lainnya' },
 ];
 
@@ -128,7 +128,10 @@ const Sidebar = () => {
           // bug). The fix: no outer scroll. The nav inside is the
           // only thing that can scroll.
           'fixed left-0 top-0 z-40 h-screen flex flex-col min-h-0',
-          'border-r border-[var(--border)] bg-surface',
+          'bg-gradient-to-b from-surface via-surface to-surface/95',
+          // Subtle inner shadow on the right edge — softer than a
+          // solid border, integrates with the page background
+          'shadow-[inset_-1px_0_0_rgba(58,41,22,0.06)]',
           // Belt-and-suspenders: even though children handle their
           // own overflow, keep x hidden so a tooltip overflow can't
           // produce a horizontal scrollbar on the aside itself.
@@ -140,7 +143,7 @@ const Sidebar = () => {
         {/* ── Brand header (collapses to just the toggle when sidebarCollapsed) ── */}
         <div
           className={cn(
-            'h-[60px] flex items-center shrink-0 border-b border-[var(--border)]',
+            'h-[60px] flex items-center shrink-0',
             sidebarCollapsed ? 'justify-center px-2' : 'justify-between px-5'
           )}
         >
@@ -235,8 +238,8 @@ const Sidebar = () => {
               transition={{ duration: 0.2 }}
               className="px-3 pb-3 overflow-hidden shrink-0"
             >
-              <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl bg-tertiary/8 border border-tertiary/15">
-                <Flame size={16} className="text-tertiary" fill="currentColor" />
+              <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl bg-tertiary/[0.07]">
+                <Flame size={15} className="text-tertiary" fill="currentColor" />
                 <span className="text-sm font-semibold text-tertiary">
                   {streak} hari berturut
                 </span>
@@ -246,7 +249,7 @@ const Sidebar = () => {
         </AnimatePresence>
 
         {/* ── User profile + logout (footer) ── */}
-        <div className="border-t border-[var(--border)] p-2.5 shrink-0">
+        <div className="p-2.5 shrink-0 shadow-[inset_0_1px_0_rgba(58,41,22,0.06)]">
           <div
             className={cn(
               'flex items-center gap-3 rounded-xl px-2 py-2 mb-1',
@@ -256,8 +259,9 @@ const Sidebar = () => {
             <div
               className={cn(
                 'w-9 h-9 rounded-full flex items-center justify-center shrink-0',
-                'bg-tertiary/10 text-tertiary font-bold text-sm font-display',
-                'ring-2 ring-surface shadow-warm-xs'
+                'bg-gradient-to-br from-tertiary/20 to-tertiary/5',
+                'text-tertiary font-bold text-sm font-display',
+                'shadow-warm-xs ring-1 ring-tertiary/15'
               )}
               aria-hidden="true"
             >
@@ -341,6 +345,11 @@ function NavGroup({ section, sidebarCollapsed }) {
 /**
  * Single nav row. Uses NavLink's own `isActive` (single source of truth).
  * The active indicator is an absolute-positioned bar (no layout shift).
+ *
+ * Phase 5.12 — refined active/hover states:
+ *  - Active state: `bg-tertiary/[0.08]` only (no ring) — softer
+ *  - Hover state: smoother transition (200ms)
+ *  - Icon color transitions smoothly between states
  */
 function NavItemRow({ item, sidebarCollapsed }) {
   const Icon = item.icon;
@@ -355,11 +364,11 @@ function NavItemRow({ item, sidebarCollapsed }) {
       aria-label={item.label}
       className={({ isActive }) =>
         cn(
-          'relative flex items-center gap-3 rounded-xl transition-colors duration-200 group',
+          'relative flex items-center gap-3 rounded-xl transition-all duration-200 group',
           isCollapsed ? 'justify-center px-0 py-2.5 my-0.5' : 'px-3 py-2.5 my-0.5',
           isActive
-            ? 'bg-tertiary/10 text-tertiary font-semibold'
-            : 'text-secondary hover:bg-secondary/8 hover:text-primary'
+            ? 'bg-tertiary/[0.08] text-tertiary font-semibold'
+            : 'text-secondary hover:bg-secondary/[0.06] hover:text-primary'
         )
       }
     >
@@ -374,9 +383,9 @@ function NavItemRow({ item, sidebarCollapsed }) {
           )}
 
           <Icon
-            size={20}
+            size={19}
             className={cn(
-              'shrink-0 transition-colors duration-150',
+              'shrink-0 transition-colors duration-200',
               isActive ? 'text-tertiary' : 'text-secondary group-hover:text-primary'
             )}
             aria-hidden="true"

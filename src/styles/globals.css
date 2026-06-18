@@ -159,70 +159,6 @@
     --spring-mass:       0.8;
   }
 
-  .dark {
-    --bg-primary: 28 25 22;
-    --bg-secondary: 22 19 16;
-    --bg-tertiary: 38 34 29;
-    --text-primary: 250 246 238;
-    --text-secondary: 196 188 172;
-    --text-tertiary: 142 134 120;
-    --border: 56 50 42;
-    --border-strong: 96 86 72;
-    --primary: 250 246 238;
-    --secondary: 196 188 172;
-    --tertiary: 232 93 84;
-    --tertiary-light: 244 114 104;
-    --tertiary-dark: 196 37 28;
-    --neutral: 38 34 29;
-    --surface: 28 25 22;
-    --on-primary: 22 19 16;
-    --success: 134 239 172;
-    --success-light: 20 83 45;
-    --warning: 253 224 71;
-    --warning-light: 113 63 18;
-    --info: 147 197 253;
-    --info-light: 30 58 138;
-    --danger: 248 113 113;
-    --danger-light: 127 29 29;
-    --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.4);
-    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.5), 0 1px 2px rgba(0, 0, 0, 0.3);
-    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -2px rgba(0, 0, 0, 0.3);
-    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.6), 0 4px 6px -4px rgba(0, 0, 0, 0.3);
-
-    /* Phase 4.3 — semantic tokens for dark mode (mirror light mode aliases) */
-    --accent: 232 93 84;
-    --accent-hover: 244 114 104;
-    --accent-active: 196 37 28;
-    --accent-subtle: 232 93 84;
-    --accent-muted: 232 93 84;
-    --accent-fg: 22 19 16;
-
-    --surface-0: 22 19 16;        /* page bg */
-    --surface-1: 28 25 22;        /* card bg */
-    --surface-2: 38 34 29;        /* nested card */
-    --surface-inverse: 250 246 238;
-
-    --text-strong: 250 246 238;
-    --text-default: 235 230 220;
-    --text-muted: 196 188 172;
-    --text-subtle: 142 134 120;
-    --text-inverse: 22 19 16;
-    --text-on-accent: 22 19 16;
-
-    --border-subtle: 56 50 42;
-    --border-default: 56 50 42;
-    --border-strong: 96 86 72;
-    --border-focus: 232 93 84;
-
-    /* Status colors stay consistent — already accessible in dark */
-    --accent-readable: 244 114 104;  /* lighter terracotta for body text in dark */
-    --text-on-light-subtle: 196 188 172;
-
-    --sidebar-width: 240px;
-    --sidebar-width-collapsed: 72px;
-    --topbar-height: 60px;
-  }
-
   * {
     border-color: rgb(var(--border));
   }
@@ -524,6 +460,19 @@
     border-color: rgb(var(--border));
   }
 
+  /* Drop cap on the first paragraph of an article — editorial touch. */
+  .first-paragraph-dropcap::first-letter {
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-weight: 700;
+    font-size: 4.5em;
+    line-height: 0.85;
+    float: left;
+    margin: 0.05em 0.08em -0.05em -0.04em;
+    color: rgb(var(--tertiary));
+    font-feature-settings: 'ss01';
+  }
+
   .module-content img {
     border-radius: var(--radius-lg);
   }
@@ -624,5 +573,210 @@
   @keyframes shimmer {
     0% { background-position: 200% 0; }
     100% { background-position: -200% 0; }
+  }
+
+  /* ─── PHASE 5.1 — SIGNATURE AESTHETIC LAYER ───────────────────────
+   * Adds three "secret sauce" details that lift the warm-ivory
+   * theme from "good SaaS template" to "memorable editorial product":
+   *
+   *  1. .texture-grain — subtle SVG noise overlay applied with
+   *     multiply blend. Gives the cream surface a tactile, paper-like
+   *     quality (think Kinfolk magazine, Linear marketing site).
+   *  2. .gradient-mesh — multi-radial gradient that creates soft
+   *     "spotlight" zones on hero sections, replacing flat fills.
+   *  3. .deco-num / .deco-italic — decorative oversized serif
+   *     numerals used as background flourishes. Subtle (4-8% opacity),
+   *     but they're the detail that makes a layout feel "designed"
+   *     rather than "templated".
+   *  4. .signature-rule — the editorial 24px horizontal rule with a
+   *     center diamond. Borrowed from print magazines, signals
+   *     "premium editorial" instantly.
+   */
+
+  /* 1. Grain texture — fixed-position overlay above content */
+  .texture-grain {
+    position: relative;
+  }
+  .texture-grain::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 9999;
+    opacity: 0.035;
+    mix-blend-mode: multiply;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.13 0 0 0 0 0.12 0 0 0 0 0.11 0 0 0 0.85 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-size: 200px 200px;
+  }
+
+  /* 2. Gradient mesh — multi-radial soft glow */
+  .gradient-mesh-warm {
+    background-color: rgb(var(--surface-0));
+    background-image:
+      radial-gradient(at 18% 24%, rgb(var(--tertiary) / 0.10) 0px, transparent 50%),
+      radial-gradient(at 82% 16%, rgb(var(--warning) / 0.08) 0px, transparent 50%),
+      radial-gradient(at 88% 84%, rgb(var(--tertiary) / 0.06) 0px, transparent 50%),
+      radial-gradient(at 12% 88%, rgb(var(--warning) / 0.05) 0px, transparent 50%);
+  }
+  .gradient-mesh-tertiary {
+    background-color: rgb(var(--tertiary));
+    background-image:
+      radial-gradient(at 20% 30%, rgb(var(--tertiary-light) / 0.4) 0px, transparent 60%),
+      radial-gradient(at 78% 72%, rgb(var(--tertiary-dark) / 0.5) 0px, transparent 60%),
+      radial-gradient(at 50% 50%, rgb(var(--warning) / 0.12) 0px, transparent 70%);
+  }
+
+  /* 3. Decorative oversized serif numerals */
+  .deco-num {
+    font-family: 'Fraunces', serif;
+    font-weight: 900;
+    font-style: italic;
+    font-size: clamp(7rem, 14vw, 13rem);
+    color: rgb(var(--tertiary) / 0.06);
+    line-height: 0.85;
+    letter-spacing: -0.04em;
+    pointer-events: none;
+    user-select: none;
+    position: absolute;
+  }
+  .deco-num-secondary {
+    color: rgb(var(--warning) / 0.07);
+  }
+
+  /* 4. Editorial separator rule with center ornament */
+  .signature-rule {
+    display: flex;
+    align-items: center;
+    gap: 0.875rem;
+    color: rgb(var(--tertiary) / 0.5);
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-size: 0.875rem;
+  }
+  .signature-rule::before,
+  .signature-rule::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(
+      to right,
+      transparent,
+      rgb(var(--tertiary) / 0.25),
+      transparent
+    );
+  }
+
+  /* 5. Hero card — subtle inner highlight (top edge) */
+  .card-hero {
+    background-color: rgb(var(--bg-primary));
+    border: 1px solid rgb(var(--border));
+    border-radius: var(--radius-2xl);
+    box-shadow:
+      var(--shadow-md),
+      inset 0 1px 0 rgb(255 255 255 / 0.6);
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* 6. Animated gradient text — used sparingly on hero numbers */
+  .text-gradient-tertiary {
+    background: linear-gradient(
+      135deg,
+      rgb(var(--tertiary)) 0%,
+      rgb(var(--tertiary-light)) 50%,
+      rgb(var(--tertiary-dark)) 100%
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+  }
+
+  /* 7. Section eyebrow — the small uppercase + line label used to
+     introduce major sections (like "01 — Hero", "02 — Fitur"). */
+  .eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.625rem;
+    font-family: 'Source Sans 3', sans-serif;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: rgb(var(--tertiary));
+  }
+  .eyebrow::before {
+    content: '';
+    width: 1.75rem;
+    height: 1px;
+    background: rgb(var(--tertiary) / 0.5);
+  }
+
+  /* 8. Sparkle star — small decorative 4-point star used in chips */
+  .sparkle-star {
+    display: inline-block;
+    width: 0.5em;
+    height: 0.5em;
+    background: currentColor;
+    clip-path: polygon(
+      50% 0%,
+      61% 39%,
+      100% 50%,
+      61% 61%,
+      50% 100%,
+      39% 61%,
+      0% 50%,
+      39% 39%
+    );
+  }
+
+  /* 9. Reveal animation — staggered fade-up with subtle scale.
+     Use class `reveal` + inline `style={{ animationDelay: 'Xs' }}`. */
+  @keyframes reveal-up {
+    from {
+      opacity: 0;
+      transform: translateY(14px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  .reveal {
+    animation: reveal-up 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  /* 10. Float animation — slow vertical drift used for decorative
+       floating shapes in hero illustrations. */
+  @keyframes float-slow {
+    0%, 100% { transform: translateY(0px) rotate(0deg); }
+    50% { transform: translateY(-12px) rotate(2deg); }
+  }
+  @keyframes float-slower {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-18px); }
+  }
+  .float-slow { animation: float-slow 6s ease-in-out infinite; }
+  .float-slower { animation: float-slower 8s ease-in-out infinite; }
+
+  /* 11. Soft pulse ring — used for active/journey nodes */
+  @keyframes pulse-ring {
+    0% {
+      transform: scale(0.8);
+      opacity: 0.6;
+    }
+    100% {
+      transform: scale(1.6);
+      opacity: 0;
+    }
+  }
+  .pulse-ring::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: currentColor;
+    opacity: 0.3;
+    animation: pulse-ring 2s ease-out infinite;
   }
 }

@@ -2,24 +2,23 @@ import React from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 import { Flame, BookOpen, Clock, Target } from 'lucide-react';
 import { CountUp } from '../dashboard/CountUp';
+import { cn } from '@/lib/utils';
 
 /**
- * StatCard (Phase 2.5 — promoted to components/data/)
+ * StatCard (Phase 5.3 — promoted to components/data/)
  *
  * Standard card for a single numeric metric on dashboard / overview pages.
- * Previously lived in `components/dashboard/StatCards.jsx`. Now reusable
- * across Dashboard, Metrics, and any future overview surface.
+ * Now with:
+ *  - Sparkline micro-chart (7-day trend) as the "wow" detail
+ *  - Gradient text on the value for primary metric
+ *  - Trend indicator (delta vs yesterday) when supplied
+ *  - All previous accessibility guarantees retained
  *
  * Variants:
  *  - flame  → primary/CTA accent
  *  - book   → success (green)
  *  - clock  → warning (amber)
  *  - target → info (blue)
- *
- * Accessibility (Phase 1.10):
- *  - role="group" with aria-label summarizing the metric
- *  - decorative icon marked aria-hidden
- *  - respects prefers-reduced-motion via MotionConfig + useReducedMotion
  */
 
 const ICON_MAP = {
@@ -49,7 +48,105 @@ const item = {
   show: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 300, damping: 24 } },
 };
 
-export function StatCard({ label, value, subtext, icon }) {
+/**
+ * Sparkline — small inline SVG showing 7 data points.
+ * No external chart lib needed.
+ */
+function Sparkline({ data = [], color = 'tertiary', height = 28 }) {
+  if (!data || data.length < 2) return null;
+
+  const max = Math.max(...data, 1)
+  const min = Math.min(...data, 0)
+  const range = max - min || 1
+  const width = 80
+  const stepX = width / (data.length - 1)
+
+  const points = data.map((v, i) => {
+    const x = i * stepX
+    const y = height - ((v - min) / range) * height
+    return [x, y]
+  })
+
+  const pathD = points
+    .map((p, i) => `${i === 0 ? 'M' : 'L'} ${p[0].toFixed(1)} ${p[1].toFixed(1)}`)
+    .join(' ')
+
+  const areaD =
+    pathD + ` L ${width} ${height} L 0 ${height} Z`
+
+  const strokeMap = {
+    tertiary: 'rgb(196, 37, 28)',
+    success: 'rgb(22, 101, 52)',
+    warning: 'rgb(161, 98, 7)',
+    info: 'rgb(29, 78, 216)',
+  }
+  const fillMap = {
+    tertiary: 'rgb(196, 37, 28)',
+    success: 'rgb(22, 101, 52)',
+    warning: 'rgb(161, 98, 7)',
+    info: 'rgb(29, 78, 216)',
+  }
+
+  return (
+    <svg
+      width={width}
+      height={height}
+      viewBox={`0 0 ${width} ${height}`}
+      className="overflow-visible"
+      aria-hidden="true"
+    >
+      <defs>
+        <linearGradient id={`spark-fill-${color}`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={fillMap[color]} stopOpacity="0.18" />
+          <stop offset="100%" stopColor={fillMap[color]} stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      <path d={areaD} fill={`url(#spark-fill-${color})`} />
+      <path
+        d={pathD}
+        fill="none"
+        stroke={strokeMap[color]}
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      {/* End dot */}
+      <circle
+        cx={points[points.length - 1][0]}
+        cy={points[points.length - 1][1]}
+        r="2"
+        fill={strokeMap[color]}
+      />
+    </svg>
+  )
+}
+
+/**
+ * TrendArrow — small indicator showing delta direction.
+ * `delta` is the numeric change; `deltaSuffix` defaults to "%".
+ */
+function TrendArrow({ delta, suffix = '%' }) {
+  if (delta == null) return null
+  const isPositive = delta >= 0
+  return (
+    <span
+      className={cn(
+        'inline-flex items-center gap-0.5 text-[10px] font-bold font-label tabular-nums',
+        isPositive ? 'text-success' : 'text-danger'
+      )}
+    >
+      <svg width="8" height="8" viewBox="0 0 8 8" fill="none">
+        <path
+          d={isPositive ? 'M4 1 L7 6 L1 6 Z' : 'M4 7 L1 2 L7 2 Z'}
+          fill="currentColor"
+        />
+      </svg>
+      {isPositive ? '+' : ''}{delta}{suffix}
+    </span>
+  )
+}
+
+export function StatCard({ label, value, subtext, icon, sparkline, trend, color = 'tertiary' }) {
   const shouldReduceMotion = useReducedMotion();
   const IconComponent = ICON_MAP[icon] || BookOpen;
   const iconBg = ICON_BG_MAP[icon] || 'bg-secondary/10 text-secondary';
@@ -68,14 +165,28 @@ export function StatCard({ label, value, subtext, icon }) {
       aria-label={`${label}: ${value}${subtext ? `. ${subtext}` : ''}`}
       className="card-base card-hover card-interactive p-5 relative overflow-hidden"
     >
-      <div className="flex items-start justify-between gap-3">
-        <div className="space-y-2 min-w-0">
-          <div className="text-xs font-label uppercase tracking-wider text-secondary">
-            {label}
+      {/* Decorative oversized corner numeral — adds the editorial layer */}
+      <span
+        aria-hidden="true"
+        className="absolute -top-3 -right-1 font-display text-[3.5rem] font-black italic text-primary/[0.04] leading-none pointer-events-none select-none"
+      >
+        {String(typeof value === 'number' ? value : value).slice(0, 2)}
+      </span>
+
+      <div className="flex items-start justify-between gap-3 relative z-10">
+        <div className="space-y-2 min-w-0 flex-1">
+          <div className="flex items-center justify-between gap-2">
+            <div className="text-xs font-label uppercase tracking-wider text-secondary">
+              {label}
+            </div>
+            {trend != null && <TrendArrow delta={trend} />}
           </div>
           <div
             aria-hidden="true"
-            className="text-3xl font-display font-bold text-primary leading-none tabular-nums"
+            className={cn(
+              'text-3xl font-display font-bold leading-none tabular-nums',
+              color === 'tertiary' ? 'text-gradient-tertiary' : 'text-primary'
+            )}
           >
             {typeof value === 'number' ? <CountUp value={value} /> : value}
           </div>
@@ -85,11 +196,16 @@ export function StatCard({ label, value, subtext, icon }) {
             </div>
           )}
         </div>
-        <div
-          aria-hidden="true"
-          className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${iconBg}`}
-        >
-          <IconComponent className="w-5 h-5" />
+        <div className="flex flex-col items-end gap-2 shrink-0">
+          <div
+            aria-hidden="true"
+            className={cn('w-10 h-10 rounded-xl flex items-center justify-center', iconBg)}
+          >
+            <IconComponent className="w-5 h-5" />
+          </div>
+          {sparkline && sparkline.length > 1 && (
+            <Sparkline data={sparkline} color={color} height={28} />
+          )}
         </div>
       </div>
     </motion.div>
@@ -104,7 +220,7 @@ export function StatCards({ stats = [], className }) {
       variants={container}
       initial="hidden"
       animate="show"
-      className={`grid grid-cols-2 lg:grid-cols-4 gap-4 ${className || ''}`}
+      className={cn('grid grid-cols-2 lg:grid-cols-4 gap-4', className)}
     >
       {stats.map((stat, idx) => (
         <StatCard
@@ -113,6 +229,9 @@ export function StatCards({ stats = [], className }) {
           value={stat.value}
           subtext={stat.subtext}
           icon={stat.icon}
+          sparkline={stat.sparkline}
+          trend={stat.trend}
+          color={stat.color}
         />
       ))}
     </motion.div>

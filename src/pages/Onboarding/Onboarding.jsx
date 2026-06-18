@@ -12,9 +12,9 @@ import StepConfirm from './StepConfirm'
 import AgentLoadingScreen from './AgentLoadingScreen'
 
 const STEPS = [
-  { id: 'goal', label: 'Target', icon: '🎯' },
-  { id: 'upload', label: 'Referensi', icon: '📄' },
-  { id: 'confirm', label: 'Konfirmasi', icon: '✓' },
+  { id: 'goal', label: 'Target', number: '01' },
+  { id: 'upload', label: 'Referensi', number: '02' },
+  { id: 'confirm', label: 'Konfirmasi', number: '03' },
 ]
 
 const INITIAL_DATA = {
@@ -113,41 +113,69 @@ export default function Onboarding() {
 
   if (activeSession) {
     return (
-      <div className="flex min-h-[80vh] items-center justify-center px-4">
-        <div className="w-full max-w-md">
+      <div className="flex min-h-[80vh] items-center justify-center px-4 py-10">
+        <div className="w-full max-w-md relative">
+          {/* Decorative numeral */}
+          <span
+            aria-hidden="true"
+            className="absolute -top-8 -right-2 deco-num deco-num-secondary hidden md:block"
+          >
+            ✦
+          </span>
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="card-base p-8 md:p-10 text-center space-y-6"
+            className="card-hero p-8 md:p-10 text-center space-y-6 relative overflow-hidden"
           >
-            <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-3xl bg-tertiary/10">
+            {/* Decorative inner numeral */}
+            <span
+              aria-hidden="true"
+              className="absolute -top-4 -right-2 font-display text-[7rem] font-black italic text-tertiary/[0.06] leading-none pointer-events-none select-none"
+            >
+              ✦
+            </span>
+
+            <div className="relative mx-auto flex h-20 w-20 items-center justify-center rounded-3xl bg-tertiary/10 border-2 border-tertiary/20">
               <Sparkles className="h-10 w-10 text-tertiary" />
             </div>
-            <div className="space-y-2">
+
+            <div className="space-y-2 relative">
+              <div className="flex justify-center">
+                <span className="eyebrow">Sesi Aktif</span>
+              </div>
               <h1 className="font-display text-3xl font-bold tracking-tight text-primary">
-                Lanjutkan Sesi Belajar
+                Lanjutkan
+                <br />
+                <span className="italic text-tertiary">Sesi Belajar</span>
               </h1>
               <p className="text-secondary max-w-sm mx-auto">
-                Kamu memiliki sesi belajar yang sedang berlangsung. Mari lanjutkan perjalanan belajarmu!
+                Kamu memiliki sesi belajar yang sedang berlangsung. Mari
+                lanjutkan perjalanan belajarmu!
               </p>
             </div>
 
-            <div className="rounded-xl bg-bg-secondary p-5 space-y-3">
+            <div className="rounded-xl bg-bg-secondary/60 border border-border/60 p-5 space-y-3">
               <div className="space-y-1">
-                <p className="font-label text-xs uppercase tracking-wider text-secondary">Topik</p>
-                <h3 className="font-display text-xl font-semibold text-primary">
+                <p className="font-label text-[10px] uppercase tracking-widest text-secondary">
+                  Topik
+                </p>
+                <h3 className="font-display text-xl font-semibold text-primary leading-snug">
                   {activeSession.topic}
                 </h3>
               </div>
               <div className="flex items-center justify-center">
                 <span
                   className={cn(
-                    'pill',
-                    activeSession.status === 'processing' ? 'pill-warning' : 'pill-success'
+                    'pill font-label',
+                    activeSession.status === 'processing'
+                      ? 'pill-warning'
+                      : 'pill-success'
                   )}
                 >
-                  {activeSession.status === 'processing' ? 'Sedang Diproses' : 'Siap'}
+                  {activeSession.status === 'processing'
+                    ? 'Sedang Diproses'
+                    : 'Siap'}
                 </span>
               </div>
             </div>
@@ -156,7 +184,7 @@ export default function Onboarding() {
               onClick={handleContinueSession}
               variant="tertiary"
               size="lg"
-              className="w-full gap-2 text-base font-semibold rounded-xl font-label"
+              className="w-full gap-2 text-base font-semibold rounded-xl font-label shadow-warm-md"
             >
               <Play className="h-5 w-5" />
               Lanjut
@@ -175,41 +203,62 @@ export default function Onboarding() {
   }
 
   return (
-    <div className="flex min-h-[80vh] items-center justify-center px-4 py-8">
-      <div className="w-full max-w-3xl">
+    <div className="flex min-h-[80vh] items-center justify-center px-4 py-8 relative">
+      {/* Decorative numerals in corners */}
+      <span
+        aria-hidden="true"
+        className="absolute top-8 left-4 deco-num deco-num-secondary hidden md:block"
+      >
+        ✦
+      </span>
+      <span
+        aria-hidden="true"
+        className="absolute bottom-8 right-4 deco-num hidden md:block"
+      >
+        ✦
+      </span>
+
+      <div className="w-full max-w-3xl relative">
         {/* Stepper */}
         <nav className="mb-10" aria-label="Progress">
           <ol className="flex items-center justify-center gap-0">
             {STEPS.map((s, i) => (
               <li key={s.id} className="flex items-center">
-                <div className="flex items-center gap-2.5">
+                <div className="flex items-center gap-3">
                   <div
                     className={cn(
-                      'flex h-9 w-9 items-center justify-center rounded-full text-sm font-semibold transition-all duration-300',
-                      i < step && 'bg-success text-white',
-                      i === step && 'bg-tertiary text-white ring-4 ring-tertiary/20',
-                      i > step && 'bg-secondary/20 text-secondary'
+                      'relative flex h-10 w-10 items-center justify-center rounded-full font-display font-bold text-sm transition-all duration-300',
+                      i < step && 'bg-success text-white shadow-warm-sm',
+                      i === step &&
+                        'bg-tertiary text-white shadow-warm-md ring-4 ring-tertiary/20',
+                      i > step && 'bg-bg-tertiary/60 text-secondary/70'
                     )}
                     aria-current={i === step ? 'step' : undefined}
                   >
-                    {i < step ? <Check className="h-4 w-4" /> : i + 1}
+                    {i < step ? (
+                      <Check className="h-4 w-4" strokeWidth={3} />
+                    ) : (
+                      <span className="tabular-nums">{s.number}</span>
+                    )}
                   </div>
                   <span
                     className={cn(
-                      'text-sm font-medium font-label hidden sm:inline transition-colors',
-                      i <= step ? 'text-primary' : 'text-secondary'
+                      'text-sm font-label font-medium hidden sm:inline transition-colors tracking-wide',
+                      i <= step ? 'text-primary' : 'text-secondary/60'
                     )}
                   >
                     {s.label}
                   </span>
                 </div>
                 {i < STEPS.length - 1 && (
-                  <div
-                    className={cn(
-                      'mx-4 h-0.5 w-12 sm:w-20 rounded-full transition-colors duration-500',
-                      i < step ? 'bg-success' : 'bg-border'
-                    )}
-                  />
+                  <div className="mx-3 sm:mx-5 h-px w-10 sm:w-16 relative overflow-hidden bg-border rounded-full">
+                    <motion.div
+                      className="absolute inset-y-0 left-0 bg-success"
+                      initial={{ width: 0 }}
+                      animate={{ width: i < step ? '100%' : '0%' }}
+                      transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                    />
+                  </div>
                 )}
               </li>
             ))}
@@ -217,7 +266,15 @@ export default function Onboarding() {
         </nav>
 
         {/* Main Card */}
-        <div className="card-base p-8 md:p-10 shadow-warm-lg">
+        <div className="card-hero p-7 md:p-10 relative overflow-hidden">
+          {/* Subtle corner deco numeral */}
+          <span
+            aria-hidden="true"
+            className="absolute -top-4 -right-2 font-display text-[8rem] font-black italic text-tertiary/[0.05] leading-none pointer-events-none select-none"
+          >
+            ✦
+          </span>
+
           <AnimatePresence mode="wait" custom={direction}>
             <motion.div
               key={step}
@@ -226,7 +283,7 @@ export default function Onboarding() {
               initial="enter"
               animate="center"
               exit="exit"
-              transition={{ duration: 0.3, ease: [0.25, 0.46, 0.45, 0.94] }}
+              transition={{ duration: 0.35, ease: [0.25, 0.46, 0.45, 0.94] }}
             >
               {step === 0 && (
                 <StepGoal data={formData} onChange={updateFormData} />
@@ -234,9 +291,7 @@ export default function Onboarding() {
               {step === 1 && (
                 <StepUpload data={formData} onChange={updateFormData} />
               )}
-              {step === 2 && (
-                <StepConfirm data={formData} />
-              )}
+              {step === 2 && <StepConfirm data={formData} />}
             </motion.div>
           </AnimatePresence>
 
@@ -245,7 +300,7 @@ export default function Onboarding() {
             <motion.div
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
-              className="mt-6 rounded-xl border border-danger/20 bg-danger/10 p-4 text-center"
+              className="mt-6 rounded-xl border border-danger/20 bg-danger/[0.06] p-4 text-center"
             >
               <p className="text-sm font-medium text-danger">{error}</p>
             </motion.div>
@@ -259,7 +314,7 @@ export default function Onboarding() {
               variant="ghost"
               onClick={handleBack}
               disabled={loading}
-              className="gap-2 font-label"
+              className="gap-2 font-label rounded-xl"
             >
               <ArrowLeft className="h-4 w-4" />
               Kembali
@@ -273,10 +328,11 @@ export default function Onboarding() {
               onClick={handleNext}
               disabled={step === 0 && !isStep1Valid}
               variant="tertiary"
-              className="gap-2 font-label"
+              size="lg"
+              className="gap-2 font-label rounded-xl shadow-warm-md group"
             >
               Lanjut
-              <ArrowRight className="h-4 w-4" />
+              <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
             </Button>
           ) : (
             <Button
@@ -284,7 +340,7 @@ export default function Onboarding() {
               disabled={loading}
               variant="tertiary"
               size="lg"
-              className="gap-2 shadow-warm-glow-tertiary text-base font-semibold rounded-xl font-label px-8"
+              className="gap-2 shadow-warm-md text-base font-semibold rounded-xl font-label px-8 group"
             >
               {loading ? (
                 <>
@@ -295,6 +351,7 @@ export default function Onboarding() {
                 <>
                   <Sparkles className="h-5 w-5" />
                   Mulai Belajar Sekarang
+                  <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
                 </>
               )}
             </Button>

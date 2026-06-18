@@ -6,73 +6,114 @@ import { Button } from '../ui/button';
 import { Progress } from '../ui/progress';
 import StatusBadge from '../common/StatusBadge';
 
-export default function ContinueLearningHero({ topic, session, hasSession, completedTopics, totalTopics }) {
+/**
+ * ContinueLearningHero — the "today's hero" card on the dashboard.
+ *
+ * Phase 5.3: rebuilt with editorial treatment.
+ *  - Larger, more prominent (dominates the dashboard fold)
+ *  - Decorative oversized serif numeral as watermark
+ *  - Gradient mesh + decorative flourishes
+ *  - Clear hierarchy: Eyebrow → Topic → Meta → CTA → Visual
+ *  - States: no-session, all-done, ready-to-learn (each with personality)
+ */
+export default function ContinueLearningHero({
+  topic,
+  session,
+  hasSession,
+  completedTopics,
+  totalTopics,
+}) {
   const navigate = useNavigate();
   const shouldReduceMotion = useReducedMotion();
 
   if (!hasSession) {
     return (
-      <div className="card-base p-8 md:p-10 bg-gradient-to-br from-tertiary/8 via-warning/5 to-transparent border-tertiary/20 relative overflow-hidden">
-        <div className="absolute -right-12 -top-12 w-48 h-48 rounded-full bg-tertiary/5 blur-2xl pointer-events-none" />
-        <div className="absolute -left-8 -bottom-8 w-36 h-36 rounded-full bg-warning/5 blur-2xl pointer-events-none" />
-
+      <motion.div
+        {...(shouldReduceMotion ? {} : { whileHover: { y: -2 } })}
+        className="card-hero p-7 md:p-9 relative overflow-hidden gradient-mesh-warm"
+      >
+        <span
+          aria-hidden="true"
+          className="absolute top-3 right-4 font-display text-7xl font-black italic text-tertiary/[0.06] leading-none pointer-events-none select-none"
+        >
+          ✦
+        </span>
+        <span
+          aria-hidden="true"
+          className="absolute -right-12 -top-12 w-56 h-56 rounded-full bg-tertiary/[0.06] blur-3xl pointer-events-none"
+        />
         <div className="relative z-10 flex flex-col md:flex-row md:items-center gap-6">
           <div className="flex-1 space-y-4">
             <div className="flex items-center gap-2">
-              <StatusBadge variant="info">Baru</StatusBadge>
+              <span className="eyebrow">Bab 01 — Mulai</span>
             </div>
-            <h2 className="text-2xl md:text-3xl font-display font-bold text-primary leading-tight">
-              Mulai perjalanan belajarmu
+            <h2 className="text-3xl md:text-[2.5rem] font-display font-bold text-primary leading-[1.05] tracking-tight">
+              Mulai perjalanan
+              <br />
+              <span className="italic text-tertiary">belajarmu</span>
             </h2>
-            <p className="text-secondary max-w-lg leading-relaxed">
-              Belum ada sesi aktif. Buat kurikulum pertamamu dan biarkan Planner Agent menyusun jalur belajar yang dipersonalisasi untukmu.
+            <p className="text-secondary max-w-lg leading-relaxed font-serif-content">
+              Belum ada sesi aktif. Buat kurikulum pertamamu dan biarkan
+              Planner Agent menyusun jalur belajar yang dipersonalisasi untukmu.
             </p>
             <div className="pt-2">
               <Button
                 variant="tertiary"
                 size="lg"
-                className="gap-2 rounded-xl font-semibold"
-                onClick={() => navigate('/learn')}
+                className="gap-2 rounded-xl font-semibold shadow-warm-md group"
+                onClick={() => navigate('/onboarding')}
               >
                 <Sparkles className="w-5 h-5" />
                 Buat Kurikulum
-                <ArrowRight className="w-4 h-4" />
+                <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
               </Button>
             </div>
           </div>
-
           <div className="hidden md:flex items-center justify-center">
-            <div className="w-28 h-28 rounded-2xl bg-tertiary/10 flex items-center justify-center">
-              <BookOpen className="w-12 h-12 text-tertiary" />
+            <div className="relative">
+              <div className="absolute inset-0 bg-tertiary/10 blur-2xl rounded-3xl" />
+              <div className="relative w-32 h-32 rounded-3xl bg-surface border-2 border-tertiary/30 flex items-center justify-center shadow-warm-lg rotate-3">
+                <BookOpen className="w-14 h-14 text-tertiary" strokeWidth={1.5} />
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      </motion.div>
     );
   }
 
   if (!topic) {
     return (
-      <div className="card-base p-8 md:p-10 bg-gradient-to-br from-tertiary/8 via-warning/5 to-transparent border-tertiary/20 relative overflow-hidden">
-        <div className="absolute -right-12 -top-12 w-48 h-48 rounded-full bg-tertiary/5 blur-2xl pointer-events-none" />
-
+      <motion.div
+        {...(shouldReduceMotion ? {} : { whileHover: { y: -2 } })}
+        className="card-hero p-7 md:p-9 relative overflow-hidden bg-gradient-to-br from-success/[0.04] via-surface to-transparent border-success/30"
+      >
+        <span
+          aria-hidden="true"
+          className="absolute top-3 right-4 font-display text-7xl font-black italic text-success/[0.08] leading-none pointer-events-none select-none"
+        >
+          ✓
+        </span>
         <div className="relative z-10 flex flex-col md:flex-row md:items-center gap-6">
           <div className="flex-1 space-y-4">
             <div className="flex items-center gap-2">
-              <StatusBadge variant="success">Semua selesai</StatusBadge>
+              <StatusBadge variant="success">Lulus</StatusBadge>
             </div>
-            <h2 className="text-2xl md:text-3xl font-display font-bold text-primary leading-tight">
-              Semua topik sudah selesai
+            <h2 className="text-3xl md:text-[2.5rem] font-display font-bold text-primary leading-[1.05] tracking-tight">
+              Semua topik
+              <br />
+              <span className="italic text-success">sudah selesai</span>
             </h2>
-            <p className="text-secondary max-w-lg leading-relaxed">
-              Kamu sudah menyelesaikan semua materi yang tersedia. Waktu yang tepat untuk review atau memulai topik baru.
+            <p className="text-secondary max-w-lg leading-relaxed font-serif-content">
+              Kamu sudah menyelesaikan semua materi yang tersedia. Saatnya
+              review atau memulai topik baru.
             </p>
             <div className="pt-2">
               <Button
                 variant="tertiary"
                 size="lg"
-                className="gap-2 rounded-xl font-semibold"
-                onClick={() => navigate('/learn')}
+                className="gap-2 rounded-xl font-semibold shadow-warm-md"
+                onClick={() => navigate('/onboarding')}
               >
                 <Sparkles className="w-5 h-5" />
                 Mulai Topik Baru
@@ -80,83 +121,138 @@ export default function ContinueLearningHero({ topic, session, hasSession, compl
               </Button>
             </div>
           </div>
-
           <div className="hidden md:flex items-center justify-center">
-            <div className="w-28 h-28 rounded-2xl bg-success-light flex items-center justify-center">
-              <BookOpen className="w-12 h-12 text-success-fg" />
+            <div className="relative">
+              <div className="absolute inset-0 bg-success/15 blur-2xl rounded-3xl" />
+              <div className="relative w-32 h-32 rounded-3xl bg-success-light border-2 border-success/40 flex items-center justify-center shadow-warm-lg -rotate-3">
+                <BookOpen className="w-14 h-14 text-success-fg" strokeWidth={1.5} />
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      </motion.div>
     );
   }
 
   const progress = topic.progress || 0;
   const topicTitle = topic.title || 'Topik berikutnya';
   const durationMinutes = topic.duration_minutes || 30;
+  const topicIndex = completedTopics + 1;
+  const progressFraction = Math.min(1, Math.max(0, progress / 100));
 
-  const hoverProps = shouldReduceMotion ? {} : {
-    whileHover: { y: -2 },
-  };
+  const hoverProps = shouldReduceMotion ? {} : { whileHover: { y: -2 } };
 
   return (
     <motion.div
       {...hoverProps}
-      className="card-base card-hover card-interactive p-6 md:p-8 bg-gradient-to-br from-tertiary/8 via-warning/5 to-transparent border-tertiary/20 relative overflow-hidden"
+      className="card-hero p-7 md:p-9 relative overflow-hidden bg-gradient-to-br from-tertiary/[0.04] via-warning/[0.025] to-transparent border-tertiary/20"
     >
-      <div className="absolute -right-16 -top-16 w-56 h-56 rounded-full bg-tertiary/5 blur-3xl pointer-events-none" />
-      <div className="absolute -left-10 -bottom-10 w-40 h-40 rounded-full bg-warning/5 blur-2xl pointer-events-none" />
+      {/* Decorative oversized numeral — watermark */}
+      <span
+        aria-hidden="true"
+        className="absolute -top-4 -right-2 font-display text-[7rem] md:text-[9rem] font-black italic text-tertiary/[0.07] leading-none pointer-events-none select-none"
+      >
+        ✦
+      </span>
 
-      <div className="relative z-10 flex flex-col md:flex-row md:items-center gap-6">
-        <div className="flex-1 space-y-4">
-          <div className="flex items-center gap-2 flex-wrap">
-            <StatusBadge variant="warning">Lanjutkan</StatusBadge>
+      {/* Soft glows for atmosphere */}
+      <span className="absolute -right-16 -top-16 w-56 h-56 rounded-full bg-tertiary/[0.05] blur-3xl pointer-events-none" />
+      <span className="absolute -left-10 -bottom-10 w-40 h-40 rounded-full bg-warning/[0.05] blur-2xl pointer-events-none" />
+
+      <div className="relative z-10 grid grid-cols-1 md:grid-cols-[1fr_auto] gap-6 md:gap-8 items-center">
+        <div className="space-y-4 min-w-0">
+          {/* Eyebrow — establishes hierarchy */}
+          <div className="flex items-center gap-2.5 flex-wrap">
+            <span className="eyebrow">Bab {String(topicIndex).padStart(2, '0')} — Lanjutkan</span>
             {totalTopics > 0 && (
-              <span className="text-xs font-label uppercase tracking-wider text-secondary">
-                Topik {completedTopics + 1} dari {totalTopics}
+              <span className="text-[10px] font-label uppercase tracking-wider text-secondary/70 tabular-nums">
+                {completedTopics} / {totalTopics} topik
               </span>
             )}
           </div>
 
-          <h2 className="text-2xl md:text-3xl font-display font-bold text-primary leading-tight">
+          <h2 className="text-3xl md:text-4xl lg:text-[2.75rem] font-display font-bold text-primary leading-[1.05] tracking-tight">
             {topicTitle}
           </h2>
 
-          <div className="flex items-center gap-4 text-sm text-secondary">
+          <div className="flex items-center gap-4 text-sm text-secondary font-label">
             <span className="flex items-center gap-1.5">
-              <BookOpen className="w-4 h-4" />
-              {durationMinutes} menit
+              <BookOpen className="w-4 h-4 text-tertiary" />
+              <span className="tabular-nums">{durationMinutes} menit</span>
             </span>
             {progress > 0 && (
-              <span className="flex items-center gap-1.5 text-tertiary font-medium">
-                {Math.round(progress)}% selesai
+              <span className="flex items-center gap-1.5 text-tertiary font-semibold">
+                <span className="tabular-nums">{Math.round(progress)}% selesai</span>
               </span>
             )}
           </div>
 
           {progress > 0 && (
             <div className="space-y-1.5 max-w-md">
-              <Progress value={progress} className="h-2.5 bg-secondary/10" indicatorClassName="bg-tertiary" />
+              <Progress
+                value={progress}
+                className="h-2 bg-secondary/15 rounded-full"
+                indicatorClassName="bg-tertiary rounded-full"
+              />
             </div>
           )}
 
-          <div className="pt-1">
+          <div className="pt-1 flex flex-wrap items-center gap-3">
             <Button
               variant="tertiary"
               size="lg"
-              className="gap-2 rounded-xl font-semibold"
-              onClick={() => navigate(`/learn/${session?.id}/topic/${topic.id}`)}
+              className="gap-2 rounded-xl font-semibold shadow-warm-md group"
+              onClick={() => navigate(`/module/${topic.id}`)}
             >
-              <PlayCircle className="w-5 h-5" />
+              <PlayCircle className="w-5 h-5" fill="currentColor" />
               {progress > 0 ? 'Lanjutkan Belajar' : 'Mulai Sekarang'}
-              <ArrowRight className="w-4 h-4" />
+              <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="lg"
+              className="rounded-xl font-semibold text-secondary hover:text-primary"
+              onClick={() => navigate('/curriculum')}
+            >
+              Lihat kurikulum
             </Button>
           </div>
         </div>
 
+        {/* Decorative visual on the right */}
         <div className="hidden md:flex items-center justify-center">
-          <div className="w-24 h-24 rounded-2xl bg-tertiary/10 flex items-center justify-center">
-            <BookOpen className="w-10 h-10 text-tertiary" />
+          <div className="relative">
+            <div className="absolute inset-0 bg-tertiary/10 blur-2xl rounded-3xl" />
+            <div className="relative w-36 h-36 rounded-3xl bg-surface border-2 border-tertiary/30 flex items-center justify-center shadow-warm-lg rotate-3 hover:rotate-0 transition-transform duration-500">
+              {/* Progress ring around the book icon */}
+              <svg
+                className="absolute inset-0"
+                viewBox="0 0 100 100"
+                aria-hidden="true"
+              >
+                <circle
+                  cx="50"
+                  cy="50"
+                  r="46"
+                  fill="none"
+                  stroke="rgb(196, 37, 28)"
+                  strokeOpacity="0.12"
+                  strokeWidth="2"
+                />
+                <circle
+                  cx="50"
+                  cy="50"
+                  r="46"
+                  fill="none"
+                  stroke="rgb(196, 37, 28)"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeDasharray={`${progressFraction * 289} 289`}
+                  transform="rotate(-90 50 50)"
+                />
+              </svg>
+              <BookOpen className="w-14 h-14 text-tertiary" strokeWidth={1.5} />
+            </div>
           </div>
         </div>
       </div>

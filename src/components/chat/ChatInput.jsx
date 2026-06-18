@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Loader2, Paperclip, Mic } from 'lucide-react';
+import { Send, Loader2, Paperclip } from 'lucide-react';
 
 const ChatInput = ({ onSend, onUpload, isLoading, isUploading, placeholder, hideUpload = false }) => {
   const [text, setText] = useState('');
@@ -42,13 +42,13 @@ const ChatInput = ({ onSend, onUpload, isLoading, isUploading, placeholder, hide
     // matches the rest of the Chat page and the AppLayout's bg-neutral.
     // The inner textarea card (below) keeps its own bg-surface so the
     // input is visually distinct from the page.
-    <div className="px-4 md:px-6 py-3 bg-transparent border-t border-border-subtle">
+    <div className="px-4 md:px-6 py-3 bg-transparent">
       <div className="max-w-[850px] mx-auto">
         <div className="flex items-end gap-2 bg-surface border border-border-subtle rounded-2xl px-4 py-2.5 focus-within:border-tertiary focus-within:ring-2 focus-within:ring-tertiary/20 transition-all shadow-warm-xs">
           {!hideUpload && (
             <>
-              <input 
-                type="file" 
+              <input
+                type="file"
                 ref={fileInputRef}
                 onChange={handleFileChange}
                 accept=".pdf,.txt,.md"
@@ -74,18 +74,9 @@ const ChatInput = ({ onSend, onUpload, isLoading, isUploading, placeholder, hide
             onChange={(e) => setText(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder={placeholder}
-            className="flex-1 bg-transparent border-none focus:ring-0 focus:outline-none text-[14px] text-primary placeholder:text-secondary/50 resize-none py-1 max-h-[120px] leading-relaxed"
+            className="flex-1 bg-transparent border-none focus:ring-0 focus:outline-none text-[14px] text-primary placeholder:text-secondary/50 resize-none py-1 max-h-[120px] leading-relaxed [&::-webkit-scrollbar]:hidden"
             disabled={isLoading}
           />
-
-          {/* Mic button (dummy) */}
-          <button
-            className="p-1.5 text-secondary/40 hover:text-secondary transition-colors flex-shrink-0 mb-0.5"
-            aria-label="Input suara"
-            tabIndex={-1}
-          >
-            <Mic size={18} />
-          </button>
 
           <button
             onClick={handleSend}

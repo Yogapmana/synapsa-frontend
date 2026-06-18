@@ -148,6 +148,8 @@ export default function Register() {
                   id="username"
                   autoComplete="username"
                   placeholder="johndoe"
+                  aria-invalid={!!errors.username}
+                  aria-describedby={errors.username ? "username-error" : undefined}
                   className={cn(
                     'w-full rounded-xl border border-border bg-surface px-4 py-3 text-sm text-primary placeholder:text-secondary/50 focus:border-tertiary focus:ring-2 focus:ring-tertiary/20 focus:outline-none transition-colors',
                     errors.username && 'border-danger focus:border-danger focus:ring-danger/20'
@@ -155,7 +157,7 @@ export default function Register() {
                   {...register('username')}
                 />
                 {errors.username && (
-                  <p className="text-danger text-sm">{errors.username.message}</p>
+                  <p id="username-error" role="alert" className="text-danger text-sm">{errors.username.message}</p>
                 )}
               </div>
 
@@ -166,6 +168,8 @@ export default function Register() {
                   type="email"
                   autoComplete="email"
                   placeholder="name@example.com"
+                  aria-invalid={!!errors.email}
+                  aria-describedby={errors.email ? "email-error" : undefined}
                   className={cn(
                     'w-full rounded-xl border border-border bg-surface px-4 py-3 text-sm text-primary placeholder:text-secondary/50 focus:border-tertiary focus:ring-2 focus:ring-tertiary/20 focus:outline-none transition-colors',
                     errors.email && 'border-danger focus:border-danger focus:ring-danger/20'
@@ -173,7 +177,7 @@ export default function Register() {
                   {...register('email')}
                 />
                 {errors.email && (
-                  <p className="text-danger text-sm">{errors.email.message}</p>
+                  <p id="email-error" role="alert" className="text-danger text-sm">{errors.email.message}</p>
                 )}
               </div>
 
@@ -184,6 +188,8 @@ export default function Register() {
                     id="password"
                     type={showPassword ? 'text' : 'password'}
                     autoComplete="new-password"
+                    aria-invalid={!!errors.password}
+                    aria-describedby={errors.password ? "password-error" : undefined}
                     className={cn(
                       'w-full rounded-xl border border-border bg-surface px-4 py-3 pr-10 text-sm text-primary placeholder:text-secondary/50 focus:border-tertiary focus:ring-2 focus:ring-tertiary/20 focus:outline-none transition-colors',
                       errors.password && 'border-danger focus:border-danger focus:ring-danger/20'
@@ -218,7 +224,7 @@ export default function Register() {
                   </div>
                 )}
                 {errors.password && (
-                  <p className="text-danger text-sm">{errors.password.message}</p>
+                  <p id="password-error" role="alert" className="text-danger text-sm">{errors.password.message}</p>
                 )}
               </div>
 
@@ -229,6 +235,8 @@ export default function Register() {
                     id="confirmPassword"
                     type={showConfirmPassword ? 'text' : 'password'}
                     autoComplete="new-password"
+                    aria-invalid={!!errors.confirmPassword}
+                    aria-describedby={errors.confirmPassword ? "confirmPassword-error" : undefined}
                     className={cn(
                       'w-full rounded-xl border border-border bg-surface px-4 py-3 pr-10 text-sm text-primary placeholder:text-secondary/50 focus:border-tertiary focus:ring-2 focus:ring-tertiary/20 focus:outline-none transition-colors',
                       errors.confirmPassword && 'border-danger focus:border-danger focus:ring-danger/20'
@@ -245,7 +253,7 @@ export default function Register() {
                   </button>
                 </div>
                 {errors.confirmPassword && (
-                  <p className="text-danger text-sm">{errors.confirmPassword.message}</p>
+                  <p id="confirmPassword-error" role="alert" className="text-danger text-sm">{errors.confirmPassword.message}</p>
                 )}
               </div>
 

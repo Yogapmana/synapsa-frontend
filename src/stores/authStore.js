@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { useLearningStore } from './learningStore'
+import { useChatStore } from './chatStore'
 
 const TOKEN_KEY = 'pla_token'
 const USER_KEY = 'pla_user'
@@ -24,6 +25,14 @@ const clearStaleUserData = () => {
   } catch {
     if (typeof window !== 'undefined') {
       window.localStorage.removeItem('pla_active_session')
+    }
+  }
+  
+  try {
+    useChatStore.getState().setActiveChatSessionId(null)
+  } catch {
+    if (typeof window !== 'undefined') {
+      window.localStorage.removeItem('chat-storage')
     }
   }
 }

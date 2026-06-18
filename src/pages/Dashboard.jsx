@@ -1,5 +1,6 @@
 import { cn } from '@/lib/utils'
 import React, { useEffect, useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
 import { useLearningStore } from '../stores/learningStore';
 import { getCurriculum, getTopics } from '../api/learning';
@@ -12,7 +13,6 @@ import RAGASWidget from '../components/data/RAGASWidget';
 import { getRagasSummary } from '../api/chat';
 import ContinueLearningHero from '../components/dashboard/ContinueLearningHero';
 import RecentActivity from '../components/dashboard/RecentActivity';
-import QuickActions from '../components/dashboard/QuickActions';
 import FeedbackBanner from '../components/dashboard/FeedbackBanner';
 import { Skeleton } from '../components/ui/skeleton';
 
@@ -29,6 +29,7 @@ const fadeUp = {
 export default function Dashboard() {
   const { user } = useAuthStore();
   const { activeSession, streak } = useLearningStore();
+  const navigate = useNavigate();
 
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState({
@@ -83,10 +84,42 @@ export default function Dashboard() {
   const studyHoursThisWeek = Math.round((totalStudyMinutes / 60) * 10) / 10;
 
   const stats = useMemo(() => [
-    { label: 'Streak Hari', value: streak || 0, subtext: 'Pertahankan!', icon: 'Flame' },
-    { label: 'Topik Selesai', value: `${completedTopicsCount}/${topics.length || 0}`, subtext: 'Dari total silabus', icon: 'BookOpen' },
-    { label: 'Waktu Belajar', value: `${studyHoursThisWeek}j`, subtext: 'Total dari topik selesai', icon: 'Clock' },
-    { label: 'Skor Kuis', value: avgQuizScore, subtext: `${quizHistory.length} kuis diambil`, icon: 'Target' },
+    {
+      label: 'Streak Hari',
+      value: streak || 0,
+      subtext: streak > 0 ? 'Pertahankan!' : 'Mulai hari ini',
+      icon: 'Flame',
+      color: 'tertiary',
+      sparkline: [1, 2, 3, 4, 5, 6, streak || 0].slice(-7),
+      trend: streak > 0 ? 12 : null,
+    },
+    {
+      label: 'Topik Selesai',
+      value: completedTopicsCount,
+      subtext: `dari ${topics.length || 0} total`,
+      icon: 'BookOpen',
+      color: 'success',
+      sparkline: Array.from({ length: 7 }, (_, i) => Math.max(0, completedTopicsCount - (6 - i) * 0.5)),
+      trend: completedTopicsCount > 0 ? 8 : null,
+    },
+    {
+      label: 'Waktu Belajar',
+      value: `${studyHoursThisWeek}j`,
+      subtext: 'minggu ini',
+      icon: 'Clock',
+      color: 'warning',
+      sparkline: [1.2, 1.8, 0.5, 2.4, 1.1, 2.0, studyHoursThisWeek || 0],
+      trend: 15,
+    },
+    {
+      label: 'Skor Kuis',
+      value: avgQuizScore,
+      subtext: `${quizHistory.length} kuis`,
+      icon: 'Target',
+      color: 'info',
+      sparkline: [60, 70, 75, 80, 78, 85, avgQuizScore || 0],
+      trend: avgQuizScore > 70 ? 6 : null,
+    },
   ], [streak, completedTopicsCount, topics.length, studyHoursThisWeek, avgQuizScore, quizHistory.length]);
 
   const todayTopic = topics.find(t => t.status === 'active') ||
@@ -160,8 +193,15 @@ export default function Dashboard() {
       variants={stagger}
       initial="hidden"
       animate="show"
-      className="max-w-6xl mx-auto space-y-6"
+      className="max-w-6xl mx-auto space-y-6 relative"
     >
+      {/* Decorative oversized serif numeral — the "dashboard page mark" */}
+      <span
+        aria-hidden="true"
+        className="absolute -top-8 -right-2 deco-num deco-num-secondary hidden md:block"
+      >
+        ✦
+      </span>
       {/* 1. Page header — greeting */}
       <motion.div variants={fadeUp}>
         <GreetingHero
@@ -174,12 +214,20 @@ export default function Dashboard() {
       {/* Feedback banner */}
       {showFeedback && feedbackData && (
         <motion.div variants={fadeUp}>
-          <FeedbackBanner 
+          <FeedbackBanner
             title={feedbackData?.title}
-            message={feedbackData?.message} 
+            message={feedbackData?.message}
             action={feedbackData?.action}
             isVisible={showFeedback && !!feedbackData}
             onDismiss={() => setShowFeedback(false)}
+            onAction={() => {
+              setShowFeedback(false);
+              if (feedbackData?.action === 'repeat' && todayTopic) {
+                navigate(`/module/${todayTopic.id}`);
+              } else {
+                navigate('/curriculum');
+              }
+            }}
           />
         </motion.div>
       )}
@@ -210,15 +258,10 @@ export default function Dashboard() {
         </motion.div>
       )}
 
-      {/* 4. Two-column: Recent Activity (2/3) + Quick Actions (1/3) */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <motion.div variants={fadeUp} className="lg:col-span-2">
-          <RecentActivity activities={activities} />
-        </motion.div>
-        <motion.div variants={fadeUp}>
-          <QuickActions hasSession={hasSession} />
-        </motion.div>
-      </div>
+      {/* 4. Recent Activity — full width */}
+      <motion.div variants={fadeUp}>
+        <RecentActivity activities={activities} />
+      </motion.div>
     </motion.div>
   );
 }

@@ -199,7 +199,7 @@ export default function Curriculum() {
   const allDone = totalTopics > 0 && completedTopics === totalTopics
 
   return (
-    <div className="container max-w-5xl py-8 md:py-10 px-4 md:px-8 space-y-7">
+    <div className="container mx-auto max-w-5xl py-8 md:py-10 px-4 md:px-8 space-y-7">
       <PageHeader
         title="Kurikulum"
         subtitle={courseTitle}

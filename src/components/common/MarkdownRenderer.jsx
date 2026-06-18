@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useRef } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import rehypeHighlight from 'rehype-highlight'
@@ -158,12 +158,38 @@ function ContentWithImages({ content, className }) {
     return parts
   }, [content])
 
+  // Track whether the FIRST paragraph has been rendered (for drop cap)
+  const firstParaRenderedRef = useRef(false)
+  if (firstParaRenderedRef.current === false) {
+    // Reset on new content
+    firstParaRenderedRef.current = false
+  }
+
   const components = useMemo(() => ({
-    blockquote: ({ children }) => <blockquote className="my-6 border-l-4 border-tertiary/30 bg-tertiary/5 py-3 pr-4 pl-5 italic text-secondary rounded-r-lg">{children}</blockquote>,
+    blockquote: ({ children }) => (
+      <blockquote className="my-7 relative border-l-[3px] border-tertiary bg-tertiary/[0.04] py-4 pr-5 pl-6 italic text-secondary rounded-r-xl">
+        <span
+          aria-hidden="true"
+          className="absolute top-3 left-2 font-display text-3xl font-black italic text-tertiary/40 leading-none"
+        >
+          &ldquo;
+        </span>
+        {children}
+      </blockquote>
+    ),
     code: CodeBlock,
     table: ({ children }) => <div className="my-6 w-full overflow-x-auto rounded-lg border"><table className="w-full caption-bottom text-sm">{children}</table></div>,
     th: ({ children }) => <th className="border-b bg-secondary/10 px-4 py-2.5 text-left font-semibold text-primary">{children}</th>,
     td: ({ children }) => <td className="border-b px-4 py-2.5 align-top">{children}</td>,
+    p: ({ children }) => {
+      const isFirst = !firstParaRenderedRef.current
+      if (isFirst) firstParaRenderedRef.current = true
+      return (
+        <p className={cn(isFirst && 'first-paragraph-dropcap')}>
+          {children}
+        </p>
+      )
+    },
   }), [])
 
   return (
@@ -171,6 +197,10 @@ function ContentWithImages({ content, className }) {
       {segments.map((segment, i) => {
         if (segment.type === 'image') {
           return <PollinationsImage key={segment.key} src={segment.src} alt={segment.alt} />
+        }
+        // Reset the first-paragraph tracker at the start of each text segment
+        if (i === 0 || segment.type === 'text') {
+          firstParaRenderedRef.current = false
         }
         return (
           <ReactMarkdown

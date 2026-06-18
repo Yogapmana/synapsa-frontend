@@ -1,54 +1,63 @@
 import { useEffect, useRef, useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { MessageCircle, Sparkles, Send, ChevronLeft, ChevronRight } from 'lucide-react'
-import { motion } from 'framer-motion'
+import {
+  MessageCircle,
+  Sparkles,
+  Send,
+  ChevronLeft,
+  ChevronRight,
+  ArrowUp,
+  Lightbulb,
+} from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { cn } from '@/lib/utils'
 import { sendMessage, getHistory } from '@/api/chat'
 import ChatBubble from '@/components/chat/ChatBubble'
-import ChatInput from '@/components/chat/ChatInput'
+
 import ThinkingIndicator from '@/components/chat/ThinkingIndicator'
 
 /**
  * ModuleChatPanel — sticky right sidebar for the AI tutor.
  *
- * Layout (final):
- *   - `position: sticky; top: 3.5rem` so the panel stays visible at
- *     the top of the viewport (just below the topbar) as the user
- *     scrolls the article. The user explicitly wants the chat to
- *     stay in view while reading — NOT to scroll out of sight.
- *   - Fixed height `calc(100vh - 3.5rem)` so the internal message
- *     area is constrained and gets its own scrollbar (6px wide via
- *     the design system). Long conversations overflow internally;
- *     short ones just leave empty space.
- *   - Header is at the top of the column, input at the bottom (flex
- *     column layout). Both stay visible while messages scroll.
- *   - The article on the left reflows to make room (flex-1 vs the
- *     420px chat column). The page scrolls naturally (1 page
- *     scrollbar).
- *
- * Sticky behavior: the panel sticks to `top: 3.5rem` (below the
- * topbar) as long as the parent (main row) is tall enough. When the
- * user scrolls past the bottom of the main row, the panel scrolls
- * up with it — so it never "floats" past the page footer.
+ * Phase 5.8 redesign — editorial treatment to match the rest of PLA:
+ *  - Header is structured as: avatar → title block → collapse button
+ *    (collapse now sits at the FAR RIGHT, where users expect it).
+ *  - Top of header has a thin terracotta accent strip + "TUTOR · AI"
+ *    eyebrow (matches the new eyebrow system used elsewhere).
+ *  - The empty state now has:
+ *      • gradient mesh backdrop (matches Dashboard hero)
+ *      • bigger, more prominent avatar (Tutor icon in soft terracotta)
+ *      • editorial eyebrow + larger display title
+ *      • suggestion chips that look CLICKABLE (with hover state and
+ *        a proper send icon), not just static labels
+ *  - Messages area has subtle warm wash, scrollable.
+ *  - Input has a clear "send" button styled to match Chat empty state.
  */
 
-const EXPANDED_WIDTH = 420 // px — full chat panel
-const COLLAPSED_WIDTH = 56 // px — narrow icon rail
+const EXPANDED_WIDTH = 420
+const COLLAPSED_WIDTH = 56
+
+const SUGGESTED_PROMPTS = [
+  {
+    label: 'Jelaskan lebih detail tentang topik ini',
+    icon: Lightbulb,
+  },
+  {
+    label: 'Beri contoh konkret',
+    icon: MessageCircle,
+  },
+  {
+    label: 'Ringkas poin-poin utama',
+    icon: Sparkles,
+  },
+]
 
 export default function ModuleChatPanel({ sessionId, topicId, moduleTitle }) {
   const queryClient = useQueryClient()
   const scrollRef = useRef(null)
-
-  // Collapse/expand state. Defaults to expanded (matches the
-  // previous always-visible design). When collapsed, the panel
-  // shrinks to a narrow icon rail so the article can use the
-  // reclaimed space for reading. The user toggles via a chevron
-  // button in the header (collapse) or at the top of the rail
-  // (expand).
-  //
-  // State is local — resets on page navigation. If persistence
-  // is needed later, lift to useUIStore next to `sidebarCollapsed`.
   const [isCollapsed, setIsCollapsed] = useState(false)
+  const [draftValue, setDraftValue] = useState('')
+  const textareaRef = useRef(null)
 
   const { data: history = [], isLoading } = useQuery({
     queryKey: ['chat', 'module', topicId],
@@ -102,15 +111,27 @@ export default function ModuleChatPanel({ sessionId, topicId, moduleTitle }) {
     },
   })
 
-  // Auto-scroll to the bottom when new messages arrive
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight
     }
   }, [history, sendMutation.isPending])
 
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto'
+      textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 100)}px`
+    }
+  }, [draftValue])
+
   const handleSendMessage = (content) => {
+    if (!content?.trim()) return
     sendMutation.mutate(content)
+  }
+
+  // Click a suggestion → send it immediately
+  const handleSuggestionClick = (label) => {
+    handleSendMessage(label)
   }
 
   return (
@@ -119,169 +140,164 @@ export default function ModuleChatPanel({ sessionId, topicId, moduleTitle }) {
       aria-label={`Tutor AI untuk ${moduleTitle || 'modul ini'}`}
       aria-expanded={!isCollapsed}
       className={cn(
-        'shrink-0',
-        'flex flex-col',
-        'bg-surface-1',
-        // Thin 1px line on the LEFT edge as the only visual separator
-        // from the article. No shadow, no border on other sides.
-        'border-l border-border-subtle',
-        // Sticky to top of viewport (just below the h-14 topbar) so
-        // the chat panel stays visible as the user scrolls through
-        // long articles. When the user reaches the bottom of the
-        // main row, the panel scrolls up with it (no floating
-        // past the page footer).
-        'sticky top-14',
-        // `overflow-hidden` so the inner content (CollapsedRail or
-        // full panel) doesn't bleed outside the animated width
-        // during the spring transition. Without it, the messages
-        // area would briefly extend past the panel border.
-        'overflow-hidden',
+        'shrink-0 flex flex-col bg-surface-1 border-l border-border-subtle',
+        'sticky top-0 self-stretch overflow-hidden h-[calc(100vh-60px)]'
       )}
       initial={false}
-      // Animate the width between the full panel and the icon rail.
-      // The spring (320/32) gives a snappy but not jarring motion
-      // that matches the rest of the app's transitions.
       animate={{ width: isCollapsed ? COLLAPSED_WIDTH : EXPANDED_WIDTH }}
       transition={{ type: 'spring', stiffness: 320, damping: 32 }}
-      style={{
-        height: 'calc(100vh - 3.5rem)',
-      }}
     >
       {isCollapsed ? (
         <CollapsedRail onExpand={() => setIsCollapsed(false)} />
       ) : (
         <>
-      {/* Sidebar header — sticks to the top of the column. The
-          chevron-right button on the left collapses the panel
-          (shrinks it back to the icon rail on the right). */}
-      <div
-        className={cn(
-          'flex items-center gap-2 shrink-0',
-          'px-3 py-3 border-b border-border-subtle',
-          'bg-surface-1',
-        )}
-      >
-        <button
-          type="button"
-          onClick={() => setIsCollapsed(true)}
-          className={cn(
-            'p-1.5 rounded-lg shrink-0',
-            'text-secondary hover:text-primary hover:bg-secondary/10',
-            'transition-colors duration-150',
-            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-tertiary',
-          )}
-          aria-label="Tutup Tutor AI"
-          title="Tutup Tutor AI"
-        >
-          <ChevronRight size={16} />
-        </button>
-        <div
-          className={cn(
-            'flex size-8 items-center justify-center rounded-lg shrink-0',
-            'bg-tertiary/15 text-tertiary',
-          )}
-          aria-hidden="true"
-        >
-          <Sparkles className="size-4" />
-        </div>
-        <div className="min-w-0 flex-1">
-          <h2 className="font-display font-semibold text-sm text-primary leading-tight truncate">
-            Tutor AI
-          </h2>
-          <p
-            className="text-[11px] text-text-muted font-label truncate"
-            title={moduleTitle}
-          >
-            {moduleTitle || 'Modul ini'}
-          </p>
-        </div>
-      </div>
-
-      {/* Chat Messages — internal scroll, so the column stays a fixed
-          height (viewport - topbar) and long conversations don't make
-          the page super tall. */}
-      <div
-        ref={scrollRef}
-        className="flex-1 overflow-y-auto p-4 space-y-6 bg-surface-0/30"
-      >
-        {isLoading ? (
-          <div className="flex items-center justify-center text-text-muted text-sm font-label py-12">
-            <Sparkles className="size-4 mr-2 animate-pulse" />
-            Memuat riwayat chat…
-          </div>
-        ) : history.length === 0 ? (
-          <EmptyChatState />
-        ) : (
-          <div className="space-y-6">
-            {history.map((msg, idx) => {
-              const isLastAi =
-                msg.role === 'assistant' &&
-                idx === history.length - 1 &&
-                !sendMutation.isPending
-              return (
-                <ChatBubble
-                  key={msg.id || idx}
-                  messageId={msg.id}
-                  message={msg.content}
-                  isAI={msg.role === 'assistant'}
-                  sources={msg.sources}
-                  timestamp={msg.created_at}
-                  isLastAiMessage={isLastAi}
-                  rag_faithfulness={msg.rag_faithfulness}
-                  rag_answer_relevancy={msg.rag_answer_relevancy}
+          {/* ─── HEADER ─── */}
+          <div className="relative shrink-0 bg-surface-1 border-b border-border-subtle">
+            <div className="flex items-center gap-2.5 px-3 py-2">
+              {/* Avatar */}
+              <div className="relative shrink-0">
+                <div className="absolute inset-0 bg-tertiary/20 blur-md rounded-full" />
+                <div className="relative flex size-7 items-center justify-center rounded-xl bg-tertiary/10 border border-tertiary/25 text-tertiary">
+                  <Sparkles className="size-3.5" />
+                </div>
+                {/* Online dot */}
+                <span
+                  aria-hidden="true"
+                  className="absolute -bottom-0.5 -right-0.5 size-2 rounded-full bg-success border-2 border-surface-1"
                 />
-              )
-            })}
-            {sendMutation.isPending && (
-              <div className="flex items-start gap-3">
-                <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-tertiary to-tertiary-light flex items-center justify-center text-white shadow-warm-sm">
-                  <Sparkles size={14} />
-                </div>
-                <div className="rounded-2xl rounded-tl-sm bg-surface-2/60 px-4 py-3 border border-border-subtle">
-                  <ThinkingIndicator />
-                </div>
+              </div>
+
+              {/* Title block */}
+              <div className="min-w-0 flex-1">
+                <h2 className="font-display font-bold text-[14px] text-primary leading-tight truncate">
+                  Tanya Tutor AI
+                </h2>
+                <p
+                  className="text-[11px] text-secondary font-label truncate mt-0.5"
+                  title={moduleTitle}
+                >
+                  {moduleTitle || 'Tanya seputar modul ini'}
+                </p>
+              </div>
+
+              {/* Collapse button — moved to the FAR RIGHT (where users expect it) */}
+              <button
+                type="button"
+                onClick={() => setIsCollapsed(true)}
+                className={cn(
+                  'flex size-8 items-center justify-center rounded-lg shrink-0',
+                  'text-secondary hover:text-primary hover:bg-secondary/10',
+                  'transition-colors duration-150',
+                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-tertiary'
+                )}
+                aria-label="Sembunyikan Tutor AI"
+                title="Sembunyikan Tutor AI"
+              >
+                <ChevronRight size={16} />
+              </button>
+            </div>
+          </div>
+
+          {/* ─── MESSAGES ─── */}
+          <div
+            ref={scrollRef}
+            className="flex-1 overflow-y-auto px-4 py-4 space-y-5 bg-surface-0/30"
+          >
+            {isLoading ? (
+              <div className="flex items-center justify-center text-text-muted text-sm font-label py-12">
+                <Sparkles className="size-4 mr-2 animate-pulse" />
+                Memuat riwayat chat…
+              </div>
+            ) : history.length === 0 ? (
+              <EmptyChatState
+                moduleTitle={moduleTitle}
+                onSuggestionClick={handleSuggestionClick}
+                disabled={sendMutation.isPending}
+              />
+            ) : (
+              <div className="space-y-5">
+                {history.map((msg, idx) => {
+                  const isLastAi =
+                    msg.role === 'assistant' &&
+                    idx === history.length - 1 &&
+                    !sendMutation.isPending
+                  return (
+                    <ChatBubble
+                      key={msg.id || idx}
+                      messageId={msg.id}
+                      message={msg.content}
+                      isAI={msg.role === 'assistant'}
+                      sources={msg.sources}
+                      timestamp={msg.created_at}
+                      isLastAiMessage={isLastAi}
+                      rag_faithfulness={msg.rag_faithfulness}
+                      rag_answer_relevancy={msg.rag_answer_relevancy}
+                    />
+                  )
+                })}
+                {sendMutation.isPending && (
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-tertiary to-tertiary-light flex items-center justify-center text-white shadow-warm-sm">
+                      <Sparkles size={14} />
+                    </div>
+                    <div className="rounded-2xl rounded-tl-sm bg-surface-2/60 px-4 py-3 border border-border-subtle">
+                      <ThinkingIndicator />
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
-        )}
-      </div>
 
-      {/* Input — at the bottom of the column. */}
-      <div className="p-3 border-t border-border-subtle bg-surface-1 shrink-0">
-        <ChatInput
-          onSend={handleSendMessage}
-          isLoading={sendMutation.isPending}
-          placeholder="Tanyakan sesuatu…"
-          hideUpload={true}
-        />
-        <p className="mt-1.5 text-[10px] font-label text-text-subtle text-center">
-          Shift+Enter untuk baris baru
-        </p>
-      </div>
+          {/* ─── INPUT ─── */}
+          <div className="px-3 py-2 border-t border-border-subtle bg-surface-1 shrink-0">
+            <div className="flex items-end gap-2 bg-surface border border-border-subtle rounded-2xl px-3 py-2 focus-within:border-tertiary focus-within:ring-2 focus-within:ring-tertiary/20 transition-all shadow-warm-xs">
+              <textarea
+                rows={1}
+                value={draftValue}
+                onChange={(e) => setDraftValue(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault()
+                    if (draftValue.trim()) {
+                      handleSendMessage(draftValue)
+                      setDraftValue('')
+                    }
+                  }
+                }}
+                placeholder="Tanyakan sesuatu…"
+                disabled={sendMutation.isPending}
+                className="flex-1 bg-transparent border-none focus:ring-0 focus:outline-none text-[13px] text-primary placeholder:text-secondary/50 resize-none py-1 max-h-[100px] leading-relaxed [&::-webkit-scrollbar]:hidden"
+                ref={textareaRef}
+              />
+              <button
+                onClick={() => {
+                  if (draftValue.trim()) {
+                    handleSendMessage(draftValue)
+                    setDraftValue('')
+                  }
+                }}
+                disabled={!draftValue.trim() || sendMutation.isPending}
+                aria-label="Kirim pesan"
+                className="bg-tertiary text-white rounded-full p-2 hover:bg-tertiary-light disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-150 flex-shrink-0 shadow-sm"
+              >
+                {sendMutation.isPending
+                  ? <span className="size-3.5 rounded-full border-2 border-white/40 border-t-white animate-spin block" />
+                  : <Send size={14} />}
+              </button>
+            </div>
+          </div>
         </>
       )}
     </motion.aside>
   )
 }
 
-/**
- * CollapsedRail — narrow icon rail shown when the chat panel is
- * collapsed. Just a chevron-left button (to expand) and a centered
- * Sparkles icon + rotated "Tutor AI" label, so the user can still
- * tell where the chat went. Width is `COLLAPSED_WIDTH` (56px).
- *
- * The label is rotated 90° via CSS `writing-mode: vertical-rl` +
- * `transform: rotate(180deg)`. This makes the text read top-to-
- * bottom along the rail, matching the way vertical text is rendered
- * in design tools (Figma "Rotate 90° CCW"). The rotation flip
- * (180°) puts the text in the natural reading orientation (top →
- * bottom, not bottom → top).
- */
+/* ────────────────────────────────────────────────────────────────── */
+
 function CollapsedRail({ onExpand }) {
   return (
     <div className="flex flex-col h-full items-center">
-      {/* Expand button — top of the rail. Chevron points LEFT (←)
-          toward where the full panel will appear when expanded. */}
       <button
         type="button"
         onClick={onExpand}
@@ -289,7 +305,7 @@ function CollapsedRail({ onExpand }) {
           'mt-3 p-1.5 rounded-lg shrink-0',
           'text-secondary hover:text-primary hover:bg-secondary/10',
           'transition-colors duration-150',
-          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-tertiary',
+          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-tertiary'
         )}
         aria-label="Buka Tutor AI"
         title="Buka Tutor AI"
@@ -297,12 +313,11 @@ function CollapsedRail({ onExpand }) {
         <ChevronLeft size={16} />
       </button>
 
-      {/* Icon + vertical label — fills the middle of the rail. */}
       <div className="flex-1 flex flex-col items-center justify-center gap-3">
         <div
           className={cn(
             'size-10 rounded-xl flex items-center justify-center',
-            'bg-tertiary/15 text-tertiary',
+            'bg-tertiary/15 text-tertiary'
           )}
           aria-hidden="true"
         >
@@ -311,7 +326,7 @@ function CollapsedRail({ onExpand }) {
         <span
           className={cn(
             'text-[10px] font-label font-bold uppercase tracking-widest',
-            'text-tertiary select-none',
+            'text-tertiary select-none'
           )}
           style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}
         >
@@ -319,49 +334,101 @@ function CollapsedRail({ onExpand }) {
         </span>
       </div>
 
-      {/* Spacer at the bottom mirrors the input area in the expanded
-          view, so the icon stays vertically centered regardless of
-          the rail's height. */}
       <div className="h-3 shrink-0" aria-hidden="true" />
     </div>
   )
 }
 
-function EmptyChatState() {
+/* ────────────────────────────────────────────────────────────────── */
+
+function EmptyChatState({ moduleTitle, onSuggestionClick, disabled }) {
   return (
-    <div className="flex flex-col items-center justify-center text-center px-6 py-12">
+    <div className="relative flex flex-col items-center text-center px-4 py-8 overflow-hidden">
+      {/* Soft gradient backdrop — matches the rest of the app's hero treatment */}
       <div
-        className={cn(
-          'w-14 h-14 rounded-2xl flex items-center justify-center mb-4',
-          'bg-tertiary/10 text-tertiary',
-        )}
+        aria-hidden="true"
+        className="absolute inset-0 -z-10 gradient-mesh-warm opacity-40"
+      />
+
+      {/* Decorative oversized numeral — tiny, doesn't overlap */}
+      <span
+        aria-hidden="true"
+        className="absolute -top-2 -right-2 font-display text-[4rem] font-black italic text-tertiary/[0.06] leading-none pointer-events-none select-none"
       >
-        <MessageCircle size={26} />
+        ✦
+      </span>
+
+      {/* Avatar — big, prominent, with glow */}
+      <div className="relative mb-4">
+        <div
+          aria-hidden="true"
+          className="absolute inset-0 -m-3 bg-tertiary/15 blur-2xl rounded-full"
+        />
+        <div className="relative flex size-16 items-center justify-center rounded-2xl bg-tertiary/10 border-2 border-tertiary/25 text-tertiary shadow-warm-sm">
+          <MessageCircle className="size-7" strokeWidth={1.5} />
+        </div>
+        {/* Live indicator dot */}
+        <span
+          aria-hidden="true"
+          className="absolute -bottom-0.5 -right-0.5 flex size-3.5 items-center justify-center"
+        >
+          <span className="absolute inline-flex h-full w-full rounded-full bg-success/40 animate-ping" />
+          <span className="relative inline-flex size-2.5 rounded-full bg-success border-2 border-surface-1" />
+        </span>
       </div>
-      <h3 className="font-display font-semibold text-base text-primary mb-2">
+
+      {/* Title block */}
+      <p className="eyebrow !text-[10px] mb-1">Selamat datang</p>
+      <h3 className="font-display font-bold text-lg text-primary leading-tight tracking-tight mb-1.5">
         Tanya Tutor AI
       </h3>
-      <p className="text-xs text-text-muted font-label leading-relaxed max-w-[280px]">
-        Ada bagian yang kurang jelas? Saya siap menjelaskannya lebih detail
-        berdasarkan materi yang sedang Anda baca.
+      <p className="text-[12px] text-secondary font-serif-content leading-relaxed max-w-[300px]">
+        Ada bagian yang kurang jelas? Saya siap menjelaskannya lebih
+        detail berdasarkan materi{' '}
+        <span className="text-primary font-medium italic">
+          {moduleTitle || 'yang sedang Anda baca'}
+        </span>
+        .
       </p>
-      <div className="mt-4 flex flex-col gap-2 w-full max-w-[280px]">
-        {[
-          'Jelaskan lebih detail tentang topik ini',
-          'Beri contoh konkret',
-          'Ringkas poin-poin utama',
-        ].map((suggestion) => (
-          <span
-            key={suggestion}
+
+      {/* Suggested prompts — actually clickable */}
+      <div className="mt-5 w-full space-y-2">
+        <p className="text-[10px] font-label uppercase tracking-widest text-secondary/70 mb-2">
+          Atau coba tanya
+        </p>
+        {SUGGESTED_PROMPTS.map(({ label, icon: Icon }) => (
+          <button
+            key={label}
+            type="button"
+            disabled={disabled}
+            onClick={() => onSuggestionClick?.(label)}
             className={cn(
-              'inline-flex items-center gap-1.5 px-3 py-2 rounded-lg',
+              'group w-full inline-flex items-center gap-2.5 px-3 py-2.5 rounded-xl',
               'bg-surface-1 border border-border-subtle',
-              'text-[11px] font-label text-text-muted text-left',
+              'text-left text-[12px] font-label text-secondary',
+              'transition-all duration-150',
+              'hover:border-tertiary/40 hover:bg-tertiary/[0.04] hover:text-primary',
+              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-tertiary',
+              'disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:border-border-subtle'
             )}
           >
-            <Send className="size-2.5 shrink-0" />
-            {suggestion}
-          </span>
+            <span
+              className={cn(
+                'flex size-7 shrink-0 items-center justify-center rounded-lg',
+                'bg-tertiary/10 text-tertiary',
+                'transition-transform duration-200 group-hover:scale-105'
+              )}
+            >
+              <Icon className="size-3.5" />
+            </span>
+            <span className="flex-1 leading-snug">{label}</span>
+            <Send
+              className={cn(
+                'size-3 shrink-0 text-secondary/40',
+                'transition-all duration-200 group-hover:text-tertiary group-hover:translate-x-0.5'
+              )}
+            />
+          </button>
         ))}
       </div>
     </div>

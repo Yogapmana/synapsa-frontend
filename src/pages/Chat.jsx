@@ -4,17 +4,15 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getChatSessions, createChatSession, deleteChatSession, sendMessage, getHistory, uploadDocument } from '@/api/chat';
 import { useChatStore } from '@/stores/chatStore';
 import { useAuthStore } from '@/stores/authStore';
-import { useAgentLog } from '@/hooks/useAgentLog';
 import ChatBubble from '@/components/chat/ChatBubble';
 import ChatInput from '@/components/chat/ChatInput';
 import WelcomeHero from '@/components/chat/WelcomeHero';
 import CapabilityBadges from '@/components/chat/CapabilityBadges';
-import QuickActionCards from '@/components/chat/QuickActionCards';
 import ChatHistoryEmpty from '@/components/chat/ChatHistoryEmpty';
 import ThinkingIndicator from '@/components/chat/ThinkingIndicator';
 import StatusBadge from '@/components/common/StatusBadge';
 import Avatar from '@/components/common/Avatar';
-import { History, Sparkles, Plus, MessageSquare, Trash2, Menu, X } from 'lucide-react';
+import { History, Sparkles, Plus, MessageSquare, MessageCircle, Trash2, Menu, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function Chat() {
@@ -26,9 +24,9 @@ export default function Chat() {
 
   const [uploadToast, setUploadToast] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-
-  // Agent Log for live thinking info
-  const { logs, clearLogs } = useAgentLog(activeChatSessionId);
+  // Desktop sidebar collapse state — when true, the sidebar shrinks
+  // to a narrow icon rail. State is local (not persisted).
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   
   // Queries
   const { data: sessions = [], isLoading: isSessionsLoading } = useQuery({
@@ -139,7 +137,6 @@ export default function Chat() {
       const newSession = await createSessionMutation.mutateAsync(content.substring(0, 30) + "...");
       currentSessionId = newSession.id;
     }
-    clearLogs(); // clear logs for new message
     sendMutation.mutate({ sessionId: currentSessionId, content });
   };
 
@@ -163,52 +160,49 @@ export default function Chat() {
 
   const SidebarContent = () => (
     <>
-      <div className="p-4 border-b border-border-subtle shrink-0">
+      {/* Top section — h-16, matches the chat header height */}
+      <div className="shadow-[inset_0_-1px_0_rgba(58,41,22,0.05)] shrink-0 flex items-center h-16 px-4 bg-surface-1">
         <button
           onClick={() => { setActiveChatSessionId(null); setSidebarOpen(false); }}
-          className="flex items-center gap-2 w-full justify-center px-4 py-2.5 bg-primary text-neutral rounded-xl hover:bg-primary/90 font-medium transition-colors shadow-warm-sm"
+          className="group flex items-center gap-2 w-full justify-center px-4 py-2.5 bg-tertiary text-white rounded-xl hover:bg-tertiary-light font-medium text-[13px] transition-all duration-200 shadow-warm-sm hover:shadow-warm-md"
         >
-          <Plus size={18} />
+          <Plus size={16} className="transition-transform duration-200 group-hover:rotate-90" />
           Percakapan Baru
         </button>
       </div>
-      {/* Sessions list — shows the empty state when there are no
-          saved chats (helps the user discover the template prompts
-          and understand the column's purpose), or a list of saved
-          sessions otherwise. The empty state is rendered in the
-          same scroll context as the sessions, so any future
-          additions (e.g. "Recent" section) can flow naturally. */}
-      <div className="flex-1 min-h-0 p-3 overflow-y-auto">
+
+      {/* Sessions list */}
+      <div className="flex-1 min-h-0 px-3 pt-4 pb-3 overflow-y-auto bg-surface-1">
         {sessions.length === 0 ? (
           <ChatHistoryEmpty onTemplateClick={handleSendMessage} />
         ) : (
-          <div className="space-y-1">
+          <div className="space-y-0.5">
             {sessions.map(session => (
-          <div
-            key={session.id}
-            className={cn(
-              "flex items-center justify-between p-3 rounded-xl cursor-pointer group transition-all duration-200",
-              activeChatSessionId === session.id
-                ? "bg-tertiary/10 text-tertiary font-medium ring-1 ring-tertiary/20"
-                : "hover:bg-secondary/8 text-secondary hover:text-primary"
-            )}
-            onClick={() => { setActiveChatSessionId(session.id); setSidebarOpen(false); }}
-          >
-            <div className="flex items-center gap-3 overflow-hidden">
-              <MessageSquare size={16} className="shrink-0" />
-              <span className="text-sm truncate">{session.topic}</span>
-            </div>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                deleteSessionMutation.mutate(session.id);
-              }}
-              className="opacity-0 group-hover:opacity-100 hover:text-danger p-1.5 rounded-md hover:bg-danger/10 transition-all shrink-0"
-              aria-label={`Hapus percakapan ${session.topic}`}
-            >
-              <Trash2 size={14} />
-            </button>
-          </div>
+              <div
+                key={session.id}
+                className={cn(
+                  "flex items-center justify-between px-3 py-2.5 rounded-xl cursor-pointer group transition-all duration-200 mb-1",
+                  activeChatSessionId === session.id
+                    ? "bg-surface border border-tertiary/30 text-tertiary font-semibold shadow-sm ring-1 ring-tertiary/10"
+                    : "border border-transparent hover:bg-tertiary/[0.04] text-secondary hover:text-primary hover:border-tertiary/10"
+                )}
+                onClick={() => { setActiveChatSessionId(session.id); setSidebarOpen(false); }}
+              >
+                <div className="flex items-center gap-2.5 overflow-hidden">
+                  <MessageCircle size={14} className={cn("shrink-0", activeChatSessionId === session.id ? "text-tertiary" : "text-secondary/60 group-hover:text-tertiary/70")} />
+                  <span className="text-[13px] truncate">{session.topic}</span>
+                </div>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    deleteSessionMutation.mutate(session.id);
+                  }}
+                  className="opacity-0 group-hover:opacity-100 hover:text-danger p-1.5 rounded-md hover:bg-danger/10 transition-all shrink-0"
+                  aria-label={`Hapus percakapan ${session.topic}`}
+                >
+                  <Trash2 size={14} />
+                </button>
+              </div>
             ))}
           </div>
         )}
@@ -233,11 +227,9 @@ export default function Chat() {
     // AppLayout's `bg-neutral` outer container. The page no longer
     // looks "tempelan" (patched on) — it reads as part of the same
     // surface as the rest of the app.
-    <div className="flex h-full bg-transparent overflow-hidden relative">
+    <div className="flex h-full bg-transparent overflow-y-auto relative items-start" ref={scrollRef}>
 
-      {/* Mobile Sidebar Overlay — lighter (was bg-primary/40, now
-          bg-neutral/30 + softer blur) so it doesn't darken the cream
-          theme too aggressively. */}
+      {/* Mobile Sidebar Overlay */}
       <AnimatePresence>
         {sidebarOpen && (
           <motion.div
@@ -250,112 +242,71 @@ export default function Chat() {
         )}
       </AnimatePresence>
 
-      {/* Chat History Sidebar — semantic <aside>, transparent bg,
-          light border. No shadow on desktop (mobile drawer keeps
-          shadow-warm-lg). `min-h-0` is required here so the
-          sessions list inside (which uses `flex-1 overflow-y-auto`)
-          gets a bounded height — without it, the inner div can't
-          scroll because the flex parent refuses to shrink below
-          its content size. */}
-      <aside
-        className={cn(
-          "fixed md:static inset-y-0 left-0 z-30 w-72 bg-transparent border-r border-border-subtle flex flex-col min-h-0 md:shadow-none transition-transform duration-300 ease-in-out shadow-warm-lg",
-          sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
-        )}
-        aria-label="Riwayat percakapan"
-      >
-        {/* Mobile Header for Sidebar */}
-        <div className="md:hidden flex items-center justify-between p-4 border-b border-border-subtle shrink-0">
-          <span className="font-display font-bold text-primary">Riwayat Obrolan</span>
-          <button onClick={() => setSidebarOpen(false)} className="p-2 text-secondary hover:text-primary rounded-lg">
-            <X size={20} />
-          </button>
-        </div>
-        <SidebarContent />
-      </aside>
-
-      {/* Main Chat Area */}
-      <div className="flex-1 flex flex-col min-w-0 h-full relative">
-        {/* ── Chat Header — transparent bg, light border, no shadow.
-            Triple-affordance removed: just a thin 1px line below
-            separates it from the messages area. */}
-        <header className="px-4 md:px-6 py-3 bg-transparent border-b border-border-subtle flex items-center justify-between z-10 shrink-0 h-16">
+      {/* Main Chat Area — comes FIRST (left side) */}
+      <div className="flex-1 flex flex-col min-w-0 min-h-full relative">
+        {/* ── Chat Header */}
+        <header className="sticky top-0 px-4 md:px-6 py-3 bg-neutral/95 backdrop-blur-sm shadow-[0_1px_0_rgba(58,41,22,0.05)] flex items-center justify-between z-20 shrink-0 h-16">
           <div className="flex items-center gap-3">
             <button
               onClick={() => setSidebarOpen(true)}
               className="md:hidden p-2 -ml-2 text-secondary hover:text-primary rounded-lg hover:bg-secondary/10 transition-colors"
+              aria-label="Buka riwayat"
             >
               <Menu size={20} />
             </button>
-            <Avatar role="tutor" variant="ring" size="md" label="Avatar PLA Chatbot" />
+            <div className="relative shrink-0 hidden sm:block">
+              <div className="absolute inset-0 bg-tertiary/20 blur-md rounded-full" />
+              <div className="relative flex size-9 items-center justify-center rounded-xl bg-tertiary/10 border border-tertiary/25 text-tertiary shadow-warm-sm">
+                <Sparkles className="size-5" />
+              </div>
+              <span className="absolute -bottom-0.5 -right-0.5 size-2.5 rounded-full bg-success border-2 border-surface-1" />
+            </div>
             <div className="flex flex-col min-w-0">
               <div className="flex items-center gap-2.5">
-                <h1 className="font-display font-bold text-lg text-primary tracking-tight">
-                  PLA Chatbot
+                <h1 className="font-display font-bold text-[16px] sm:text-lg text-primary tracking-tight leading-none">
+                  Tanya PLA Chatbot
                 </h1>
-                <StatusBadge variant="success" className="flex items-center gap-1.5 hidden sm:flex">
+                <StatusBadge variant="success" className="flex items-center gap-1.5 hidden sm:flex !py-0.5 !px-2 !text-[10px] shadow-sm">
                   <span className="w-1.5 h-1.5 bg-success rounded-full animate-pulse" />
                   RAG & Web Search Aktif
                 </StatusBadge>
               </div>
+              <p className="text-[11px] text-secondary font-label mt-1 truncate">
+                Asisten AI General • Jawaban komprehensif
+              </p>
             </div>
           </div>
+          {/* History toggle — visible on desktop when sidebar is collapsed */}
+          <button
+            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+            className={cn(
+              "hidden md:flex items-center justify-center size-9 rounded-lg text-secondary hover:text-primary hover:bg-secondary/10 transition-colors",
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-tertiary"
+            )}
+            title={sidebarCollapsed ? 'Tampilkan riwayat' : 'Sembunyikan riwayat'}
+            aria-label={sidebarCollapsed ? 'Tampilkan riwayat' : 'Sembunyikan riwayat'}
+          >
+            <History size={18} />
+          </button>
         </header>
 
         {/* ── Chat Content ── */}
-        <div className="flex-1 overflow-y-auto" ref={scrollRef}>
+        <div className="flex-1">
           <div className="max-w-[850px] mx-auto px-4 md:px-6 py-6 min-h-full flex flex-col">
 
             <AnimatePresence mode="wait">
               {isEmpty ? (
-                /* ── Empty State (redesigned) ──
-                    Replaces the old single-icon + 3-pill layout with
-                    a more visual, premium feel:
-                      - WelcomeHero: animated sparkles icon with
-                        gradient glow + personalized greeting
-                      - CapabilityBadges: 4 chips showing what the
-                        bot can do (web search, docs, etc.)
-                      - QuickActionCards: 2×2 grid of action cards
-                        with hover effects and prompts
-                      - Background: subtle tertiary radial glow
-                        at top, no harsh borders
-                    The user said "buat menarik dan sesuai standar
-                    UI/UX" so we lean into the modern AI-chat
-                    pattern (Notion AI, Linear AI, Cursor) without
-                    breaking the warm cream aesthetic. */
                 <motion.div
                   key="empty"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
-                  className="flex-1 flex flex-col items-center justify-center text-center py-10 relative"
+                  className="flex-1 flex flex-col items-center justify-center text-center py-10"
                 >
-                  {/* Soft background glow — two large blurred
-                      tertiary circles that create a subtle "spotlight"
-                      effect behind the hero. `pointer-events-none` so
-                      they never block clicks. Opacity 6% so it's
-                      barely there but adds depth. */}
-                  <div
-                    aria-hidden="true"
-                    className="absolute inset-0 overflow-hidden pointer-events-none"
-                  >
-                    <div className="absolute top-[10%] left-1/2 -translate-x-1/2 w-[500px] h-[500px] rounded-full bg-tertiary/[0.06] blur-3xl" />
-                    <div className="absolute bottom-[20%] right-[20%] w-[300px] h-[300px] rounded-full bg-tertiary-light/[0.05] blur-3xl" />
-                  </div>
-
-                  {/* Content stack — welcome hero, capability
-                      badges, action cards, then a small "powered
-                      by" footer. `relative` so it sits above the
-                      background glow. */}
-                  <div className="relative w-full max-w-2xl mx-auto flex flex-col items-center gap-7 md:gap-8">
+                  <div className="w-full max-w-2xl mx-auto flex flex-col items-center gap-6">
                     <WelcomeHero username={user?.username} />
                     <CapabilityBadges />
-                    <QuickActionCards onActionClick={handleSendMessage} />
-
-                    {/* Powered-by footer — small line with a live
-                        dot, like the chat header's status badge.
-                        Reinforces the "AI is real" feel. */}
-                    <div className="flex items-center gap-1.5 text-[11px] text-secondary/60 font-label">
+                    <div className="flex items-center gap-1.5 text-[11px] text-secondary/60 font-label mt-1">
                       <span
                         className="w-1.5 h-1.5 bg-success rounded-full animate-pulse"
                         aria-hidden="true"
@@ -365,7 +316,6 @@ export default function Chat() {
                   </div>
                 </motion.div>
               ) : (
-                /* ── Messages ── */
                 <motion.div
                   key="messages"
                   initial={{ opacity: 0 }}
@@ -394,7 +344,7 @@ export default function Chat() {
 
                   {sendMutation.isPending && (
                     <ThinkingIndicator
-                      message={logs.length > 0 ? logs[logs.length - 1]?.message : "Memikirkan jawaban..."}
+                      message="Memikirkan jawaban..."
                     />
                   )}
 
@@ -406,7 +356,7 @@ export default function Chat() {
         </div>
 
         {/* ── Input Area (pinned bottom) ── */}
-        <div className="relative shrink-0">
+        <div className="sticky bottom-0 z-20 shrink-0 bg-neutral/95 backdrop-blur-sm pb-2 pt-2">
           <AnimatePresence>
             {uploadToast && (
               <motion.div
@@ -433,6 +383,29 @@ export default function Chat() {
           />
         </div>
       </div>
+
+      {/* Chat History Sidebar — RIGHT side, border-l instead of border-r.
+          On mobile, slides in from the right edge. */}
+      <aside
+        className={cn(
+          "fixed md:sticky inset-y-0 md:top-0 right-0 z-30 bg-surface-1 border-l border-[rgba(58,41,22,0.06)] flex flex-col min-h-0 md:shadow-none shadow-warm-lg",
+          "transition-all duration-300 ease-in-out",
+          "w-72 md:h-[calc(100vh-60px)]",
+          sidebarOpen ? "translate-x-0" : "translate-x-full md:translate-x-0",
+          // Desktop: collapse to hidden
+          sidebarCollapsed && "md:w-0 md:border-l-0 md:overflow-hidden"
+        )}
+        aria-label="Riwayat percakapan"
+      >
+        {/* Mobile Header for Sidebar */}
+        <div className="md:hidden flex items-center justify-between p-4 shadow-[inset_0_-1px_0_rgba(58,41,22,0.05)] shrink-0">
+          <span className="font-display font-bold text-primary">Riwayat Obrolan</span>
+          <button onClick={() => setSidebarOpen(false)} className="p-2 text-secondary hover:text-primary rounded-lg">
+            <X size={20} />
+          </button>
+        </div>
+        <SidebarContent />
+      </aside>
     </div>
   );
 }

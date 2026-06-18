@@ -144,6 +144,8 @@ export default function Login() {
                   type="email"
                   autoComplete="email"
                   placeholder="name@example.com"
+                  aria-invalid={!!errors.email}
+                  aria-describedby={errors.email ? "email-error" : undefined}
                   className={cn(
                     'w-full rounded-xl border border-border bg-surface px-4 py-3 text-sm text-primary placeholder:text-secondary/50 focus:border-tertiary focus:ring-2 focus:ring-tertiary/20 focus:outline-none transition-colors',
                     errors.email && 'border-danger focus:border-danger focus:ring-danger/20'
@@ -151,7 +153,7 @@ export default function Login() {
                   {...register('email')}
                 />
                 {errors.email && (
-                  <p className="text-danger text-sm">{errors.email.message}</p>
+                  <p id="email-error" role="alert" className="text-danger text-sm">{errors.email.message}</p>
                 )}
               </div>
 
@@ -167,6 +169,8 @@ export default function Login() {
                     id="password"
                     type={showPassword ? 'text' : 'password'}
                     autoComplete="current-password"
+                    aria-invalid={!!errors.password}
+                    aria-describedby={errors.password ? "password-error" : undefined}
                     className={cn(
                       'w-full rounded-xl border border-border bg-surface px-4 py-3 pr-10 text-sm text-primary placeholder:text-secondary/50 focus:border-tertiary focus:ring-2 focus:ring-tertiary/20 focus:outline-none transition-colors',
                       errors.password && 'border-danger focus:border-danger focus:ring-danger/20'
@@ -183,7 +187,7 @@ export default function Login() {
                   </button>
                 </div>
                 {errors.password && (
-                  <p className="text-danger text-sm">{errors.password.message}</p>
+                  <p id="password-error" role="alert" className="text-danger text-sm">{errors.password.message}</p>
                 )}
               </div>
 
@@ -208,7 +212,9 @@ export default function Login() {
 
             <button
               type="button"
-              className="w-full border-2 border-border bg-surface text-primary rounded-xl px-6 py-3 font-semibold hover:border-tertiary hover:text-tertiary transition-colors flex items-center justify-center gap-2"
+              disabled
+              title="Coming Soon"
+              className="w-full border-2 border-border bg-surface text-primary rounded-xl px-6 py-3 font-semibold hover:border-tertiary hover:text-tertiary transition-colors flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
             >
               <svg className="h-4 w-4" viewBox="0 0 24 24">
                 <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/>
