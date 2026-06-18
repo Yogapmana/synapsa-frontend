@@ -140,7 +140,7 @@ export default function ModuleChatPanel({ sessionId, topicId, moduleTitle }) {
       aria-label={`Tutor AI untuk ${moduleTitle || 'modul ini'}`}
       aria-expanded={!isCollapsed}
       className={cn(
-        'shrink-0 flex flex-col bg-surface-1 border-l border-border-subtle',
+        'shrink-0 flex flex-col bg-surface-1 border-l border-tertiary/20',
         'sticky top-0 self-stretch overflow-hidden h-[calc(100vh-60px)]'
       )}
       initial={false}
@@ -152,7 +152,7 @@ export default function ModuleChatPanel({ sessionId, topicId, moduleTitle }) {
       ) : (
         <>
           {/* ─── HEADER ─── */}
-          <div className="relative shrink-0 bg-surface-1 border-b border-border-subtle">
+          <div className="relative shrink-0 bg-surface-1 border-b border-tertiary/20">
             <div className="flex items-center gap-2.5 px-3 py-2">
               {/* Avatar */}
               <div className="relative shrink-0">
@@ -240,7 +240,7 @@ export default function ModuleChatPanel({ sessionId, topicId, moduleTitle }) {
                     <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-tertiary to-tertiary-light flex items-center justify-center text-white shadow-warm-sm">
                       <Sparkles size={14} />
                     </div>
-                    <div className="rounded-2xl rounded-tl-sm bg-surface-2/60 px-4 py-3 border border-border-subtle">
+                    <div className="rounded-2xl rounded-tl-sm bg-surface-2/60 px-4 py-3 border border-[rgba(58,41,22,0.06)]">
                       <ThinkingIndicator />
                     </div>
                   </div>
@@ -250,8 +250,8 @@ export default function ModuleChatPanel({ sessionId, topicId, moduleTitle }) {
           </div>
 
           {/* ─── INPUT ─── */}
-          <div className="px-3 py-2 border-t border-border-subtle bg-surface-1 shrink-0">
-            <div className="flex items-end gap-2 bg-surface border border-border-subtle rounded-2xl px-3 py-2 focus-within:border-tertiary focus-within:ring-2 focus-within:ring-tertiary/20 transition-all shadow-warm-xs">
+          <div className="px-3 py-2 border-t border-tertiary/20 bg-surface-1 shrink-0">
+            <div className="flex items-end gap-2 bg-surface border border-[rgba(58,41,22,0.06)] rounded-2xl px-3 py-2 focus-within:border-tertiary focus-within:ring-2 focus-within:ring-tertiary/20 transition-all shadow-warm-xs">
               <textarea
                 rows={1}
                 value={draftValue}
@@ -404,12 +404,12 @@ function EmptyChatState({ moduleTitle, onSuggestionClick, disabled }) {
             onClick={() => onSuggestionClick?.(label)}
             className={cn(
               'group w-full inline-flex items-center gap-2.5 px-3 py-2.5 rounded-xl',
-              'bg-surface-1 border border-border-subtle',
+              'bg-surface-1 border border-[rgba(58,41,22,0.06)]',
               'text-left text-[12px] font-label text-secondary',
               'transition-all duration-150',
               'hover:border-tertiary/40 hover:bg-tertiary/[0.04] hover:text-primary',
               'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-tertiary',
-              'disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:border-border-subtle'
+              'disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:border-[rgba(58,41,22,0.06)]'
             )}
           >
             <span

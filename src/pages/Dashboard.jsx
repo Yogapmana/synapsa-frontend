@@ -9,6 +9,8 @@ import { motion } from 'framer-motion';
 
 import GreetingHero from '../components/dashboard/GreetingHero';
 import { StatCards } from '../components/data/StatCards';
+import StreakCard from '../components/gamification/StreakCard';
+import XpCard from '../components/gamification/XpCard';
 import RAGASWidget from '../components/data/RAGASWidget';
 import { getRagasSummary } from '../api/chat';
 import ContinueLearningHero from '../components/dashboard/ContinueLearningHero';
@@ -69,7 +71,12 @@ export default function Dashboard() {
   const { curriculum, topics, quizHistory } = data;
 
   const completedTopicsCount = topics.filter(t => t.status === 'completed').length;
-  const xp = (completedTopicsCount * 10) + ((streak || 0) * 5);
+  // The fake XP formula below (topics*10 + streak*5) was a
+  // pre-gamification placeholder. The real XP system lives on
+  // the backend (see ``/api/v1/gamification/xp``) and is now
+  // displayed in the new <XpCard /> below. We delete the
+  // calculation entirely — no one reads it now.
+  const xp = 0; // legacy prop, see <XpCard /> for real value
 
   const avgQuizScore = quizHistory.length > 0
     ? Math.round(quizHistory.reduce((sum, q) => {
@@ -84,15 +91,9 @@ export default function Dashboard() {
   const studyHoursThisWeek = Math.round((totalStudyMinutes / 60) * 10) / 10;
 
   const stats = useMemo(() => [
-    {
-      label: 'Streak Hari',
-      value: streak || 0,
-      subtext: streak > 0 ? 'Pertahankan!' : 'Mulai hari ini',
-      icon: 'Flame',
-      color: 'tertiary',
-      sparkline: [1, 2, 3, 4, 5, 6, streak || 0].slice(-7),
-      trend: streak > 0 ? 12 : null,
-    },
+    // Note: "Streak Hari" was removed from this array because
+    // it's now shown in the dedicated <StreakCard /> with full
+    // 12-week heatmap. Keeping it here too would be redundant.
     {
       label: 'Topik Selesai',
       value: completedTopicsCount,
@@ -120,7 +121,7 @@ export default function Dashboard() {
       sparkline: [60, 70, 75, 80, 78, 85, avgQuizScore || 0],
       trend: avgQuizScore > 70 ? 6 : null,
     },
-  ], [streak, completedTopicsCount, topics.length, studyHoursThisWeek, avgQuizScore, quizHistory.length]);
+  ], [completedTopicsCount, topics.length, studyHoursThisWeek, avgQuizScore, quizHistory.length]);
 
   const todayTopic = topics.find(t => t.status === 'active') ||
                       topics.find(t => t.status === 'locked' || !t.status);
@@ -193,7 +194,7 @@ export default function Dashboard() {
       variants={stagger}
       initial="hidden"
       animate="show"
-      className="max-w-6xl mx-auto space-y-6 relative"
+      className="max-w-6xl mx-auto space-y-6 relative pb-8 md:pb-12"
     >
       {/* Decorative oversized serif numeral — the "dashboard page mark" */}
       <span
@@ -243,10 +244,26 @@ export default function Dashboard() {
         />
       </motion.div>
 
-      {/* 3. Stats grid — 4 kolom */}
+      {/* 3. Stats grid — 3 kolom (Streak dipindah ke StreakCard) */}
       <motion.div variants={fadeUp}>
         <StatCards stats={stats} />
       </motion.div>
+
+      {/* 3a. Gamification — Streak Heatmap + Level/XP. The streak
+          card is a richer version of the old "Streak Hari" stat
+          (now 12 weeks of history + longest streak). The XP card
+          is brand new and shows the user's level progression
+          powered by the Mastery Score milestones. Both pull
+          live data from /api/v1/gamification/* — no fake client
+          computations, no stale values. */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-5">
+        <motion.div variants={fadeUp}>
+          <StreakCard />
+        </motion.div>
+        <motion.div variants={fadeUp}>
+          <XpCard />
+        </motion.div>
+      </div>
 
       {/* 3b. RAGAS quality widget (RAG faithfulness + relevancy) */}
       {activeSession?.id && (

@@ -44,7 +44,10 @@ export default function Login() {
       const response = await loginApi(data.email, data.password)
       useAuthStore.getState().logout()
       queryClient.clear()
-      login(response.access_token, response.user)
+      // Pass the response.streak payload through to the auth store
+      // — when `is_new_day` is true, the store queues a
+      // StreakCelebration modal that AppLayout will render.
+      login(response.access_token, response.user, response.streak)
       navigate('/dashboard')
     } catch (err) {
       setError(err.response?.data?.detail || 'Login gagal. Silakan periksa email dan password Anda.')

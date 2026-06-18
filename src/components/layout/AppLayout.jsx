@@ -1,13 +1,33 @@
 import React from 'react';
 import { useLocation } from 'react-router-dom';
+import { AnimatePresence } from 'framer-motion';
 import Sidebar from './Sidebar';
 import Topbar from './Topbar';
 import { useUIStore } from '../../stores/uiStore';
+import { useAuthStore } from '../../stores/authStore';
+import StreakCelebration from '../gamification/StreakCelebration';
+import LevelUpCelebration from '../gamification/LevelUpCelebration';
 import { cn } from '../../utils/cn';
 
 const AppLayout = ({ children }) => {
   const { sidebarCollapsed } = useUIStore();
   const location = useLocation();
+
+  // Global streak celebration — pulled from the auth store which
+  // is set by `authStore.login()` whenever a login crosses a day
+  // boundary (``streak.is_new_day === true``). The modal renders
+  // here (and not in the Login page) so it persists across the
+  // route transition from /login → /dashboard, and so any future
+  // entry point (e.g. magic-link login, OAuth callback) gets the
+  // same celebration for free.
+  const pendingStreakCelebration = useAuthStore(
+    (s) => s.pendingStreakCelebration,
+  );
+  const clearStreakCelebration = useAuthStore(
+    (s) => s.clearStreakCelebration,
+  );
+  const pendingLevelUp = useAuthStore((s) => s.pendingLevelUp);
+  const clearLevelUp = useAuthStore((s) => s.clearLevelUp);
 
   const path = location.pathname;
   // Chat and Module pages are "app-in-app" layouts: they fill the
@@ -82,6 +102,28 @@ const AppLayout = ({ children }) => {
           </div>
         </main>
       </div>
+
+      {/* ── Global Streak Celebration Modal ─────────────────────
+          Rendered OUTSIDE the layout's flex tree (after the inner
+          wrapper closes) so it always renders at the top stacking
+          context (z-[60]) regardless of which page the user is on.
+          AnimatePresence handles enter/exit transitions; the modal
+          reads its data from the auth store and clears it on
+          dismiss so it only ever shows once per login. */}
+      <AnimatePresence>
+        {pendingStreakCelebration && (
+          <StreakCelebration
+            streak={pendingStreakCelebration}
+            onClose={clearStreakCelebration}
+          />
+        )}
+        {pendingLevelUp && (
+          <LevelUpCelebration
+            levelUp={pendingLevelUp}
+            onClose={clearLevelUp}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 };
