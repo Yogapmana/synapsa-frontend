@@ -59,13 +59,13 @@ export default function ModuleTopbar({ module, scrollContainerRef }) {
   })()
 
   return (
-    <div className="sticky top-0 z-30 backdrop-blur-md bg-neutral/85">
+    <div className="sticky top-0 z-30 backdrop-blur-md bg-neutral/85 pt-2 md:pt-3">
       {/* Full-width row — NO max-w / NO mx-auto.
           The topbar sits inside the main content area (left of the
           420px chat panel), and we want the back button + title to
           anchor to the LEFT EDGE of that area, not to the center
           of the page. */}
-      <div className="flex h-12 items-center gap-2.5 px-4 md:px-6">
+      <div className="flex h-14 items-center gap-2.5 px-4 md:px-6 pb-2">
         {/* Back button — at the very left */}
         <Link
           to="/curriculum"

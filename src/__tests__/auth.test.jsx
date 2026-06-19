@@ -1,6 +1,7 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import Login from '../pages/Auth/Login';
 import Register from '../pages/Auth/Register';
 import { useAuthStore } from '../stores/authStore';
@@ -11,6 +12,14 @@ vi.mock('@/api/auth', () => ({
   register: vi.fn(),
 }));
 
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: false,
+    },
+  },
+});
+
 describe('Authentication Smoke Tests', () => {
   beforeEach(() => {
     // Clear localStorage and store state
@@ -20,21 +29,25 @@ describe('Authentication Smoke Tests', () => {
 
   it('Login form renders with email and password fields', () => {
     render(
-      <BrowserRouter>
-        <Login />
-      </BrowserRouter>
+      <QueryClientProvider client={queryClient}>
+        <BrowserRouter>
+          <Login />
+        </BrowserRouter>
+      </QueryClientProvider>
     );
 
-    expect(screen.getByLabelText(/Email/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/Password/i)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Masuk/i })).toBeInTheDocument();
+    expect(screen.getAllByLabelText(/Email/i)[0]).toBeInTheDocument();
+    expect(screen.getAllByLabelText(/Password/i)[0]).toBeInTheDocument();
+    expect(screen.getAllByRole('button', { name: /Masuk/i })[0]).toBeInTheDocument();
   });
 
   it('Register form validates required fields', async () => {
     render(
-      <BrowserRouter>
-        <Register />
-      </BrowserRouter>
+      <QueryClientProvider client={queryClient}>
+        <BrowserRouter>
+          <Register />
+        </BrowserRouter>
+      </QueryClientProvider>
     );
 
     const submitButton = screen.getByRole('button', { name: /Daftar/i });

@@ -6,7 +6,6 @@ import { QUIZ_FEEDBACK } from '@/utils/constants';
 import { ConfettiEffect } from './ConfettiEffect';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import { useCompleteTopic } from '@/hooks/useLearning';
 
 /**
@@ -87,11 +86,11 @@ export function QuizResult({ result, questions, topicId, sessionId, onRetry }) {
       </span>
 
       {/* Main score card */}
-      <Card className={`relative border-none shadow-warm-lg overflow-hidden ${tierTone.bgClass}`}>
+      <div className={`card-hero relative overflow-hidden ${tierTone.bgClass}`}>
         {/* Top accent strip */}
         <div className="h-1.5 w-full bg-tertiary" />
 
-        <CardContent className="pt-10 pb-8 px-6 md:px-10 relative">
+        <div className="pt-10 pb-8 px-6 md:px-10 relative">
           {/* Decorative numeral watermark */}
           <span
             aria-hidden="true"
@@ -232,12 +231,12 @@ export function QuizResult({ result, questions, topicId, sessionId, onRetry }) {
               Ulangi Kuis
             </Button>
           </motion.div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       {/* Question review */}
-      <Card className="border-[var(--border)] shadow-warm-sm">
-        <CardContent className="p-6">
+      <div className="card-base">
+        <div className="p-6">
           <div className="flex items-baseline justify-between mb-4">
             <h3 className="font-display font-bold text-lg text-primary">
               Pembahasan Soal
@@ -335,8 +334,8 @@ export function QuizResult({ result, questions, topicId, sessionId, onRetry }) {
               )
             })}
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </motion.div>
   )
 }

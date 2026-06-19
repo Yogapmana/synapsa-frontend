@@ -23,6 +23,7 @@ vi.mock('framer-motion', () => ({
   motion: {
     div: ({ children, ...props }) => <div {...props}>{children}</div>,
   },
+  useReducedMotion: () => false,
 }));
 
 // Mock MarkdownRenderer

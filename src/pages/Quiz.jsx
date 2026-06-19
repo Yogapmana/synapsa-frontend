@@ -131,7 +131,7 @@ export default function Quiz() {
     }));
 
     return (
-      <div className="container py-8 max-w-4xl mx-auto">
+      <div className="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6 lg:px-0">
         <QuizResult 
           result={quizResult}
           questions={formattedQuestions}
@@ -146,7 +146,7 @@ export default function Quiz() {
   const currentQuestion = quizData.questions[currentIndex];
 
   return (
-    <div className="container py-8 max-w-4xl mx-auto flex flex-col items-center">
+    <div className="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6 lg:px-0 flex flex-col items-center">
       {quizState === 'submitting' ? (
         <div className="flex flex-col items-center justify-center space-y-4 py-12">
           <Loader2 className="w-10 h-10 animate-spin text-tertiary" />

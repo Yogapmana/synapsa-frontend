@@ -73,7 +73,7 @@ describe('QuizHistory Page', () => {
     vi.clearAllMocks();
   });
 
-  it('renders the page header and stat tiles with empty state', () => {
+  it('renders the page header with empty state', () => {
     vi.mocked(useActiveSession).mockReturnValue({
       data: { id: 'session-1' },
     });
@@ -84,15 +84,9 @@ describe('QuizHistory Page', () => {
 
     renderPage();
 
-    // "Riwayat Kuis" appears in BOTH the page title (h1) AND the
-    // last breadcrumb crumb. Use getAllByText to assert both.
     const titleMatches = screen.getAllByText(/Riwayat Kuis/i);
     expect(titleMatches.length).toBeGreaterThan(0);
 
-    // Stat tile labels
-    expect(screen.getByText(/Total Kuis/i)).toBeInTheDocument();
-    expect(screen.getByText(/Rata-rata/i)).toBeInTheDocument();
-    expect(screen.getByText(/Skor Terbaik/i)).toBeInTheDocument();
     // Empty-state copy
     expect(
       screen.getByText(/Belum ada riwayat kuis/i)
@@ -125,7 +119,7 @@ describe('QuizHistory Page', () => {
     expect(goodLabels.length).toBeGreaterThan(0);
   });
 
-  it('renders per-attempt rows with correct/total, time', () => {
+  it('renders stat tiles and topic cards when history exists', () => {
     vi.mocked(useActiveSession).mockReturnValue({
       data: { id: 'session-1' },
     });
@@ -136,22 +130,28 @@ describe('QuizHistory Page', () => {
 
     renderPage();
 
-    // Each attempt row shows "X/Y benar" — all 3 attempts.
-    expect(screen.getByText('5/5 benar')).toBeInTheDocument();
-    expect(screen.getByText('2/5 benar')).toBeInTheDocument();
-    expect(screen.getByText('4/5 benar')).toBeInTheDocument();
+    // Stat tiles
+    expect(screen.getByText('Total Kuis')).toBeInTheDocument();
+    expect(screen.getByText('3')).toBeInTheDocument(); // total = 3
+    expect(screen.getByText('Rata-rata')).toBeInTheDocument();
+    expect(screen.getByText('73%')).toBeInTheDocument(); // avg = 73%
+    expect(screen.getByText('Skor Terbaik')).toBeInTheDocument();
+    expect(screen.getByText('100%')).toBeInTheDocument(); // best = 100%
+    expect(screen.getByText('Topik Dikerjakan')).toBeInTheDocument();
+    expect(screen.getByText('2')).toBeInTheDocument(); // topic count = 2
 
-    // Time spent (in minutes): 180s → 3mnt, 120s → 2mnt, 200s → 3mnt.
-    expect(screen.getAllByText('3 mnt').length).toBeGreaterThan(0);
-    expect(screen.getByText('2 mnt')).toBeInTheDocument();
+    // Topic group cards
+    expect(screen.getByText('React Hooks')).toBeInTheDocument();
+    expect(screen.getByText(/2 percobaan/i)).toBeInTheDocument();
+    expect(screen.getByText(/Terbaik: 100%/i)).toBeInTheDocument();
+
+    expect(screen.getByText('React State Management')).toBeInTheDocument();
+    expect(screen.getByText(/1 percobaan/i)).toBeInTheDocument();
+    expect(screen.getByText(/Terbaik: 80%/i)).toBeInTheDocument();
 
     // "Lihat detail" button per topic group (2 topics → 2 buttons)
     const detailButtons = screen.getAllByText(/Lihat detail/i);
     expect(detailButtons.length).toBe(2);
-
-    // Each attempt row shows "Skor NN%" — there are 3 attempts in
-    // the sample data.
-    expect(screen.getAllByText(/Skor \d+%/i).length).toBe(3);
   });
 
   it('shows skeleton when loading', () => {

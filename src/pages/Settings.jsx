@@ -128,16 +128,8 @@ function SectionCard({ eyebrow, title, subtitle, children, footer }) {
       variants={fadeUp}
       initial="hidden"
       animate="visible"
-      className="card-hero p-6 md:p-7 relative overflow-hidden"
+      className="card-base p-6 md:p-7 relative overflow-hidden"
     >
-      {/* Decorative numeral — page mark */}
-      <span
-        aria-hidden="true"
-        className="absolute -top-4 -right-2 font-display text-[6rem] font-black italic text-tertiary/[0.04] leading-none pointer-events-none select-none"
-      >
-        ✦
-      </span>
-
       <div className="relative">
         <div className="mb-1">
           <span className="eyebrow !text-[10px]">{eyebrow}</span>

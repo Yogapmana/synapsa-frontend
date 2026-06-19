@@ -161,7 +161,7 @@ export default function Chat() {
   const SidebarContent = () => (
     <>
       {/* Top section — h-16, matches the chat header height */}
-      <div className="shadow-[inset_0_-1px_0_rgba(58,41,22,0.05)] shrink-0 flex items-center h-16 px-4 bg-surface-1">
+      <div className="border-b border-border/60 shrink-0 flex items-center h-16 px-4 bg-surface-1">
         <button
           onClick={() => { setActiveChatSessionId(null); setSidebarOpen(false); }}
           className="group flex items-center gap-2 w-full justify-center px-4 py-2.5 bg-tertiary text-white rounded-xl hover:bg-tertiary-light font-medium text-[13px] transition-all duration-200 shadow-warm-sm hover:shadow-warm-md"
@@ -245,7 +245,7 @@ export default function Chat() {
       {/* Main Chat Area — comes FIRST (left side) */}
       <div className="flex-1 flex flex-col min-w-0 min-h-full relative">
         {/* ── Chat Header */}
-        <header className="sticky top-0 px-4 md:px-6 py-3 bg-neutral/95 backdrop-blur-sm shadow-[0_1px_0_rgba(58,41,22,0.05)] flex items-center justify-between z-20 shrink-0 h-16">
+        <header className="sticky top-0 px-4 md:px-6 py-3 bg-neutral/85 backdrop-blur-md shadow-[0_1px_0_rgba(58,41,22,0.05)] flex items-center justify-between z-20 shrink-0 h-16">
           <div className="flex items-center gap-3">
             <button
               onClick={() => setSidebarOpen(true)}
@@ -356,7 +356,7 @@ export default function Chat() {
         </div>
 
         {/* ── Input Area (pinned bottom) ── */}
-        <div className="sticky bottom-0 z-20 shrink-0 bg-neutral/95 backdrop-blur-sm pb-2 pt-2">
+        <div className="sticky bottom-0 z-20 shrink-0 bg-surface-0/95 backdrop-blur-sm pb-2 pt-2">
           <AnimatePresence>
             {uploadToast && (
               <motion.div
@@ -398,7 +398,7 @@ export default function Chat() {
         aria-label="Riwayat percakapan"
       >
         {/* Mobile Header for Sidebar */}
-        <div className="md:hidden flex items-center justify-between p-4 shadow-[inset_0_-1px_0_rgba(58,41,22,0.05)] shrink-0">
+        <div className="md:hidden flex items-center justify-between p-4 border-b border-border/60 shrink-0">
           <span className="font-display font-bold text-primary">Riwayat Obrolan</span>
           <button onClick={() => setSidebarOpen(false)} className="p-2 text-secondary hover:text-primary rounded-lg">
             <X size={20} />

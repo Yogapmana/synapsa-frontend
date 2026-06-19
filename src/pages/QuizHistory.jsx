@@ -18,10 +18,14 @@ import {
   Inbox,
   History as HistoryIcon,
   BarChart3,
+  Target,
+  Sparkles,
+  Flame,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { format } from 'date-fns'
 import { id as idLocale } from 'date-fns/locale'
+import { motion } from 'framer-motion'
 
 function getScorePill(percentage) {
   if (percentage == null) return { variant: 'neutral', label: '—' }
@@ -77,6 +81,16 @@ function formatDate(iso) {
   }
 }
 
+const fadeUp = {
+  hidden: { opacity: 0, y: 16 },
+  visible: { opacity: 1, y: 0 },
+}
+
+const stagger = {
+  hidden: { opacity: 0 },
+  visible: { opacity: 1, transition: { staggerChildren: 0.08 } },
+}
+
 export default function QuizHistory() {
   const { data: session } = useActiveSession()
   const sessionId = session?.id
@@ -86,52 +100,73 @@ export default function QuizHistory() {
 
   const stats = useMemo(() => {
     if (attempts.length === 0) {
-      return { total: 0, avg: 0, best: 0, lastDate: null }
+      return { total: 0, avg: 0, best: 0, lastDate: null, topicCount: 0 }
     }
     const percentages = attempts.map((a) => a.percentage ?? 0)
     const total = attempts.length
     const avg = Math.round(percentages.reduce((s, p) => s + p, 0) / total)
     const best = Math.max(...percentages)
     const lastDate = attempts[0]?.created_at || null
-    return { total, avg, best, lastDate }
+    const topicCount = new Set(attempts.map((a) => a.topic_id)).size
+    return { total, avg, best, lastDate, topicCount }
   }, [attempts])
 
   return (
     <div className="max-w-5xl mx-auto">
-      <div className="relative rounded-3xl p-6 md:p-8 mb-6 gradient-mesh-warm overflow-hidden">
-        <div className="relative z-10">
-          <div className="eyebrow mb-4">Bab 03 — Evaluasi</div>
+      {/* ─── Hero Section ─── */}
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, ease: [0.25, 1, 0.5, 1] }}
+        className="relative rounded-3xl p-6 md:p-8 mb-8 overflow-hidden bg-gradient-to-br from-surface-1 via-surface-0 to-surface-1 border border-border-subtle"
+      >
+        {/* Decorative blobs */}
+        <div aria-hidden="true" className="absolute -right-20 -top-20 w-64 h-64 rounded-full bg-tertiary/[0.04] blur-3xl pointer-events-none" />
+        <div aria-hidden="true" className="absolute -left-16 -bottom-16 w-48 h-48 rounded-full bg-warning/[0.05] blur-3xl pointer-events-none" />
 
+        <div className="relative z-10">
           <PageHeader
             title="Riwayat Kuis"
             subtitle="Semua kuis yang pernah Anda kerjakan, dikelompokkan per topik."
             icon={HistoryIcon}
-            breadcrumbs={[
-              { label: 'Dashboard', to: '/dashboard' },
-              { label: 'Riwayat Kuis' },
-            ]}
           />
         </div>
 
-        {!isLoading && (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
-            <StatTile label="Total Kuis" value={stats.total} icon={HelpCircle} />
-            <StatTile label="Rata-rata" value={`${stats.avg}%`} icon={BarChart3} />
-            <StatTile label="Skor Terbaik" value={`${stats.best}%`} icon={CheckCircle2} />
-            <StatTile
-              label="Terakhir"
-              value={stats.lastDate ? formatDate(stats.lastDate) : '—'}
-              icon={Clock}
-              small
+        {!isLoading && stats.total > 0 && (
+          <div className="relative z-10 grid grid-cols-2 md:grid-cols-4 gap-3 mt-2">
+            <StatCard
+              icon={HelpCircle}
+              label="Total Kuis"
+              value={stats.total}
+              tone="tertiary"
+            />
+            <StatCard
+              icon={BarChart3}
+              label="Rata-rata"
+              value={`${stats.avg}%`}
+              tone="info"
+            />
+            <StatCard
+              icon={Trophy}
+              label="Skor Terbaik"
+              value={`${stats.best}%`}
+              tone="success"
+            />
+            <StatCard
+              icon={Target}
+              label="Topik Dikerjakan"
+              value={stats.topicCount}
+              tone="warning"
             />
           </div>
         )}
-      </div>
+      </motion.div>
 
+      {/* ─── Topic List ─── */}
       {isLoading ? (
         <div className="space-y-4">
           {[0, 1, 2].map((i) => (
-            <Skeleton key={i} className="h-48 w-full rounded-2xl skeleton-shimmer" />
+            <Skeleton key={i} className="h-32 w-full rounded-2xl skeleton-shimmer" />
           ))}
         </div>
       ) : groups.length === 0 ? (
@@ -141,33 +176,40 @@ export default function QuizHistory() {
           description="Mulai kerjakan kuis pada topik manapun untuk melihat riwayatnya di sini."
         />
       ) : (
-        <div className="space-y-4">
+        <motion.div
+          className="space-y-4"
+          variants={stagger}
+          initial="hidden"
+          animate="visible"
+        >
           {groups.map((group, idx) => (
-            <TopicGroupCard key={group.topic_id} group={group} index={idx} />
+            <motion.div key={group.topic_id} variants={fadeUp}>
+              <TopicGroupCard group={group} index={idx} />
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
       )}
     </div>
   )
 }
 
-function StatTile({ label, value, icon: Icon, small = false }) {
+/* ─── Stat Card ─── */
+function StatCard({ icon: Icon, label, value, tone = 'tertiary' }) {
+  const toneClasses = {
+    tertiary: 'bg-tertiary/8 text-tertiary',
+    success: 'bg-success-light text-success-fg',
+    info: 'bg-info-light text-info-fg',
+    warning: 'bg-warning-light text-warning-fg',
+  }
+
   return (
-    <div className="relative card-hero p-4 md:p-5 flex items-center gap-3 overflow-hidden">
-      <div className="w-10 h-10 rounded-xl bg-tertiary/10 text-tertiary flex items-center justify-center shrink-0">
+    <div className="flex items-center gap-3 p-4 rounded-2xl bg-surface-0/60 backdrop-blur-sm border border-border-subtle/60 hover:border-border-subtle transition-colors">
+      <div className={cn('w-10 h-10 rounded-xl flex items-center justify-center shrink-0', toneClasses[tone])}>
         <Icon size={18} />
       </div>
       <div className="min-w-0">
-        <p className="text-xs text-secondary font-label">{label}</p>
-        <p
-          className={cn(
-            'font-display font-bold tabular-nums truncate',
-            small ? 'text-base' : 'text-2xl',
-            typeof value === 'string' && value.includes('%')
-              ? 'text-gradient-tertiary'
-              : 'text-primary'
-          )}
-        >
+        <p className="text-[11px] text-secondary font-label uppercase tracking-wider">{label}</p>
+        <p className="font-display font-bold text-xl text-primary tabular-nums leading-tight mt-0.5">
           {value}
         </p>
       </div>
@@ -175,6 +217,7 @@ function StatTile({ label, value, icon: Icon, small = false }) {
   )
 }
 
+/* ─── Topic Group Card ─── */
 function TopicGroupCard({ group, index }) {
   const latest = group.attempts[group.attempts.length - 1]
   const first = group.attempts[0]
@@ -184,120 +227,80 @@ function TopicGroupCard({ group, index }) {
   )
   const trend = getTrend(first?.percentage, latest?.percentage)
   const TrendIcon = trend?.icon
-  const latestPill = getScorePill(latest?.percentage)
+  const latestPill = getScorePill(best)
   const num = String(index + 1).padStart(2, '0')
+  const latestDate = latest?.created_at
 
   return (
-    <article className="relative card-hero overflow-hidden">
-      <header className="relative z-10 p-5 border-b border-border-subtle flex flex-wrap items-start gap-3 justify-between">
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2.5 mb-1">
-            <span className="w-7 h-7 rounded-lg bg-tertiary/10 text-tertiary flex items-center justify-center font-display font-bold text-xs tabular-nums">
-              {num}
-            </span>
-            <h2 className="font-display font-semibold text-lg text-primary leading-tight">
-              {group.topic_title}
-            </h2>
-          </div>
-          <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-secondary font-label">
+    <article className="group relative card-base overflow-hidden hover:shadow-warm-sm transition-all duration-300">
+      <div className="flex items-center gap-4 p-5">
+        {/* Number badge */}
+        <div className="relative w-12 h-12 rounded-2xl bg-gradient-to-br from-tertiary/10 to-tertiary/5 flex items-center justify-center shrink-0 border border-tertiary/10">
+          <span className="font-display font-bold text-lg text-tertiary tabular-nums">{num}</span>
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 min-w-0">
+          <h2 className="font-display font-semibold text-base text-primary leading-tight truncate">
+            {group.topic_title}
+          </h2>
+          <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-secondary font-label">
             <span className="inline-flex items-center gap-1">
-              <HelpCircle size={12} />
+              <Sparkles size={11} className="text-tertiary" />
               {group.attempts.length} percobaan
             </span>
-            {best > 0 && (
-              <span className="inline-flex items-center gap-1">
-                <Trophy size={12} />
-                Terbaik: {best}%
-              </span>
-            )}
+            <span className="inline-flex items-center gap-1">
+              <Trophy size={11} />
+              Terbaik: {best}%
+            </span>
             {trend && TrendIcon && (
-              <span
-                className={cn(
-                  'inline-flex items-center gap-1',
-                  trend.color
-                )}
-              >
-                <TrendIcon size={12} />
+              <span className={cn('inline-flex items-center gap-1', trend.color)}>
+                <TrendIcon size={11} />
                 {trend.label}
               </span>
             )}
-            {latest && (
-              <span className="inline-flex items-center gap-1">
-                <Clock size={12} />
-                {formatDate(latest.created_at)}
+            {latestDate && (
+              <span className="inline-flex items-center gap-1 text-secondary/70">
+                <Clock size={11} />
+                {formatDate(latestDate)}
               </span>
             )}
           </div>
         </div>
-        <div className="flex items-center gap-2 shrink-0">
+
+        {/* Right side — badge + link */}
+        <div className="flex items-center gap-2.5 shrink-0">
           <StatusBadge variant={latestPill.variant}>{latestPill.label}</StatusBadge>
           <Link
             to={`/progress/topic/${encodeURIComponent(group.topic_id)}`}
-            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-tertiary text-white text-sm font-label font-semibold hover:bg-tertiary-dark transition-colors"
+            className={cn(
+              'inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-label font-semibold',
+              'bg-surface-1 text-primary border border-border-subtle',
+              'hover:bg-tertiary hover:text-white hover:border-tertiary',
+              'transition-all duration-200 shadow-warm-xs group-hover:shadow-warm-sm'
+            )}
           >
             Lihat detail
-            <ChevronRight size={14} />
+            <ChevronRight size={14} className="transition-transform group-hover:translate-x-0.5" />
           </Link>
         </div>
-      </header>
-
-      <ul className="relative z-10 divide-y divide-border-subtle">
-        {[...group.attempts].reverse().map((a) => (
-          <AttemptRow key={a.id} attempt={a} />
-        ))}
-      </ul>
-    </article>
-  )
-}
-
-function AttemptRow({ attempt }) {
-  const pill = getScorePill(attempt.percentage)
-  const correctCount = attempt.correct_answers ?? 0
-  const totalCount = attempt.total_questions ?? 0
-  const time = formatTimeSpent(attempt.time_spent_seconds)
-
-  return (
-    <li className="flex items-center gap-4 p-4 hover:bg-tertiary/[0.03] transition-colors group">
-      <div
-        className={cn(
-          'w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-colors',
-          pill.variant === 'success' || pill.variant === 'info'
-            ? 'bg-tertiary/10 text-tertiary group-hover:bg-tertiary/15'
-            : pill.variant === 'danger'
-              ? 'bg-danger-light text-danger-fg'
-              : 'bg-surface-1 text-secondary border border-border-subtle'
-        )}
-      >
-        <Trophy size={18} />
       </div>
 
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 mb-0.5">
-          <p className="text-sm font-semibold text-primary">
-            Skor {attempt.percentage ?? 0}%
-          </p>
-          <StatusBadge variant={pill.variant}>{pill.label}</StatusBadge>
+      {/* Score bar visualization */}
+      <div className="px-5 pb-4">
+        <div className="h-1.5 rounded-full bg-surface-2 overflow-hidden">
+          <div
+            className={cn(
+              'h-full rounded-full transition-all duration-500',
+              best >= 90 ? 'bg-success' :
+              best >= 75 ? 'bg-info' :
+              best >= 60 ? 'bg-warning' :
+              'bg-danger'
+            )}
+            style={{ width: `${best}%` }}
+          />
         </div>
-        <p className="text-xs text-secondary font-label flex items-center gap-2 flex-wrap">
-          <span className="inline-flex items-center gap-1">
-            {correctCount}/{totalCount} benar
-          </span>
-          {time && (
-            <span className="inline-flex items-center gap-1">
-              <Clock size={11} /> {time}
-            </span>
-          )}
-          {attempt.attempt_number && (
-            <span>Percobaan #{attempt.attempt_number}</span>
-          )}
-        </p>
       </div>
-
-      <div className="text-right shrink-0">
-        <p className="text-xs text-secondary font-label">
-          {formatDate(attempt.created_at)}
-        </p>
-      </div>
-    </li>
+    </article>
   )
 }

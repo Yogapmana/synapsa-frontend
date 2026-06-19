@@ -244,18 +244,16 @@ const sampleConceptGraph = {
 describe('buildElkGraphFromResponse', () => {
   test('produces one ELK node per backend node with fixed dimensions', () => {
     const { nodes } = buildElkGraphFromResponse(sampleConceptGraph)
-    expect(nodes).toHaveLength(5)
+    // Cluster node is dropped, so 5 - 1 = 4 nodes
+    expect(nodes).toHaveLength(4)
     const kinds = nodes.map((n) => n.id)
-    expect(kinds).toEqual(['root', 'cluster-week-1', 'concept-w1-0', 'topic-t1', 'resource-r1'])
-    // Cluster has the cluster dimensions
-    const cluster = nodes.find((n) => n.id === 'cluster-week-1')
-    expect(cluster.width).toBe(260)
-    expect(cluster.height).toBe(60)
+    expect(kinds).toEqual(['root', 'concept-w1-0', 'topic-t1', 'resource-r1'])
   })
 
   test('converts edges to ELK sources/targets format', () => {
     const { edges } = buildElkGraphFromResponse(sampleConceptGraph)
-    expect(edges).toHaveLength(4)
+    // Cluster edges and concept_to_concept edges are dropped, leaving 3 edges
+    expect(edges).toHaveLength(3)
     edges.forEach((e) => {
       expect(Array.isArray(e.sources)).toBe(true)
       expect(Array.isArray(e.targets)).toBe(true)
@@ -300,7 +298,7 @@ describe('elkResultToReactFlow', () => {
     expect(cluster.style).toEqual({ width: 280, height: 80 })
   })
 
-  test('concept-to-concept edges get dashed style; structural edges get solid', () => {
+  test('concept-to-concept edges get highlight style; structural edges get default', () => {
     const graphWithCross = {
       ...sampleConceptGraph,
       edges: [
@@ -318,8 +316,8 @@ describe('elkResultToReactFlow', () => {
     const { edges } = elkResultToReactFlow(elkResult, graphWithCross)
     const structural = edges.find((e) => e.id === 'e1')
     const crossConcept = edges.find((e) => e.id === 'e5')
-    expect(structural.style.strokeDasharray).toBeUndefined()
-    expect(crossConcept.style.strokeDasharray).toBe('4 4')
+    expect(structural.style.stroke).toBe('rgb(var(--border-default))')
+    expect(crossConcept.style.stroke).toBe('rgb(var(--tertiary))')
   })
 
   test('preserves the relation label in edge data', () => {
@@ -349,8 +347,8 @@ describe('buildConceptGraphLayout', () => {
     const { nodes, edges } = await buildConceptGraphLayout(sampleConceptGraph, {
       elk: stubElk,
     })
-    expect(nodes).toHaveLength(5)
-    expect(edges).toHaveLength(4)
+    expect(nodes).toHaveLength(4)
+    expect(edges).toHaveLength(3)
     expect(stubElk.layout).toHaveBeenCalledTimes(1)
   })
 
@@ -365,14 +363,13 @@ describe('buildConceptGraphLayout', () => {
     expect(stubElk.layout).not.toHaveBeenCalled()
   })
 
-  test('passes layered algorithm and RIGHT direction to ELK by default', async () => {
+  test('passes layered algorithm and DOWN direction to ELK by default', async () => {
     const stubElk = {
       layout: vi.fn(async (graph) => ({ children: graph.children, edges: graph.edges })),
     }
     await buildConceptGraphLayout(sampleConceptGraph, { elk: stubElk })
     const input = stubElk.layout.mock.calls[0][0]
     expect(input.layoutOptions.algorithm).toBe('layered')
-    expect(input.layoutOptions.direction).toBe('RIGHT')
-    expect(input.layoutOptions.hierarchyHandling).toBe('INCLUDE_CHILDREN')
+    expect(input.layoutOptions.direction).toBe('DOWN')
   })
 })
