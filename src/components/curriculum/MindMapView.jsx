@@ -17,7 +17,6 @@ import {
   Network,
   ArrowLeft,
   AlertTriangle,
-  Sparkles,
   Lightbulb,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -32,33 +31,13 @@ import { cn } from '@/lib/utils'
 import { RootNode } from './mindmap/RootNode'
 import { WeekNode } from './mindmap/WeekNode'
 import { TopicNode as ConceptTopicNode } from './mindmap/TopicNode'
-import RoadmapMindmapView from './mindmap/RoadmapMindmapView'
+import EnhancedMindmapView from './EnhancedMindmapView'
 import {
   buildOverviewLayout,
   buildWeekDetailLayout,
 } from './mindmap/layout'
 
-/**
- * MindMapView (v4) — Two-mode interactive mind map.
- *
- * Modes (driven by ``subMode`` prop, which Curriculum.jsx toggles via a
- * segmented control):
- *
- * 1. ``overview`` — Radial "v3" layout: 1 root, N weeks in a circle, click a
- *    week to drill into a row of topics. Cheap, deterministic.
- * 2. ``concept`` — Layered "Konsep" view: root → week cluster → concept →
- *    topic → resource, auto-laid-out by ELK.js. Click a concept to open a
- *    side panel; click a topic to navigate; click a resource to open the
- *    URL. Cached server-side in ``curricula.concept_graph_json``.
- *
- * Click behavior matrix:
- *   topic (overview mode)    → /module/{id}
- *   week (overview mode)     → drill into that week's detail
- *   concept/topic/resource   → handled by MermaidMindmapView's own
- *                              SVG event delegation (concept sub-mode)
- */
-
-// React Flow v12 node type registry (all kinds for both modes)
+// React Flow v12 node type registry
 const nodeTypes = {
   root: RootNode,
   week: WeekNode,
@@ -72,8 +51,8 @@ const defaultEdgeOptions = {
 }
 
 export default function MindMapView({ sessionId, courseTitle, subMode: subModeProp }) {
-  // Default to concept mode (the new "comprehensive" view) if not specified.
-  const [internalSubMode, setInternalSubMode] = useState('concept')
+  // Default to enhanced mode
+  const [internalSubMode, setInternalSubMode] = useState('enhanced')
   const subMode = subModeProp || internalSubMode
   const setSubMode = subModeProp ? () => {} : setInternalSubMode
 
@@ -93,82 +72,37 @@ function MindMapViewInner({ sessionId, courseTitle, subMode, onSubModeChange }) 
   const navigate = useNavigate()
   const shouldReduceMotion = useReducedMotion()
 
-  // Overview-mode state — concept mode is now handled by
-  // MermaidMindmapView, which manages its own selected-concept state.
-  const [selectedWeek, setSelectedWeek] = useState(null)  // null = overview
+  const [selectedWeek, setSelectedWeek] = useState(null)
+  const [selectedWeekData, setSelectedWeekData] = useState(null)
 
-  // Queries — the "concept" path is now handled by MermaidMindmapView
-  // (it hits its own /mermaid-mindmap endpoint). We only fetch
-  // overview data here.
   const overviewQuery = useMindmapData(sessionId)
-  const detailQuery = useCurriculumDetail(sessionId, { enabled: subMode === 'overview' })
   const { data, isLoading, isError, error } = overviewQuery
 
-  // Layout computation
-  // The XYFlow path is only used in "overview" mode now — "concept" mode
-  // short-circuits to <MermaidMindmapView /> in the render below, so
-  // we only build nodes/edges when the user is in the radial view.
-  const { initialNodes, initialEdges, selectedWeekData } = useMemo(() => {
+  // Layout computation for visual mode
+  const { initialNodes, initialEdges } = useMemo(() => {
     if (!data) {
-      return {
-        initialNodes: [],
-        initialEdges: [],
-        selectedWeekData: null,
-      }
+      return { initialNodes: [], initialEdges: [] }
     }
-
-    // Radial mode
     if (selectedWeek !== null) {
       const week = data.weeks.find((w) => w.week_number === selectedWeek)
-      if (!week) {
-        return {
-          initialNodes: [],
-          initialEdges: [],
-          selectedWeekData: null,
-        }
-      }
+      if (!week) return { initialNodes: [], initialEdges: [] }
       const layout = buildWeekDetailLayout(week, sessionId)
-      return {
-        initialNodes: layout.nodes,
-        initialEdges: layout.edges,
-        selectedWeekData: week,
-      }
+      return { initialNodes: layout.nodes, initialEdges: layout.edges }
     }
     const layout = buildOverviewLayout(data, { radius: 380 })
-    return {
-      initialNodes: layout.nodes,
-      initialEdges: layout.edges,
-      selectedWeekData: null,
-    }
+    return { initialNodes: layout.nodes, initialEdges: layout.edges }
   }, [data, selectedWeek, sessionId])
 
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes)
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges)
 
-  // Sync nodes/edges when layout input changes
   useEffect(() => {
     setNodes(initialNodes)
     setEdges(initialEdges)
   }, [initialNodes, initialEdges, setNodes, setEdges])
 
-  // ─── Click handlers (overview mode only — concept mode is in MermaidMindmapView) ───
-  const handleNodeClick = useCallback(
-    (_event, node) => {
-      if (node.type === 'week' && !node.data?.isDetail) {
-        setSelectedWeek(node.data.weekNumber)
-      } else if (node.type === 'topic') {
-        navigate(`/module/${node.data.id}`)
-      }
-    },
-    [navigate],
-  )
+  if (isLoading) return <MindMapSkeleton />
 
-  // ─── Loading state ───
-  if (isLoading) {
-    return <MindMapSkeleton />
-  }
-
-  // ─── Error states ───
   if (isError) {
     const status = error?.response?.status
     if (status === 404) {
@@ -197,8 +131,6 @@ function MindMapViewInner({ sessionId, courseTitle, subMode, onSubModeChange }) 
     )
   }
 
-  // Empty-state guard — only the overview (radial) path renders here.
-  // Concept mode is delegated to MermaidMindmapView above.
   if (!data || !data.weeks || data.weeks.length === 0) {
     return (
       <MindMapEmpty
@@ -208,15 +140,115 @@ function MindMapViewInner({ sessionId, courseTitle, subMode, onSubModeChange }) 
     )
   }
 
-  // The Roadmap view handles its own ReactFlow + ELK pipeline.
-  // We render it here and skip the overview-specific XYFlow logic.
-  if (subMode === 'concept') {
-    return <RoadmapMindmapView sessionId={sessionId} courseTitle={courseTitle} />
-  }
+  return (
+    <div className="space-y-4">
+      <SubModeTabBar
+        subMode={subMode}
+        onSubModeChange={onSubModeChange}
+      />
+
+      {subMode === 'enhanced' && (
+        <EnhancedMindmapView sessionId={sessionId} />
+      )}
+
+      {subMode === 'overview' && (
+        <OverviewContent
+          data={data}
+          courseTitle={courseTitle}
+          selectedWeek={selectedWeek}
+          setSelectedWeek={setSelectedWeek}
+          selectedWeekData={selectedWeekData}
+          setSelectedWeekData={setSelectedWeekData}
+          shouldReduceMotion={shouldReduceMotion}
+          navigate={navigate}
+        />
+      )}
+    </div>
+  )
+}
+
+function SubModeTabBar({ subMode, onSubModeChange }) {
+  return (
+    <div
+      role="tablist"
+      aria-label="Pilih mode peta konsep"
+      className="inline-flex items-center gap-1 p-1 bg-surface-1 border border-border-subtle rounded-xl"
+    >
+      <SubModeTab
+        active={subMode === 'enhanced'}
+        onClick={() => onSubModeChange('enhanced')}
+        label="Detail Terstruktur"
+      />
+      <SubModeTab
+        active={subMode === 'overview'}
+        onClick={() => onSubModeChange('overview')}
+        label="Mindmap Visual"
+      />
+    </div>
+  )
+}
+
+function SubModeTab({ active, onClick, label }) {
+  return (
+    <button
+      type="button"
+      role="tab"
+      aria-selected={active}
+      onClick={onClick}
+      className={cn(
+        'inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-[11px] font-label font-medium',
+        'transition-all duration-200 focus:outline-none focus-visible:ring-2',
+        'focus-visible:ring-tertiary focus-visible:ring-offset-1',
+        active
+          ? 'bg-surface-0 text-primary shadow-warm-sm'
+          : 'text-secondary hover:text-primary hover:bg-surface-0/50',
+      )}
+    >
+      {label}
+    </button>
+  )
+}
+
+function OverviewContent({
+  data,
+  courseTitle,
+  selectedWeek,
+  setSelectedWeek,
+  selectedWeekData,
+  setSelectedWeekData,
+  shouldReduceMotion,
+  navigate,
+}) {
+  const { nodes, edges } = useMemo(() => {
+    if (!data?.weeks?.length) return { nodes: [], edges: [] }
+    if (selectedWeek != null) {
+      const week = data.weeks.find((w) => w.week_number === selectedWeek)
+      if (!week) return { nodes: [], edges: [] }
+      return buildWeekDetailLayout(week, data.session_id)
+    }
+    return buildOverviewLayout(data, { radius: 380 })
+  }, [data, selectedWeek])
+
+  const [localNodes, setLocalNodes, onNodesChange] = useNodesState(nodes)
+  const [localEdges, setLocalEdges, onEdgesChange] = useEdgesState(edges)
+  useEffect(() => { setLocalNodes(nodes) }, [nodes, setLocalNodes])
+  useEffect(() => { setLocalEdges(edges) }, [edges, setLocalEdges])
+
+  const handleNodeClick = useCallback(
+    (_evt, node) => {
+      if (node?.type === 'topic' && node.data?.id) {
+        navigate(`/module/${node.data.id}`)
+      } else if (node?.type === 'week' && typeof node.data?.weekNumber === 'number' && !node.data?.isDetail) {
+        setSelectedWeek(node.data.weekNumber)
+        const w = data.weeks.find((wk) => wk.week_number === node.data.weekNumber)
+        setSelectedWeekData(w || null)
+      }
+    },
+    [navigate, setSelectedWeek, setSelectedWeekData, data]
+  )
 
   return (
     <div className="card-base p-0 relative overflow-hidden">
-      {/* Decorative blobs */}
       <div
         aria-hidden="true"
         className="absolute -right-16 -top-16 w-64 h-64 rounded-full bg-tertiary/[0.04] blur-3xl pointer-events-none z-0"
@@ -226,39 +258,55 @@ function MindMapViewInner({ sessionId, courseTitle, subMode, onSubModeChange }) 
         className="absolute -left-12 -bottom-12 w-40 h-40 rounded-full bg-warning/[0.05] blur-3xl pointer-events-none z-0"
       />
 
-      {/* Header */}
-      <MindMapHeader
-        data={data}
-        courseTitle={courseTitle}
-        subMode={subMode}
-        onSubModeChange={onSubModeChange}
-        selectedWeek={selectedWeek}
-        selectedWeekData={selectedWeekData}
-        onBackToOverview={() => setSelectedWeek(null)}
-      />
+      <div className="relative z-10 p-5 md:p-7 pb-4">
+        <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+          <StatusBadge variant="accent" size="sm" icon={Brain}>
+            Peta Konsep Visual
+          </StatusBadge>
+          <StatusBadge variant="success" size="sm" icon={Network}>
+            {data.total_weeks} minggu • {data.total_topics} topik
+          </StatusBadge>
+          {selectedWeek !== null && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => { setSelectedWeek(null); setSelectedWeekData(null) }}
+              className="rounded-xl font-label ml-auto"
+            >
+              <ArrowLeft size={14} />
+              Kembali
+            </Button>
+          )}
+        </div>
+        <h3 className="font-display text-xl md:text-2xl font-semibold text-primary leading-tight">
+          {selectedWeek
+            ? selectedWeekData?.title || courseTitle || data.course_title
+            : courseTitle || data.course_title}
+        </h3>
+        <p className="text-secondary text-sm mt-1 max-w-2xl leading-relaxed">
+          {selectedWeek
+            ? 'Klik topik untuk mulai belajar.'
+            : 'Klik minggu untuk melihat detail topik.'}
+        </p>
+      </div>
 
-      {/* React Flow canvas */}
       <motion.div
-        key={subMode}  // remount-on-mode-switch for a clean ELK layout
+        key={selectedWeek ?? 'overview'}
         initial={shouldReduceMotion ? {} : { opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.4, delay: 0.1 }}
         className="relative w-full h-[620px] bg-surface-0/40"
       >
         <ReactFlow
-          nodes={nodes}
-          edges={edges}
+          nodes={localNodes}
+          edges={localEdges}
           onNodesChange={onNodesChange}
           onEdgesChange={onEdgesChange}
           onNodeClick={handleNodeClick}
           nodeTypes={nodeTypes}
           defaultEdgeOptions={defaultEdgeOptions}
           fitView
-          fitViewOptions={{
-            padding: 0.25,
-            minZoom: 0.2,
-            maxZoom: 1.4,
-          }}
+          fitViewOptions={{ padding: 0.25, minZoom: 0.2, maxZoom: 1.4 }}
           minZoom={0.15}
           maxZoom={2}
           proOptions={{ hideAttribution: true }}
@@ -305,154 +353,16 @@ function MindMapViewInner({ sessionId, courseTitle, subMode, onSubModeChange }) 
         </ReactFlow>
       </motion.div>
 
-      {/* Footer hint */}
       <div className="px-5 md:px-7 py-3 border-t border-border-subtle bg-surface-1/30 text-center">
         <p className="text-xs text-subtle-readable font-label">
-          {subMode === 'concept' ? (
-            <>
-              Klik konsep untuk melihat detail • Klik topik untuk mulai belajar
-              {' '}• Klik sumber untuk membuka tautan • Scroll untuk zoom
-            </>
-          ) : selectedWeek ? (
-            'Klik topik untuk mulai belajar • Scroll untuk zoom • Drag untuk menggeser'
-          ) : (
-            'Klik minggu untuk melihat detail topik • Scroll untuk zoom • Drag untuk menggeser'
-          )}
+          {selectedWeek
+            ? 'Klik topik untuk mulai belajar • Scroll untuk zoom • Drag untuk menggeser'
+            : 'Klik minggu untuk melihat detail topik • Scroll untuk zoom • Drag untuk menggeser'}
         </p>
-      </div>
-
-      {/* Concept detail side panel lives in MermaidMindmapView for the
-          concept sub-mode; overview mode doesn't need it. */}
-    </div>
-  )
-}
-
-// --------------------------------------------------------------------------- //
-// Header
-// --------------------------------------------------------------------------- //
-
-function MindMapHeader({
-  data,
-  courseTitle,
-  subMode,
-  onSubModeChange,
-  selectedWeek,
-  selectedWeekData,
-  onBackToOverview,
-}) {
-  return (
-    <div className="relative z-10 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 p-5 md:p-7 pb-4">
-      <div className="min-w-0">
-        <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-          <StatusBadge variant="accent" size="sm" icon={Brain}>
-            Peta Konsep Interaktif
-          </StatusBadge>
-          <AnimatePresence mode="wait">
-            {subMode === 'overview' ? (
-              <motion.div
-                key="overview-badge"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.2 }}
-              >
-                <StatusBadge variant="success" size="sm" icon={Network}>
-                  {data.total_weeks} minggu • {data.total_topics} topik
-                </StatusBadge>
-              </motion.div>
-            ) : (
-              <motion.div
-                key="concept-badge"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.2 }}
-                className="flex items-center gap-2 flex-wrap"
-              >
-                <StatusBadge variant="info" size="sm" icon={Lightbulb}>
-                  {data.node_count} node • {data.edge_count} relasi
-                </StatusBadge>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-        <h3 className="font-display text-xl md:text-2xl font-semibold text-primary leading-tight">
-          {subMode === 'overview' && selectedWeek
-            ? selectedWeekData?.title || courseTitle || data.course_title
-            : courseTitle || data.course_title}
-        </h3>
-        <p className="text-secondary text-sm mt-1 max-w-2xl leading-relaxed">
-          {subMode === 'concept'
-            ? 'Peta konsep terstruktur: minggu → konsep → topik → sumber.'
-            : selectedWeek
-              ? 'Klik topik untuk mulai belajar.'
-              : 'Klik minggu untuk melihat detail topik.'}
-        </p>
-      </div>
-
-      <div className="flex items-center gap-2 shrink-0 flex-wrap">
-        {/* Sub-mode segmented control — switches between the radial
-            overview and the dark-themed Mermaid Konsep view. */}
-        <div
-          role="tablist"
-          aria-label="Pilih mode peta konsep"
-          className="inline-flex items-center gap-1 p-1 bg-surface-1 border border-border-subtle rounded-xl"
-        >
-          <SubModeTab
-            active={subMode === 'overview'}
-            onClick={() => onSubModeChange('overview')}
-            label="Overview"
-          />
-          <SubModeTab
-            active={subMode === 'concept'}
-            onClick={() => onSubModeChange('concept')}
-            label="Konsep"
-          />
-        </div>
-
-        {subMode === 'overview' && selectedWeek !== null && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onBackToOverview}
-            className="rounded-xl font-label"
-          >
-            <ArrowLeft size={14} />
-            Kembali
-          </Button>
-        )}
-        {/* Note: the "Buat Ulang" button for the concept graph lives in
-            MermaidMindmapView's own header — that view owns the mutation
-            and shows the loading state. */}
       </div>
     </div>
   )
 }
-
-function SubModeTab({ active, onClick, label }) {
-  return (
-    <button
-      type="button"
-      role="tab"
-      aria-selected={active}
-      onClick={onClick}
-      className={cn(
-        'inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-[11px] font-label font-medium',
-        'transition-all duration-200 focus:outline-none focus-visible:ring-2',
-        'focus-visible:ring-tertiary focus-visible:ring-offset-1',
-        active
-          ? 'bg-surface-0 text-primary shadow-warm-sm'
-          : 'text-secondary hover:text-primary hover:bg-surface-0/50',
-      )}
-    >
-      {label}
-    </button>
-  )
-}
-
-// --------------------------------------------------------------------------- //
-// Skeleton / Empty
-// --------------------------------------------------------------------------- //
 
 function MindMapSkeleton() {
   return (

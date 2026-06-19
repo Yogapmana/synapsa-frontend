@@ -9,6 +9,7 @@ import {
   getCurriculumDetail,
   getMermaidMindmap,
   regenerateMermaidMindmap,
+  getEnhancedMindmap,
 } from '../api/curriculum'
 import { SESSION_STATUSES, hasActiveSession } from '../stores/learningStore'
 
@@ -124,6 +125,53 @@ export function useMindmapData(sessionId, options = {}) {
     queryFn: () => getMindmapData(sessionId),
     enabled: !!sessionId && (options.enabled ?? true),
     staleTime: 5 * 60 * 1000,  // 5 min
+    ...options,
+  })
+}
+
+/**
+ * Hook for the NotebookLM-style enhanced mindmap.
+ *
+ * Behavior:
+ *   - Returns ``{ data, isLoading, isError }`` from React Query.
+ *   - ``data.ready === false`` means the background Celery task
+ *     hasn't finished yet (or failed). The component should show
+ *     a "preparing mindmap..." state.
+ *   - We poll every 5s while ``ready === false`` so the component
+ *     automatically picks up the new mindmap once it lands.
+ *   - ``refetchIntervalInBackground: true`` is important — by
+ *     default React Query pauses polling when the browser tab is
+ *     hidden. We explicitly keep it running so a user who has
+ *     Curriculum open in a background tab still sees the new
+ *     mindmap when they come back. (Without this, the
+ *     ``mindmap_enhanced`` WebSocket event would be the only
+ *     way to learn about the update — and we don't have a
+ *     WebSocket consumer wired in yet.)
+ *   - The component can ALSO call ``refetch()`` for an instant
+ *     manual refresh (the "Coba lagi" button in the loading UI).
+ *
+ * @param {string} sessionId - UUID
+ */
+export function useEnhancedMindmap(sessionId, options = {}) {
+  return useQuery({
+    queryKey: ['enhanced-mindmap', sessionId],
+    queryFn: () => getEnhancedMindmap(sessionId),
+    enabled: !!sessionId && (options.enabled ?? true),
+    refetchInterval: (query) => {
+      // Poll every 5s while waiting for the Celery task. Stop as
+      // soon as the payload arrives.
+      const data = query.state.data
+      if (data?.ready) return false
+      return 5000
+    },
+    // Keep polling even when the tab is in the background. Without
+    // this, a user who minimizes the Curriculum tab while the
+    // mindmap is generating would see a stale "preparing..." UI
+    // when they come back, even though the data has been ready
+    // for minutes.
+    refetchIntervalInBackground: true,
+    staleTime: 30 * 1000,  // 30 s — short enough that a manual
+                           // refresh picks up the new data quickly
     ...options,
   })
 }

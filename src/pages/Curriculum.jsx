@@ -19,7 +19,7 @@ import {
   Network,
   ArrowLeft,
 } from 'lucide-react'
-import { motion, useReducedMotion } from 'framer-motion'
+import { motion, useReducedMotion, AnimatePresence } from 'framer-motion'
 import { cn } from '@/lib/utils'
 import { Skeleton } from '@/components/ui/skeleton'
 import PageHeader from '@/components/common/PageHeader'
@@ -381,67 +381,72 @@ export default function Curriculum() {
           )}
 
           {/* ─── Week Grid or Week Detail ─── */}
-          {selectedWeek ? (
-            <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              className="space-y-6"
-            >
-              <div className="flex flex-col gap-4">
-                <Button
-                  variant="ghost"
-                  onClick={() => setSelectedWeek(null)}
-                  className="w-fit -ml-2 text-secondary hover:text-primary gap-2"
-                >
-                  <ArrowLeft size={16} />
-                  Kembali ke Daftar Minggu
-                </Button>
-                
-                <div className="card-base p-6 border-tertiary/20 bg-gradient-to-br from-tertiary/[0.02] to-transparent">
-                  <h2 className="text-2xl font-display font-bold text-primary mb-2">
-                    Minggu {selectedWeek.week_number}: {selectedWeek.title || 'Topik Belajar'}
-                  </h2>
-                  <p className="text-secondary font-label text-sm mb-6">
-                    Pilih modul di bawah ini untuk mulai belajar.
-                  </p>
+          <AnimatePresence mode="wait">
+            {selectedWeek ? (
+              <motion.div
+                key="detail-view"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20, transition: { duration: 0.2 } }}
+                className="space-y-6"
+              >
+                <div className="flex flex-col gap-4">
+                  <Button
+                    variant="ghost"
+                    onClick={() => setSelectedWeek(null)}
+                    className="w-fit -ml-2 text-secondary hover:text-primary gap-2"
+                  >
+                    <ArrowLeft size={16} />
+                    Kembali ke Daftar Minggu
+                  </Button>
                   
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {(topicsByWeek[selectedWeek.week_number] || []).map((topic) => (
-                      <div key={topic.id} className="bg-surface border border-border/50 rounded-xl">
-                        <TopicNode topic={topic} />
-                      </div>
-                    ))}
+                  <div className="card-base p-6 border-tertiary/20 bg-gradient-to-br from-tertiary/[0.02] to-transparent">
+                    <h2 className="text-2xl font-display font-bold text-primary mb-2">
+                      Minggu {selectedWeek.week_number}: {selectedWeek.title || 'Topik Belajar'}
+                    </h2>
+                    <p className="text-secondary font-label text-sm mb-6">
+                      Pilih modul di bawah ini untuk mulai belajar.
+                    </p>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {(topicsByWeek[selectedWeek.week_number] || []).map((topic) => (
+                        <div key={topic.id} className="bg-surface border border-border/50 rounded-xl">
+                          <TopicNode topic={topic} />
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
-              </div>
-            </motion.div>
-          ) : (
-            <motion.div
-              className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 items-start"
-              variants={shouldReduceMotion ? { hidden: {}, visible: {} } : stagger}
-              initial="hidden"
-              animate="visible"
-            >
-              {weeks.map((week, i) => (
-                <div
-                  key={week.week_number ?? i}
-                  ref={(el) => {
-                    if (el) weekRefs.current[week.week_number ?? i] = el
-                  }}
-                  className="scroll-mt-24"
-                >
-                  <WeekCard
-                    week={week}
-                    topics={topicsByWeek[week.week_number] || []}
-                    weekIndex={i}
-                    isActive={week.week_number === activeWeekNumber}
-                    onClick={(w) => setSelectedWeek(w)}
-                  />
-                </div>
-              ))}
-            </motion.div>
-          )}
+              </motion.div>
+            ) : (
+              <motion.div
+                key="grid-view"
+                className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 items-start"
+                variants={shouldReduceMotion ? { hidden: {}, visible: {} } : stagger}
+                initial="hidden"
+                animate="visible"
+                exit={{ opacity: 0, x: 20, transition: { duration: 0.2 } }}
+              >
+                {weeks.map((week, i) => (
+                  <div
+                    key={week.week_number ?? i}
+                    ref={(el) => {
+                      if (el) weekRefs.current[week.week_number ?? i] = el
+                    }}
+                    className="scroll-mt-24"
+                  >
+                    <WeekCard
+                      week={week}
+                      topics={topicsByWeek[week.week_number] || []}
+                      weekIndex={i}
+                      isActive={week.week_number === activeWeekNumber}
+                      onClick={(w) => setSelectedWeek(w)}
+                    />
+                  </div>
+                ))}
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {/* Empty state when no weeks */}
           {weeks.length === 0 && (
