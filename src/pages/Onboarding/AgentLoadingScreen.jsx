@@ -1,7 +1,7 @@
 import { cn } from '@/lib/utils'
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Brain, AlertCircle, Loader2, Sparkles, X } from 'lucide-react'
+import { Brain, AlertCircle, Loader2, Sparkles, X, Globe, PenTool } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Progress } from '@/components/ui/progress'
 import { Button } from '@/components/ui/button'
@@ -99,7 +99,7 @@ export default function AgentLoadingScreen({ sessionId }) {
           return
         }
 
-        if (data?.type && data.type !== 'log') {
+        if (data?.type && data.type !== 'log' && data.type !== 'agent_log') {
           return
         }
 
@@ -140,7 +140,7 @@ export default function AgentLoadingScreen({ sessionId }) {
         clearTimeout(reconnectTimerRef.current)
         reconnectTimerRef.current = null
       }
-      if (ws && ws.readyState === WebSocket.OPEN) {
+      if (ws && (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING)) {
         ws.close()
       }
       wsRef.current = null
@@ -244,13 +244,13 @@ export default function AgentLoadingScreen({ sessionId }) {
             />
             <div className="relative flex h-24 w-24 items-center justify-center rounded-3xl bg-tertiary shadow-warm-lg ring-4 ring-tertiary/15">
               <motion.div
-                animate={{ rotate: [0, 5, -5, 0] }}
-                transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+                animate={currentStageData?.key !== 'done' ? { rotate: [0, 5, -5, 0] } : { scale: [0.9, 1.1, 1] }}
+                transition={{ duration: 4, repeat: currentStageData?.key !== 'done' ? Infinity : 0, ease: 'easeInOut' }}
               >
                 {currentStageData?.agent === 'planner' && <Brain className="h-12 w-12 text-white" />}
-                {currentStageData?.agent === 'researcher' && <Sparkles className="h-12 w-12 text-white" />}
-                {currentStageData?.agent === 'composer' && <Sparkles className="h-12 w-12 text-white" />}
-                {(!currentStageData?.agent || currentStageData?.key === 'starting') && (
+                {currentStageData?.agent === 'researcher' && <Globe className="h-12 w-12 text-white" />}
+                {currentStageData?.agent === 'composer' && <PenTool className="h-12 w-12 text-white" />}
+                {(!currentStageData?.agent || currentStageData?.key === 'starting' || currentStageData?.key === 'done') && (
                   <Loader2 className="h-12 w-12 text-white animate-spin" />
                 )}
               </motion.div>
