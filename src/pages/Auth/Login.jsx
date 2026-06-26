@@ -55,8 +55,8 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen flex bg-bg-secondary">
-      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-gradient-to-br from-bg-primary via-bg-secondary to-tertiary/8 items-center justify-center">
+    <div className="min-h-screen flex bg-neutral texture-grain">
+      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-gradient-to-br from-surface via-neutral to-tertiary/5 items-center justify-center">
         <div className="absolute inset-0 opacity-[0.04]" style={{ backgroundImage: 'radial-gradient(circle, rgb(var(--tertiary)) 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
         <div
           aria-hidden="true"
@@ -99,7 +99,7 @@ export default function Login() {
         </div>
       </div>
 
-      <div className="flex-1 flex items-center justify-center bg-bg-secondary p-6 sm:p-8">
+      <div className="flex-1 flex items-center justify-center bg-transparent p-6 sm:p-8">
         <motion.div
           className="w-full max-w-[440px]"
           initial={{ opacity: 0, y: 20 }}
@@ -113,7 +113,7 @@ export default function Login() {
             <span className="text-2xl font-display font-bold tracking-tight text-primary">PLA</span>
           </div>
 
-          <div className="card-base p-8 md:p-10">
+          <div className="bg-surface rounded-[2rem] p-8 md:p-10 shadow-warm-xl ring-1 ring-border-subtle/50">
             <div className="mb-6">
               <h2 className="text-2xl font-display font-bold text-primary tracking-tight">
                 Selamat datang kembali
@@ -150,8 +150,8 @@ export default function Login() {
                   aria-invalid={!!errors.email}
                   aria-describedby={errors.email ? "email-error" : undefined}
                   className={cn(
-                    'w-full rounded-xl border border-border bg-surface px-4 py-3 text-sm text-primary placeholder:text-secondary/50 focus:border-tertiary focus:ring-2 focus:ring-tertiary/20 focus:outline-none transition-colors',
-                    errors.email && 'border-danger focus:border-danger focus:ring-danger/20'
+                    'w-full rounded-xl border-none ring-1 ring-border-subtle bg-surface-1 px-4 py-3 text-sm text-primary placeholder:text-secondary/50 focus:ring-2 focus:ring-tertiary/30 focus:outline-none transition-shadow shadow-[inset_0_2px_4px_rgba(0,0,0,0.02)]',
+                    errors.email && 'ring-2 ring-danger/40 focus:ring-danger/40'
                   )}
                   {...register('email')}
                 />
@@ -175,8 +175,8 @@ export default function Login() {
                     aria-invalid={!!errors.password}
                     aria-describedby={errors.password ? "password-error" : undefined}
                     className={cn(
-                      'w-full rounded-xl border border-border bg-surface px-4 py-3 pr-10 text-sm text-primary placeholder:text-secondary/50 focus:border-tertiary focus:ring-2 focus:ring-tertiary/20 focus:outline-none transition-colors',
-                      errors.password && 'border-danger focus:border-danger focus:ring-danger/20'
+                      'w-full rounded-xl border-none ring-1 ring-border-subtle bg-surface-1 px-4 py-3 pr-10 text-sm text-primary placeholder:text-secondary/50 focus:ring-2 focus:ring-tertiary/30 focus:outline-none transition-shadow shadow-[inset_0_2px_4px_rgba(0,0,0,0.02)]',
+                      errors.password && 'ring-2 ring-danger/40 focus:ring-danger/40'
                     )}
                     {...register('password')}
                   />
@@ -217,7 +217,7 @@ export default function Login() {
               type="button"
               disabled
               title="Coming Soon"
-              className="w-full border-2 border-border bg-surface text-primary rounded-xl px-6 py-3 font-semibold hover:border-tertiary hover:text-tertiary transition-colors flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
+              className="w-full bg-surface shadow-warm-sm ring-1 ring-border-subtle text-primary rounded-xl px-6 py-3 font-semibold hover:shadow-warm-md hover:ring-tertiary/30 transition-all flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
             >
               <svg className="h-4 w-4" viewBox="0 0 24 24">
                 <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/>

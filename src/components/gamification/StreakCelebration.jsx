@@ -103,7 +103,7 @@ export default function StreakCelebration({ streak, onClose }) {
         exit={{ opacity: 0, y: 20, scale: 0.92 }}
         transition={{ type: 'spring', stiffness: 320, damping: 26 }}
         onClick={(e) => e.stopPropagation()}
-        className={`relative w-full max-w-md bg-surface-1 rounded-2xl border border-border-subtle shadow-warm-xl overflow-hidden ${
+        className={`relative w-full max-w-md bg-surface rounded-[2rem] border border-border-subtle shadow-warm-xl overflow-hidden ${
           isMilestone ? 'p-7' : 'p-6'
         }`}
       >

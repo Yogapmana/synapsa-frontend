@@ -220,7 +220,11 @@ export function StatCards({ stats = [], className }) {
       variants={container}
       initial="hidden"
       animate="show"
-      className={cn('grid grid-cols-2 lg:grid-cols-4 gap-4', className)}
+      className={cn(
+        'grid grid-cols-2 gap-4',
+        stats.length === 3 ? 'lg:grid-cols-3' : 'lg:grid-cols-4',
+        className
+      )}
     >
       {stats.map((stat, idx) => (
         <StatCard

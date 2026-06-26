@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
-import { Sparkles, Loader2, Eye, EyeOff, Leaf } from 'lucide-react'
+import { Sparkles, Loader2, Eye, EyeOff, Brain, BookOpen, MessageSquare } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { cn } from '@/lib/utils'
 import { register as registerApi } from '@/api/auth'
@@ -87,35 +87,51 @@ export default function Register() {
   }
 
   return (
-    <div className="min-h-screen flex">
-      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-gradient-to-br from-bg-primary via-bg-secondary to-tertiary/5 items-center justify-center">
+    <div className="min-h-screen flex bg-neutral texture-grain">
+      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-gradient-to-br from-surface via-neutral to-tertiary/5 items-center justify-center">
         <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(circle, rgb(var(--tertiary)) 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
-        <div className="relative z-10 flex flex-col items-center text-center px-12">
-          <div className="w-20 h-20 rounded-2xl bg-tertiary flex items-center justify-center mb-6 shadow-warm-lg">
-            <Leaf className="h-10 w-10 text-white" />
+        <div
+          aria-hidden="true"
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] rounded-full bg-tertiary/[0.06] blur-3xl"
+        />
+
+        <div className="relative z-10 flex flex-col items-center text-center px-12 max-w-md">
+          <div className="w-20 h-20 rounded-2xl bg-tertiary flex items-center justify-center mb-6 shadow-warm-lg ring-4 ring-tertiary/15">
+            <Sparkles className="h-10 w-10 text-white" />
           </div>
-          <h1 className="text-4xl font-display font-bold text-primary tracking-tight">PLA</h1>
-          <p className="text-lg text-secondary mt-3 max-w-sm">
-            Personal Learning Agent — kurikulum adaptif yang belajar dari cara kamu belajar.
+          <h1 className="text-5xl font-display font-bold text-primary tracking-tighter leading-none">
+            PLA
+          </h1>
+          <p className="text-lg text-secondary mt-3 font-serif-content leading-relaxed">
+            Personal Learning Agent — kurikulum adaptif yang
+            <span className="text-tertiary italic"> belajar </span>
+            dari cara kamu belajar.
           </p>
-          <div className="mt-10 flex flex-col gap-3 text-sm text-secondary/70">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-tertiary/10 text-tertiary flex items-center justify-center text-xs font-bold">1</div>
-              <span>Buat kurikulum personal</span>
-            </div>
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-tertiary/10 text-tertiary flex items-center justify-center text-xs font-bold">2</div>
-              <span>Belajar dengan AI agent</span>
-            </div>
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-tertiary/10 text-tertiary flex items-center justify-center text-xs font-bold">3</div>
-              <span>Lacak progres & insight</span>
-            </div>
+
+          <div className="mt-12 w-full space-y-3 text-left">
+            {[
+              { icon: Brain, label: 'Planner Agent rancang kurikulum personal' },
+              { icon: BookOpen, label: 'Modul dari 7 sumber terpercaya' },
+              { icon: MessageSquare, label: 'Tutor AI kontekstual 24/7' },
+            ].map((item, i) => (
+              <motion.div
+                key={item.label}
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.4 + i * 0.1, duration: 0.4 }}
+                className="flex items-center gap-3"
+              >
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-tertiary/10 text-tertiary shrink-0">
+                  <item.icon className="h-4 w-4" />
+                </div>
+                <span className="text-sm text-primary font-label">{item.label}</span>
+              </motion.div>
+            ))}
           </div>
         </div>
       </div>
 
-      <div className="flex-1 flex items-center justify-center bg-bg-secondary p-6 sm:p-8">
+      <div className="flex-1 flex items-center justify-center bg-transparent p-6 sm:p-8">
         <motion.div
           className="w-full max-w-[440px]"
           initial={{ opacity: 0, y: 20 }}
@@ -129,7 +145,7 @@ export default function Register() {
             <span className="text-2xl font-display font-bold tracking-tight text-primary">PLA</span>
           </div>
 
-          <div className="card-base p-8 md:p-10">
+          <div className="bg-surface rounded-[2rem] p-8 md:p-10 shadow-warm-xl ring-1 ring-border-subtle/50">
             <div className="mb-6">
               <h2 className="text-2xl font-display font-bold text-primary">Mulai perjalanan kamu ✨</h2>
               <p className="text-sm text-secondary mt-1">Buat akun gratis, dapetin kurikulum personal</p>
@@ -151,8 +167,8 @@ export default function Register() {
                   aria-invalid={!!errors.username}
                   aria-describedby={errors.username ? "username-error" : undefined}
                   className={cn(
-                    'w-full rounded-xl border border-border bg-surface px-4 py-3 text-sm text-primary placeholder:text-secondary/50 focus:border-tertiary focus:ring-2 focus:ring-tertiary/20 focus:outline-none transition-colors',
-                    errors.username && 'border-danger focus:border-danger focus:ring-danger/20'
+                    'w-full rounded-xl border-none ring-1 ring-border-subtle bg-surface-1 px-4 py-3 text-sm text-primary placeholder:text-secondary/50 focus:ring-2 focus:ring-tertiary/30 focus:outline-none transition-shadow shadow-[inset_0_2px_4px_rgba(0,0,0,0.02)]',
+                    errors.username && 'ring-2 ring-danger/40 focus:ring-danger/40'
                   )}
                   {...register('username')}
                 />
@@ -171,8 +187,8 @@ export default function Register() {
                   aria-invalid={!!errors.email}
                   aria-describedby={errors.email ? "email-error" : undefined}
                   className={cn(
-                    'w-full rounded-xl border border-border bg-surface px-4 py-3 text-sm text-primary placeholder:text-secondary/50 focus:border-tertiary focus:ring-2 focus:ring-tertiary/20 focus:outline-none transition-colors',
-                    errors.email && 'border-danger focus:border-danger focus:ring-danger/20'
+                    'w-full rounded-xl border-none ring-1 ring-border-subtle bg-surface-1 px-4 py-3 text-sm text-primary placeholder:text-secondary/50 focus:ring-2 focus:ring-tertiary/30 focus:outline-none transition-shadow shadow-[inset_0_2px_4px_rgba(0,0,0,0.02)]',
+                    errors.email && 'ring-2 ring-danger/40 focus:ring-danger/40'
                   )}
                   {...register('email')}
                 />
@@ -191,8 +207,8 @@ export default function Register() {
                     aria-invalid={!!errors.password}
                     aria-describedby={errors.password ? "password-error" : undefined}
                     className={cn(
-                      'w-full rounded-xl border border-border bg-surface px-4 py-3 pr-10 text-sm text-primary placeholder:text-secondary/50 focus:border-tertiary focus:ring-2 focus:ring-tertiary/20 focus:outline-none transition-colors',
-                      errors.password && 'border-danger focus:border-danger focus:ring-danger/20'
+                      'w-full rounded-xl border-none ring-1 ring-border-subtle bg-surface-1 px-4 py-3 pr-10 text-sm text-primary placeholder:text-secondary/50 focus:ring-2 focus:ring-tertiary/30 focus:outline-none transition-shadow shadow-[inset_0_2px_4px_rgba(0,0,0,0.02)]',
+                      errors.password && 'ring-2 ring-danger/40 focus:ring-danger/40'
                     )}
                     {...register('password')}
                   />
@@ -238,8 +254,8 @@ export default function Register() {
                     aria-invalid={!!errors.confirmPassword}
                     aria-describedby={errors.confirmPassword ? "confirmPassword-error" : undefined}
                     className={cn(
-                      'w-full rounded-xl border border-border bg-surface px-4 py-3 pr-10 text-sm text-primary placeholder:text-secondary/50 focus:border-tertiary focus:ring-2 focus:ring-tertiary/20 focus:outline-none transition-colors',
-                      errors.confirmPassword && 'border-danger focus:border-danger focus:ring-danger/20'
+                      'w-full rounded-xl border-none ring-1 ring-border-subtle bg-surface-1 px-4 py-3 pr-10 text-sm text-primary placeholder:text-secondary/50 focus:ring-2 focus:ring-tertiary/30 focus:outline-none transition-shadow shadow-[inset_0_2px_4px_rgba(0,0,0,0.02)]',
+                      errors.confirmPassword && 'ring-2 ring-danger/40 focus:ring-danger/40'
                     )}
                     {...register('confirmPassword')}
                   />

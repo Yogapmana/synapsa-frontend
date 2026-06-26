@@ -6,7 +6,7 @@ export function ConfettiEffect({ active = true, duration = 2500 }) {
     if (!active) return;
     
     const end = Date.now() + duration;
-    const colors = ['#4ade80', '#86efac', '#f59e0b', '#ffffff'];
+    const colors = ['#C4251C', '#A16207', '#166534', '#1D4ED8'];
 
     const frame = () => {
       confetti({

@@ -237,7 +237,7 @@ function FeaturesSection() {
             };
             return (
               <motion.div key={feature.title} variants={fadeUp} className="group">
-                <Card className="relative h-full border border-[var(--border)] bg-surface shadow-warm-sm hover:shadow-warm-md transition-all duration-300 hover:-translate-y-1 overflow-hidden">
+                <Card className="relative h-full border-none bg-surface shadow-warm-md hover:shadow-warm-lg transition-all duration-300 hover:-translate-y-1 overflow-hidden">
                   {/* Number watermark — top right of card */}
                   <span
                     aria-hidden="true"
@@ -346,7 +346,7 @@ function HowItWorksSection() {
                 >
                   <div className="flex flex-col items-center text-center">
                     <div className="relative mb-5">
-                      <div className="flex size-24 items-center justify-center rounded-2xl bg-surface border-2 border-tertiary/20 shadow-warm-sm group-hover:border-tertiary/40 transition-colors">
+                      <div className="flex size-24 items-center justify-center rounded-2xl bg-surface shadow-warm-md transition-shadow group-hover:shadow-warm-lg">
                         <Icon className="w-10 h-10 text-tertiary" />
                       </div>
                       <div className="absolute -top-2 -right-2 flex size-9 items-center justify-center rounded-full bg-tertiary text-white font-display font-bold text-sm shadow-warm-md ring-4 ring-surface">
@@ -372,7 +372,7 @@ function HowItWorksSection() {
 
 function SocialProofSection() {
   return (
-    <section className="py-20 sm:py-24 bg-neutral border-y border-[var(--border)] relative overflow-hidden">
+    <section className="py-20 sm:py-24 bg-neutral relative overflow-hidden shadow-[inset_0_1px_3px_rgba(58,41,22,0.04),inset_0_-1px_3px_rgba(58,41,22,0.04)]">
       {/* Signature rule decoration */}
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
         <p className="text-xs font-label uppercase tracking-widest text-secondary mb-3">
@@ -395,47 +395,34 @@ function SocialProofSection() {
 
 function CTASection() {
   return (
-    <section className="py-24 sm:py-32 bg-tertiary relative overflow-hidden">
+    <section className="py-24 sm:py-32 bg-surface-1 relative overflow-hidden">
       <div
         aria-hidden="true"
-        className="absolute inset-0 opacity-10"
+        className="absolute inset-0 opacity-[0.03]"
         style={{
-          backgroundImage:
-            'radial-gradient(circle, white 1px, transparent 1px)',
-          backgroundSize: '24px 24px',
+          backgroundImage: 'radial-gradient(circle, rgb(var(--tertiary)) 1px, transparent 1px)',
+          backgroundSize: '32px 32px',
         }}
       />
-      <div
-        aria-hidden="true"
-        className="absolute -top-20 -right-20 w-96 h-96 rounded-full bg-white/5 blur-3xl"
-      />
-
-      <div className="relative max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+      <div className="relative max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
         <motion.div
           initial="initial"
           whileInView="animate"
           viewport={{ once: true }}
           variants={staggerContainer}
+          className="bg-surface rounded-[2.5rem] p-10 sm:p-16 md:p-24 shadow-warm-xl relative overflow-hidden ring-1 ring-border-subtle/50"
         >
-          <h2 className="text-4xl sm:text-5xl font-display font-bold text-white leading-tight tracking-tight">
-            Siap belajar lebih
-            <span className="italic"> pintar</span>?
+          {/* Subtle glow */}
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-3/4 h-32 bg-tertiary/10 blur-[80px] rounded-full pointer-events-none" />
+          
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-display font-bold text-primary leading-tight tracking-tight relative z-10">
+            “Belajar bukanlah tentang menghafal fakta,
+            <br className="hidden sm:block" />
+            melainkan melatih pikiran untuk <span className="italic text-tertiary">berpikir</span>.”
           </h2>
-          <p className="mt-5 text-lg text-white/80 font-serif-content leading-relaxed">
-            Buat akun gratis dan biarkan Planner Agent menyusun
-            jalur belajar yang dipersonalisasi untukmu.
+          <p className="mt-6 text-lg sm:text-xl text-secondary font-serif-content leading-relaxed relative z-10 max-w-2xl mx-auto">
+            — Albert Einstein
           </p>
-          <div className="mt-8">
-            <Link to="/register">
-              <Button
-                size="lg"
-                className="px-10 py-6 text-base font-semibold rounded-xl shadow-warm-xl bg-white text-tertiary hover:bg-white/90 font-label tracking-wide"
-              >
-                Daftar Gratis Sekarang
-                <ArrowRight className="ml-2 w-4 h-4" />
-              </Button>
-            </Link>
-          </div>
         </motion.div>
       </div>
     </section>
@@ -444,15 +431,15 @@ function CTASection() {
 
 function Footer() {
   return (
-    <footer className="bg-primary text-secondary py-12">
+    <footer className="bg-surface text-secondary py-12 border-t border-border-subtle/30">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-          <div className="flex items-center gap-2.5">
-            <div className="bg-tertiary p-2 rounded-xl">
-              <Sparkles className="h-5 w-5 text-white" />
+        <div className="flex flex-col md:flex-row justify-between items-center gap-6">
+          <div className="flex items-center gap-3">
+            <div className="bg-tertiary/10 p-2.5 rounded-xl text-tertiary ring-1 ring-tertiary/20">
+              <Sparkles className="h-5 w-5" />
             </div>
-            <span className="text-xl font-display font-bold text-white tracking-tight">PLA</span>
-            <span className="text-xs text-secondary/60 font-label">v1.0</span>
+            <span className="text-2xl font-display font-bold text-primary tracking-tight">PLA</span>
+            <span className="text-xs text-secondary/60 font-label font-medium bg-surface-1 px-2 py-1 rounded-md">v1.0</span>
           </div>
           <p className="text-sm font-label">
             Personal Learning Agent — Skripsi S1 · 2026
@@ -467,7 +454,7 @@ export default function Landing() {
   return (
     <div className="min-h-screen bg-neutral texture-grain">
       <nav
-        className="fixed top-0 left-0 right-0 z-50 bg-surface/80 backdrop-blur-md border-b border-[var(--border)]"
+        className="fixed top-0 left-0 right-0 z-50 bg-surface/80 backdrop-blur-md shadow-[0_1px_3px_rgba(58,41,22,0.06),0_1px_0_rgba(58,41,22,0.08)]"
         aria-label="Main"
       >
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
