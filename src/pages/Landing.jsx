@@ -97,7 +97,7 @@ function HeroSection() {
             variants={fadeUp}
             className="max-w-2xl mx-auto text-lg sm:text-xl text-secondary leading-relaxed font-serif-content"
           >
-            PLA merancang kurikulum personal, mencari materi terkini
+            Synapsa merancang kurikulum personal, mencari materi terkini
             dari internet, dan menyesuaikan kecepatan belajarmu secara
             <em className="font-display not-italic text-tertiary"> real-time </em>
             berdasarkan performamu.
@@ -175,7 +175,7 @@ function FeaturesSection() {
       icon: BookOpen,
       title: 'Materi dari 7 sumber',
       description:
-        'PLA mencari dari web, arXiv, Semantic Scholar, Wikipedia, YouTube, dan PDF. Modul belajar disusun dari sumber terbaik yang tersedia.',
+        'Synapsa mencari dari web, arXiv, Semantic Scholar, Wikipedia, YouTube, dan PDF. Modul belajar disusun dari sumber terbaik yang tersedia.',
       accent: 'success',
       number: '02',
     },
@@ -211,12 +211,12 @@ function FeaturesSection() {
             variants={fadeUp}
             className="text-4xl sm:text-5xl font-display font-bold text-primary leading-[1.05] tracking-tight"
           >
-            Tiga hal yang membuat PLA
+            Tiga hal yang membuat Synapsa
             <br className="hidden sm:block" />
             {' '}<span className="italic text-tertiary">berbeda</span>
           </motion.h2>
           <motion.p variants={fadeUp} className="mt-4 max-w-2xl mx-auto text-secondary">
-            Bukan sekadar chatbot. PLA merancang, mencari, dan
+            Bukan sekadar chatbot. Synapsa merancang, mencari, dan
             menyesuaikan — kamu tinggal fokus pada belajarmu.
           </motion.p>
         </motion.div>
@@ -379,7 +379,7 @@ function SocialProofSection() {
           Bukti konsep
         </p>
         <p className="text-2xl sm:text-3xl font-display font-medium text-primary leading-snug max-w-3xl mx-auto">
-          “PLA dirancang untuk skripsi S1. Pengujian internal menunjukkan
+          “Synapsa dirancang untuk skripsi S1. Pengujian internal menunjukkan
           <span className="text-tertiary italic"> 87% </span>
           kepuasan pengguna pada kuis adaptif.”
         </p>
@@ -438,7 +438,7 @@ function Footer() {
             <div className="bg-tertiary/10 p-2.5 rounded-xl text-tertiary ring-1 ring-tertiary/20">
               <Sparkles className="h-5 w-5" />
             </div>
-            <span className="text-2xl font-display font-bold text-primary tracking-tight">PLA</span>
+            <span className="text-2xl font-display font-bold text-primary tracking-tight">Synapsa</span>
             <span className="text-xs text-secondary/60 font-label font-medium bg-surface-1 px-2 py-1 rounded-md">v1.0</span>
           </div>
           <p className="text-sm font-label">
@@ -459,12 +459,12 @@ export default function Landing() {
       >
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <Link to="/" className="flex items-center gap-2.5 group" aria-label="PLA home">
+            <Link to="/" className="flex items-center gap-2.5 group" aria-label="Synapsa home">
               <div className="bg-tertiary p-2 rounded-xl transition-transform group-hover:scale-105">
                 <Sparkles className="h-5 w-5 text-white" />
               </div>
               <span className="text-xl font-display font-bold text-primary tracking-tight">
-                PLA
+                Synapsa
               </span>
             </Link>
             <div className="flex items-center gap-2 sm:gap-3">

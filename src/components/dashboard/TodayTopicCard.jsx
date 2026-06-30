@@ -2,10 +2,12 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, useReducedMotion } from 'framer-motion';
 import { BookOpen, Clock, PlayCircle } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '../ui/button';
 import { Progress } from '../ui/progress';
 
 export default function TodayTopicCard({ topic }) {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const shouldReduceMotion = useReducedMotion();
 
@@ -16,10 +18,10 @@ export default function TodayTopicCard({ topic }) {
           <BookOpen className="w-8 h-8" />
         </div>
         <h3 className="text-lg font-semibold text-primary mb-1">
-          Tidak ada topik hari ini
+          {t('dashboard.no_topic_today', 'Tidak ada topik hari ini')}
         </h3>
         <p className="text-sm text-secondary max-w-sm">
-          Kamu sudah menyelesaikan semua materi untuk hari ini. Waktu yang tepat untuk beristirahat!
+          {t('dashboard.no_topic_today_desc', 'Kamu sudah menyelesaikan semua materi untuk hari ini. Waktu yang tepat untuk beristirahat!')}
         </p>
       </div>
     );
@@ -40,7 +42,7 @@ export default function TodayTopicCard({ topic }) {
       
       <div className="flex items-center gap-2 mb-4">
         <span className="bg-primary text-white text-xs font-bold px-2.5 py-1 rounded-md uppercase tracking-wider">
-          Topik Hari Ini
+          {t('dashboard.today_topic', 'Topik Hari Ini')}
         </span>
       </div>
       
@@ -51,7 +53,7 @@ export default function TodayTopicCard({ topic }) {
       <div className="flex items-center gap-4 text-sm text-secondary mb-6 font-medium">
         <div className="flex items-center gap-1.5">
           <Clock className="w-4 h-4" />
-          <span>~{duration_minutes} menit</span>
+          <span>{t('dashboard.approx_mins', { duration: duration_minutes, defaultValue: `~${duration_minutes} menit` })}</span>
         </div>
       </div>
       
@@ -59,7 +61,7 @@ export default function TodayTopicCard({ topic }) {
         {progress > 0 && (
           <div className="space-y-1.5">
             <div className="flex justify-between text-xs font-medium text-secondary">
-              <span>Progress materi</span>
+              <span>{t('dashboard.material_progress', 'Progress materi')}</span>
               <span>{Math.round(progress)}%</span>
             </div>
             <Progress value={progress} className="h-2 bg-secondary/10" indicatorClassName="bg-tertiary" />
@@ -71,7 +73,7 @@ export default function TodayTopicCard({ topic }) {
           className="w-full flex items-center justify-center gap-2 rounded-xl py-6 text-base font-semibold shadow-sm transition-transform active:scale-[0.98]"
         >
           <PlayCircle className="w-5 h-5" />
-          {progress > 0 ? 'Lanjutkan Belajar' : 'Mulai Belajar'}
+          {progress > 0 ? t('dashboard.continue_learning', 'Lanjutkan Belajar') : t('dashboard.start_learning', 'Mulai Belajar')}
         </Button>
       </div>
     </motion.div>

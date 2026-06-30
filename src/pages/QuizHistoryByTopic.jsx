@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react'
 import { useParams, Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useActiveSession } from '@/hooks/useLearning'
 import { useQuizHistoryByTopic, useQuizAttemptDetail } from '@/hooks/useQuiz'
@@ -32,12 +33,13 @@ import { cn } from '@/lib/utils'
 import { format } from 'date-fns'
 import { id as idLocale } from 'date-fns/locale'
 
-function getScorePill(percentage) {
+function getScorePill(percentage, t) {
+  if (!t) return { variant: "neutral", label: "—" }
   if (percentage == null) return { variant: 'neutral', label: '—' }
-  if (percentage >= 90) return { variant: 'success', label: 'Sangat Baik' }
-  if (percentage >= 75) return { variant: 'info', label: 'Baik' }
-  if (percentage >= 60) return { variant: 'warning', label: 'Cukup' }
-  return { variant: 'danger', label: 'Perlu Review' }
+  if (percentage >= 90) return { variant: 'success', label: t('quiz.excellent', 'Sangat Baik') }
+  if (percentage >= 75) return { variant: 'info', label: t('quiz.good', 'Baik') }
+  if (percentage >= 60) return { variant: 'warning', label: t('quiz.fair', 'Cukup') }
+  return { variant: 'danger', label: t('quiz.needs_review', 'Perlu Review') }
 }
 
 function formatTimeSpent(seconds) {
@@ -68,6 +70,7 @@ const stagger = {
 }
 
 export default function QuizHistoryByTopic() {
+  const { t } = useTranslation()
   const { topicId } = useParams()
   const { data: session } = useActiveSession()
   const sessionId = session?.id
@@ -123,7 +126,7 @@ export default function QuizHistoryByTopic() {
         className="inline-flex items-center gap-1.5 text-sm text-secondary hover:text-primary font-label transition-colors mb-6 group"
       >
         <ArrowLeft size={14} className="transition-transform group-hover:-translate-x-0.5" />
-        Kembali ke Riwayat Kuis
+        {t('quiz.back_to_history', 'Kembali ke Riwayat Kuis')}
       </Link>
 
       {/* ─── Hero Section ─── */}
@@ -170,9 +173,9 @@ export default function QuizHistoryByTopic() {
       ) : attempts.length === 0 ? (
         <EmptyState
           icon={Inbox}
-          title="Belum ada percobaan kuis"
-          description="Klik 'Coba Lagi' untuk mengerjakan kuis topik ini."
-          actionLabel="Mulai Kuis"
+          title={t("quiz.no_attempts", "Belum ada percobaan kuis")}
+          description={t('quiz.no_attempts_desc', "Klik 'Coba Lagi' untuk mengerjakan kuis topik ini.")}
+          actionLabel={t("quiz.start_quiz", "Mulai Kuis")}
           onAction={handleRetry}
         />
       ) : (
@@ -236,7 +239,7 @@ export default function QuizHistoryByTopic() {
                 Riwayat Percobaan
               </h2>
               <span className="text-xs text-secondary font-label px-2.5 py-1 rounded-lg bg-surface-2/60">
-                {attempts.length} entri
+                {t('quiz.entries_count', { count: attempts.length, defaultValue: `${attempts.length} entri` })}
               </span>
             </div>
             <ol className="divide-y divide-border-subtle/60">
@@ -392,7 +395,8 @@ function ScoreProgression({ attempts }) {
 
 /* ─── Attempt Row ─── */
 function AttemptRow({ attempt, index, total, onReview }) {
-  const pill = getScorePill(attempt.percentage)
+  const { t } = useTranslation();
+  const pill = getScorePill(attempt.percentage, t)
   const time = formatTimeSpent(attempt.time_spent_seconds)
   const isLatest = index === total - 1
   const score = attempt.percentage ?? 0
@@ -425,7 +429,7 @@ function AttemptRow({ attempt, index, total, onReview }) {
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 mb-1 flex-wrap">
           <p className="text-sm font-semibold text-primary">
-            Skor {score}%
+            {t('quiz.score_percent', { score, defaultValue: `Skor ${score}%` })}
           </p>
           <StatusBadge variant={pill.variant}>{pill.label}</StatusBadge>
           {isLatest && (
@@ -437,7 +441,7 @@ function AttemptRow({ attempt, index, total, onReview }) {
         <p className="text-xs text-secondary font-label flex items-center gap-2.5 flex-wrap">
           <span className="inline-flex items-center gap-1">
             <CheckCircle2 size={11} className="text-success" />
-            {attempt.correct_answers}/{attempt.total_questions} benar
+            {t('quiz.correct_count', { correct: attempt.correct_answers, total: attempt.total_questions, defaultValue: `${attempt.correct_answers}/${attempt.total_questions} benar` })}
           </span>
           {time && (
             <span className="inline-flex items-center gap-1">
@@ -486,6 +490,7 @@ function AttemptRow({ attempt, index, total, onReview }) {
 
 /* ─── Review Modal ─── */
 function ReviewModal({ attempt, attemptNumber, topicTitle, onClose }) {
+  const { t } = useTranslation();
   const {
     data: detail,
     isLoading: detailLoading,
@@ -499,7 +504,7 @@ function ReviewModal({ attempt, attemptNumber, topicTitle, onClose }) {
   const correctAnswers =
     fullAttempt.correct_answers ?? attempt.correct_answers ?? 0
   const score = fullAttempt.percentage ?? attempt.percentage ?? 0
-  const pill = getScorePill(score)
+  const pill = getScorePill(score, t)
 
   return (
     <motion.div
@@ -527,14 +532,14 @@ function ReviewModal({ attempt, attemptNumber, topicTitle, onClose }) {
               <StatusBadge variant={pill.variant}>{pill.label}</StatusBadge>
             </div>
             <h2 className="font-display font-semibold text-lg text-primary leading-tight">
-              Percobaan #{attemptNumber}
+              {t('quiz.attempt_title', { num: attemptNumber, defaultValue: `Percobaan #${attemptNumber}` })}
             </h2>
             <p className="text-xs text-secondary font-label mt-1 flex items-center gap-2 flex-wrap">
               <span>{topicTitle}</span>
               <span className="text-secondary/40">·</span>
               <span>{formatDate(fullAttempt.created_at, false)}</span>
               <span className="text-secondary/40">·</span>
-              <span className="font-semibold">{correctAnswers}/{totalQuestions} benar</span>
+              <span className="font-semibold">{t('quiz.correct_count', { correct: correctAnswers, total: totalQuestions, defaultValue: `${correctAnswers}/${totalQuestions} benar` })}</span>
             </p>
           </div>
           <button
@@ -582,13 +587,13 @@ function ReviewModal({ attempt, attemptNumber, topicTitle, onClose }) {
                     </div>
                   )}
                   <span className="text-xs font-label font-semibold text-primary">
-                    Pertanyaan {a.question_index + 1}
+                    {t('quiz.question_num', { num: a.question_index + 1, defaultValue: `Pertanyaan ${a.question_index + 1}` })}
                   </span>
                   <span className={cn(
                     'ml-auto text-[10px] font-label font-semibold uppercase tracking-wider px-2 py-0.5 rounded-md',
                     a.is_correct ? 'bg-success/10 text-success-fg' : 'bg-danger/10 text-danger-fg'
                   )}>
-                    {a.is_correct ? 'Benar' : 'Salah'}
+                    {a.is_correct ? t('quiz.correct', 'Benar') : t('quiz.incorrect', 'Salah')}
                   </span>
                 </div>
 
@@ -602,7 +607,7 @@ function ReviewModal({ attempt, attemptNumber, topicTitle, onClose }) {
                   <p className="text-primary">
                     <span className="text-secondary text-xs font-label">Jawaban Anda: </span>
                     <span className={cn('font-semibold', a.is_correct ? 'text-success-fg' : 'text-danger-fg')}>
-                      {a.selected || '— tidak dijawab —'}
+                      {a.selected || t('quiz.unanswered', '— tidak dijawab —')}
                     </span>
                   </p>
                   {!a.is_correct && (
@@ -649,6 +654,7 @@ function ReviewDetailSkeleton() {
 }
 
 function ReviewErrorState({ error, topicId }) {
+  const { t } = useTranslation();
   return (
     <div className="flex flex-col items-center justify-center text-center py-10 px-4">
       <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-4 bg-danger-light text-danger-fg">
@@ -667,7 +673,7 @@ function ReviewErrorState({ error, topicId }) {
           className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-tertiary text-white text-xs font-label font-semibold hover:bg-tertiary-dark transition-colors"
         >
           <RotateCcw size={12} />
-          Coba Lagi untuk Rekam Ulang
+          {t('quiz.try_again_record', 'Coba Lagi untuk Rekam Ulang')}
         </Link>
       )}
     </div>
@@ -675,6 +681,7 @@ function ReviewErrorState({ error, topicId }) {
 }
 
 function EmptyReviewState({ attempt, topicId }) {
+  const { t } = useTranslation();
   const total = attempt?.total_questions ?? 0
   const correct = attempt?.correct_answers ?? 0
   const isZeroQ = total === 0
@@ -692,27 +699,19 @@ function EmptyReviewState({ attempt, topicId }) {
 
       <h3 className="font-display font-semibold text-base text-primary mb-2">
         {isZeroQ
-          ? 'Kuis ini tidak punya detail jawaban'
-          : 'Detail jawaban tidak tersedia'}
+          ? t('quiz.no_detail_zero', 'Kuis ini tidak punya detail jawaban')
+          : t('quiz.no_detail', 'Detail jawaban tidak tersedia')}
       </h3>
 
       <p className="text-sm text-secondary max-w-md leading-relaxed mb-5">
         {isZeroQ ? (
           <>
-            Percobaan ini terekam dengan{' '}
-            <span className="font-semibold text-primary">
-              0 pertanyaan
-            </span>{' '}
-            ({correct}/{total} benar). Kemungkinan sistem gagal membuat
-            soal kuis saat percobaan ini (mis. cache kadaluwarsa atau
-            generator LLM tidak mengembalikan format yang valid). Detail
-            per-soal tidak bisa ditampilkan karena tidak ada soal yang
-            dinilai.
+            {t('quiz.no_detail_zero_desc', "Percobaan ini terekam dengan 0 pertanyaan. Kemungkinan sistem gagal membuat soal kuis saat percobaan ini. Detail per-soal tidak bisa ditampilkan karena tidak ada soal yang dinilai.")}{' '}
+            
           </>
         ) : (
           <>
-            Detail per-soal untuk percobaan ini belum terekam.
-            Skor keseluruhan ({correct}/{total}) tetap tersimpan.
+            {t('quiz.no_detail_desc', { correct, total, defaultValue: `Detail per-soal untuk percobaan ini belum terekam. Skor keseluruhan (${correct}/${total}) tetap tersimpan.` })}
           </>
         )}
       </p>
@@ -728,7 +727,7 @@ function EmptyReviewState({ attempt, topicId }) {
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-tertiary text-white font-semibold hover:bg-tertiary-dark transition-colors"
           >
             <RotateCcw size={12} />
-            Coba Lagi untuk Rekam Ulang
+            {t('quiz.try_again_record', 'Coba Lagi untuk Rekam Ulang')}
           </Link>
         )}
       </div>

@@ -26,20 +26,21 @@ import { cn } from '@/lib/utils'
 import { format } from 'date-fns'
 import { id as idLocale } from 'date-fns/locale'
 import { motion } from 'framer-motion'
+import { useTranslation } from 'react-i18next'
 
 function getScorePill(percentage) {
   if (percentage == null) return { variant: 'neutral', label: '—' }
-  if (percentage >= 90) return { variant: 'success', label: 'Sangat Baik' }
-  if (percentage >= 75) return { variant: 'info', label: 'Baik' }
-  if (percentage >= 60) return { variant: 'warning', label: 'Cukup' }
-  return { variant: 'danger', label: 'Perlu Review' }
+  if (percentage >= 90) return { variant: 'success', label: 'quiz.excellent', defaultLabel: 'Sangat Baik' }
+  if (percentage >= 75) return { variant: 'info', label: 'quiz.good', defaultLabel: 'Baik' }
+  if (percentage >= 60) return { variant: 'warning', label: 'quiz.fair', defaultLabel: 'Cukup' }
+  return { variant: 'danger', label: 'quiz.needs_review', defaultLabel: 'Perlu Review' }
 }
 
 function getTrend(firstPct, latestPct) {
   if (firstPct == null || latestPct == null) return null
-  if (latestPct > firstPct + 5) return { icon: TrendingUp, color: 'text-success', label: 'Membaik' }
-  if (latestPct < firstPct - 5) return { icon: TrendingDown, color: 'text-danger', label: 'Menurun' }
-  return { icon: Minus, color: 'text-secondary', label: 'Stabil' }
+  if (latestPct > firstPct + 5) return { icon: TrendingUp, color: 'text-success', label: 'quiz.improving', defaultLabel: 'Membaik' }
+  if (latestPct < firstPct - 5) return { icon: TrendingDown, color: 'text-danger', label: 'quiz.declining', defaultLabel: 'Menurun' }
+  return { icon: Minus, color: 'text-secondary', label: 'quiz.stable', defaultLabel: 'Stabil' }
 }
 
 function groupByTopic(attempts) {
@@ -65,11 +66,11 @@ function groupByTopic(attempts) {
   })
 }
 
-function formatTimeSpent(seconds) {
+function formatTimeSpent(seconds, t) {
   if (seconds == null || seconds <= 0) return null
   const minutes = Math.round(seconds / 60)
-  if (minutes < 1) return '< 1 mnt'
-  return `${minutes} mnt`
+  if (minutes < 1) return t('quiz.less_than_1m', '< 1 mnt')
+  return t('quiz.mins_format', { mins: minutes, defaultValue: `${minutes} mnt` })
 }
 
 function formatDate(iso) {
@@ -92,6 +93,7 @@ const stagger = {
 }
 
 export default function QuizHistory() {
+  const { t } = useTranslation()
   const { data: session } = useActiveSession()
   const sessionId = session?.id
   const { data: attempts = [], isLoading } = useQuizHistory(sessionId)
@@ -126,8 +128,8 @@ export default function QuizHistory() {
 
         <div className="relative z-10">
           <PageHeader
-            title="Riwayat Kuis"
-            subtitle="Semua kuis yang pernah Anda kerjakan, dikelompokkan per topik."
+            title={t('quiz.history_title', 'Riwayat Kuis')}
+            subtitle={t('quiz.history_desc', 'Semua kuis yang pernah Anda kerjakan, dikelompokkan per topik.')}
             icon={HistoryIcon}
           />
         </div>
@@ -136,25 +138,25 @@ export default function QuizHistory() {
           <div className="relative z-10 grid grid-cols-2 md:grid-cols-4 gap-3 mt-2">
             <StatCard
               icon={HelpCircle}
-              label="Total Kuis"
+              label={t('quiz.total_quizzes', 'Total Kuis')}
               value={stats.total}
               tone="tertiary"
             />
             <StatCard
               icon={BarChart3}
-              label="Rata-rata"
+              label={t('quiz.average', 'Rata-rata')}
               value={`${stats.avg}%`}
               tone="info"
             />
             <StatCard
               icon={Trophy}
-              label="Skor Terbaik"
+              label={t('quiz.best_score', 'Skor Terbaik')}
               value={`${stats.best}%`}
               tone="success"
             />
             <StatCard
               icon={Target}
-              label="Topik Dikerjakan"
+              label={t('quiz.topics_attempted', 'Topik Dikerjakan')}
               value={stats.topicCount}
               tone="warning"
             />
@@ -172,8 +174,8 @@ export default function QuizHistory() {
       ) : groups.length === 0 ? (
         <EmptyState
           icon={Inbox}
-          title="Belum ada riwayat kuis"
-          description="Mulai kerjakan kuis pada topik manapun untuk melihat riwayatnya di sini."
+          title={t('quiz.no_history_title', 'Belum ada riwayat kuis')}
+          description={t('quiz.no_history_desc', 'Mulai kerjakan kuis pada topik manapun untuk melihat riwayatnya di sini.')}
         />
       ) : (
         <motion.div
@@ -184,7 +186,7 @@ export default function QuizHistory() {
         >
           {groups.map((group, idx) => (
             <motion.div key={group.topic_id} variants={fadeUp}>
-              <TopicGroupCard group={group} index={idx} />
+              <TopicGroupCard group={group} index={idx} t={t} />
             </motion.div>
           ))}
         </motion.div>
@@ -218,7 +220,7 @@ function StatCard({ icon: Icon, label, value, tone = 'tertiary' }) {
 }
 
 /* ─── Topic Group Card ─── */
-function TopicGroupCard({ group, index }) {
+function TopicGroupCard({ group, index, t }) {
   const latest = group.attempts[group.attempts.length - 1]
   const first = group.attempts[0]
   const best = group.attempts.reduce(
@@ -247,16 +249,16 @@ function TopicGroupCard({ group, index }) {
           <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-secondary font-label">
             <span className="inline-flex items-center gap-1">
               <Sparkles size={11} className="text-tertiary" />
-              {group.attempts.length} percobaan
+              {group.attempts.length} {t('quiz.attempts', 'percobaan')}
             </span>
             <span className="inline-flex items-center gap-1">
               <Trophy size={11} />
-              Terbaik: {best}%
+              {t('quiz.best_prefix', 'Terbaik:')} {best}%
             </span>
             {trend && TrendIcon && (
               <span className={cn('inline-flex items-center gap-1', trend.color)}>
                 <TrendIcon size={11} />
-                {trend.label}
+                {t(trend.label, trend.defaultLabel)}
               </span>
             )}
             {latestDate && (
@@ -270,7 +272,9 @@ function TopicGroupCard({ group, index }) {
 
         {/* Right side — badge + link */}
         <div className="flex items-center gap-2.5 shrink-0">
-          <StatusBadge variant={latestPill.variant}>{latestPill.label}</StatusBadge>
+          <StatusBadge variant={latestPill.variant}>
+            {latestPill.label === '—' ? '—' : t(latestPill.label, latestPill.defaultLabel)}
+          </StatusBadge>
           <Link
             to={`/progress/topic/${encodeURIComponent(group.topic_id)}`}
             className={cn(
@@ -280,7 +284,7 @@ function TopicGroupCard({ group, index }) {
               'transition-all duration-200 shadow-warm-xs group-hover:shadow-warm-sm'
             )}
           >
-            Lihat detail
+            {t('quiz.view_details', 'Lihat detail')}
             <ChevronRight size={14} className="transition-transform group-hover:translate-x-0.5" />
           </Link>
         </div>

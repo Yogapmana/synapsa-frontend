@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { Clock, ArrowRight, BookOpen, ChevronLeft, Sparkles } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { useTranslation } from 'react-i18next'
 
 /**
  * ModuleTopbar — sticky top bar for the module reading page.
@@ -22,6 +23,7 @@ import { Button } from '@/components/ui/button'
  *    hard card glued on the page.
  */
 export default function ModuleTopbar({ module, scrollContainerRef }) {
+  const { t } = useTranslation();
   const [showQuizButton, setShowQuizButton] = useState(false)
   const { topicId } = useParams()
 
@@ -94,18 +96,18 @@ export default function ModuleTopbar({ module, scrollContainerRef }) {
         <div className="min-w-0 shrink text-left">
           <div className="hidden md:flex items-center gap-1.5 mb-0.5">
             <span className="text-[10px] font-label uppercase tracking-[0.18em] text-tertiary font-bold whitespace-nowrap">
-              {topicNumber ? `Topik ${topicNumber}` : 'Topik'}
+              {topicNumber ? t('module.topic_number', { number: topicNumber }) : t('module.topic')}
             </span>
             <span className="size-1 rounded-full bg-tertiary/40" aria-hidden="true" />
             <span className="text-[10px] font-label uppercase tracking-[0.18em] text-secondary/70 whitespace-nowrap">
-              Modul
+              {t('module.module')}
             </span>
           </div>
           <h1
             title={module?.title}
             className="font-display font-semibold text-[15px] text-primary leading-tight truncate"
           >
-            {module?.title ?? 'Memuat…'}
+            {module?.title ?? t('module.loading')}
           </h1>
         </div>
 
@@ -118,7 +120,7 @@ export default function ModuleTopbar({ module, scrollContainerRef }) {
           {estimatedMinutes > 0 && (
             <span className="hidden sm:inline-flex items-center gap-1.5 text-xs text-secondary font-label tabular-nums px-2.5 py-1 rounded-lg bg-bg-secondary/40 border border-border/40">
               <Clock className="size-3.5" aria-hidden="true" />
-              {estimatedMinutes} mnt
+              {estimatedMinutes} {t('module.mins')}
             </span>
           )}
 
@@ -131,7 +133,7 @@ export default function ModuleTopbar({ module, scrollContainerRef }) {
             >
               <Link to={`/quiz/${module.topic_id}`}>
                 <Sparkles className="size-3.5" />
-                Mulai Kuis
+                {t('module.start_quiz')}
                 <ArrowRight className="size-3.5 transition-transform group-hover:translate-x-0.5" />
               </Link>
             </Button>

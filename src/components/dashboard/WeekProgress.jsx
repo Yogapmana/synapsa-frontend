@@ -1,19 +1,21 @@
 import React from 'react';
 import { CheckCircle2, Circle, CircleDashed } from 'lucide-react';
 import { Progress } from '../ui/progress';
+import { useTranslation } from 'react-i18next';
 
 export default function WeekProgress({ weeks = [] }) {
+  const { t } = useTranslation();
   if (!weeks.length) return null;
 
   return (
     <div className="bg-surface rounded-2xl border border-[var(--border)] p-6 flex flex-col h-full">
       <h3 className="text-lg font-bold text-primary mb-6">
-        Progres Silabus
+        {t('dashboard.syllabus_progress', 'Progres Silabus')}
       </h3>
       
       <div className="space-y-6 flex-1 overflow-y-auto pr-2 custom-scrollbar">
         {weeks.map((week, index) => {
-          const { id, title = `Minggu ${index + 1}`, status, progress = 0 } = week;
+          const { id, title = t('dashboard.week_num', { num: index + 1, defaultValue: `Minggu ${index + 1}` }), status, progress = 0 } = week;
           
           let icon;
           let colorClass;

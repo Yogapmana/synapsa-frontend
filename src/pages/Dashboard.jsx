@@ -6,6 +6,7 @@ import { useLearningStore } from '../stores/learningStore';
 import { getCurriculum, getTopics } from '../api/learning';
 import { getQuizHistory } from '../api/quiz';
 import { motion } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 
 import GreetingHero from '../components/dashboard/GreetingHero';
 import { StatCards } from '../components/data/StatCards';
@@ -29,6 +30,7 @@ const fadeUp = {
 };
 
 export default function Dashboard() {
+  const { t } = useTranslation();
   const { user } = useAuthStore();
   const { activeSession, streak } = useLearningStore();
   const navigate = useNavigate();
@@ -95,27 +97,27 @@ export default function Dashboard() {
     // it's now shown in the dedicated <StreakCard /> with full
     // 12-week heatmap. Keeping it here too would be redundant.
     {
-      label: 'Topik Selesai',
+      label: t('dashboard.stats_completed_topics', 'Topik Selesai'),
       value: completedTopicsCount,
-      subtext: `dari ${topics.length || 0} total`,
+      subtext: t('dashboard.stats_from_total', { total: topics.length || 0, defaultValue: `dari ${topics.length || 0} total` }),
       icon: 'BookOpen',
       color: 'success',
       sparkline: Array.from({ length: 7 }, (_, i) => Math.max(0, completedTopicsCount - (6 - i) * 0.5)),
       trend: completedTopicsCount > 0 ? 8 : null,
     },
     {
-      label: 'Waktu Belajar',
+      label: t('dashboard.stats_study_time', 'Waktu Belajar'),
       value: `${studyHoursThisWeek}j`,
-      subtext: 'minggu ini',
+      subtext: t('dashboard.stats_this_week', 'minggu ini'),
       icon: 'Clock',
       color: 'warning',
       sparkline: [1.2, 1.8, 0.5, 2.4, 1.1, 2.0, studyHoursThisWeek || 0],
       trend: 15,
     },
     {
-      label: 'Skor Kuis',
+      label: t('dashboard.stats_quiz_score', 'Skor Kuis'),
       value: avgQuizScore,
-      subtext: `${quizHistory.length} kuis`,
+      subtext: t('dashboard.stats_quizzes_count', { count: quizHistory.length, defaultValue: `${quizHistory.length} kuis` }),
       icon: 'Target',
       color: 'info',
       sparkline: [60, 70, 75, 80, 78, 85, avgQuizScore || 0],
@@ -131,8 +133,8 @@ export default function Dashboard() {
     return {
       id: q.id,
       type: 'quiz',
-      title: `Kuis: ${q.topic_title || 'Topik'}`,
-      description: `Skor: ${displayScore} — ${Math.round((q.time_spent_seconds || 0) / 60)} menit`,
+      title: t('dashboard.activity_quiz', { topic: q.topic_title || 'Topik', defaultValue: `Kuis: ${q.topic_title || 'Topik'}` }),
+      description: t('dashboard.activity_score_time', { score: displayScore, mins: Math.round((q.time_spent_seconds || 0) / 60), defaultValue: `Skor: ${displayScore} — ${Math.round((q.time_spent_seconds || 0) / 60)} menit` }),
       time: new Date(q.created_at || Date.now()).toLocaleDateString('id-ID'),
       score: displayScore,
       // Used by RecentActivity to link each row to the per-topic
@@ -150,18 +152,18 @@ export default function Dashboard() {
     const action = latestFeedbackTopic.feedback_action;
     const score = latestFeedbackTopic.mastery_score ? Math.round(latestFeedbackTopic.mastery_score * 100) : null;
     
-    let title = "Evaluasi Adaptive Learning";
-    let message = `Sistem mendeteksi tingkat pemahaman Anda.`;
+    let title = t('dashboard.feedback_eval_title', "Evaluasi Adaptive Learning");
+    let message = t('dashboard.feedback_eval_msg', "Sistem mendeteksi tingkat pemahaman Anda.");
     
     if (action === "repeat") {
-      title = "Pemahaman Perlu Ditingkatkan";
-      message = `Skor penguasaan Anda pada materi terakhir adalah ${score}%. Sistem merekomendasikan Anda untuk mengulang materi yang disederhanakan. Silakan klik 'Lanjut Belajar' untuk memulai ulang.`;
+      title = t('dashboard.feedback_repeat_title', "Pemahaman Perlu Ditingkatkan");
+      message = t('dashboard.feedback_repeat_msg', { score, defaultValue: `Skor penguasaan Anda pada materi terakhir adalah ${score}%. Sistem merekomendasikan Anda untuk mengulang materi yang disederhanakan. Silakan klik 'Lanjut Belajar' untuk memulai ulang.` });
     } else if (action === "review") {
-      title = "Sesi Review Ditambahkan";
-      message = `Skor penguasaan Anda pada materi terakhir adalah ${score}%. Agar pemahaman lebih kuat, sebuah topik Review khusus telah disisipkan ke dalam jadwal Anda.`;
+      title = t('dashboard.feedback_review_title', "Sesi Review Ditambahkan");
+      message = t('dashboard.feedback_review_msg', { score, defaultValue: `Skor penguasaan Anda pada materi terakhir adalah ${score}%. Agar pemahaman lebih kuat, sebuah topik Review khusus telah disisipkan ke dalam jadwal Anda.` });
     } else if (action === "accelerate") {
-      title = "Anda Sangat Cepat!";
-      message = `Skor penguasaan Anda adalah ${score}%. Anda memahami materi dengan sangat baik! Jadwal telah dipercepat untuk menyesuaikan kemampuan Anda.`;
+      title = t('dashboard.feedback_accel_title', "Anda Sangat Cepat!");
+      message = t('dashboard.feedback_accel_msg', { score, defaultValue: `Skor penguasaan Anda adalah ${score}%. Anda memahami materi dengan sangat baik! Jadwal telah dipercepat untuk menyesuaikan kemampuan Anda.` });
     }
 
     return { title, message, action };

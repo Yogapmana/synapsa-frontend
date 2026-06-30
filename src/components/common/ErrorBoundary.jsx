@@ -5,6 +5,7 @@ import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 
+import { withTranslation } from "react-i18next";
 class ErrorBoundary extends React.Component {
   constructor(props) {
     super(props)
@@ -33,7 +34,7 @@ class ErrorBoundary extends React.Component {
             </div>
             <CardTitle>Oops, ada yang error</CardTitle>
             <CardDescription>
-              Halaman ini gagal dimuat. Silakan coba lagi atau kembali ke dashboard.
+              {this.props.t('common.error_loading', 'Halaman ini gagal dimuat. Silakan coba lagi atau kembali ke dashboard.')}
             </CardDescription>
           </CardHeader>
           <CardContent className="flex flex-wrap gap-3">
@@ -44,7 +45,7 @@ class ErrorBoundary extends React.Component {
             <Button asChild variant="outline">
               <Link to="/dashboard">
                 <LayoutDashboard data-icon="inline-start" />
-                Kembali ke Dashboard
+                {this.props.t('common.back_to_dashboard', 'Kembali ke Dashboard')}
               </Link>
             </Button>
           </CardContent>
@@ -54,4 +55,4 @@ class ErrorBoundary extends React.Component {
   }
 }
 
-export default ErrorBoundary
+export default withTranslation()(ErrorBoundary)

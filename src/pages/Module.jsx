@@ -14,6 +14,7 @@ import ReadingTracker from '@/components/module/ReadingTracker'
 import ModuleChatPanel from '@/components/module/ModuleChatSlider'
 import { BookOpen, GraduationCap, Loader2 } from 'lucide-react'
 import ReadingProgressBar from '@/components/module/ReadingProgressBar'
+import { useTranslation } from 'react-i18next'
 
 /**
  * Module page
@@ -57,23 +58,24 @@ function ModuleSkeleton() {
 }
 
 function GeneratingState() {
+  const { t } = useTranslation();
   return (
     <div className="flex min-h-[60vh] flex-col items-center justify-center px-4">
       <div className="flex size-16 items-center justify-center rounded-2xl bg-tertiary/10 mb-6">
         <Loader2 className="size-8 animate-spin text-tertiary" />
       </div>
       <h2 className="text-xl font-display font-bold tracking-tight text-primary mb-2">
-        Menyusun materi untuk Anda…
+        {t('module.generating_title')}
       </h2>
       <p className="text-secondary max-w-md text-center text-sm leading-relaxed">
-        Tutor AI sedang mengumpulkan dan menyusun materi pembelajaran.
-        Mohon tunggu sebentar (1-2 menit).
+        {t('module.generating_desc')}
       </p>
     </div>
   )
 }
 
 function ModuleArticle({ module }) {
+  const { t } = useTranslation();
   const sources = module.sources ?? []
   const courses = module.courses ?? []
 
@@ -89,7 +91,7 @@ function ModuleArticle({ module }) {
 
       {/* Eyebrow — establishes editorial hierarchy */}
       <div className="mb-3">
-        <span className="eyebrow">Materi Pembelajaran</span>
+        <span className="eyebrow">{t('module.learning_material')}</span>
       </div>
 
       {/* Article body — title is shown in the sticky topbar above and as
@@ -102,11 +104,11 @@ function ModuleArticle({ module }) {
       {sources.length > 0 && (
         <section className="mt-16 pt-8 border-t border-border">
           <div className="mb-5">
-            <span className="eyebrow">Rujukan</span>
+            <span className="eyebrow">{t('module.reference')}</span>
           </div>
           <h2 className="mb-5 flex items-center gap-2.5 text-xl font-display font-bold text-primary tracking-tight">
             <BookOpen className="size-5 text-tertiary" aria-hidden="true" />
-            Sumber yang Digunakan
+            {t('module.sources_used')}
           </h2>
           <div className="space-y-2.5">
             {sources.map((source, i) => (
@@ -123,11 +125,11 @@ function ModuleArticle({ module }) {
       {courses.length > 0 && (
         <section className="mt-12 pt-8 border-t border-border">
           <div className="mb-5">
-            <span className="eyebrow">Pelajari Lebih Dalam</span>
+            <span className="eyebrow">{t('module.learn_more')}</span>
           </div>
           <h2 className="mb-5 flex items-center gap-2.5 text-xl font-display font-bold text-primary tracking-tight">
             <GraduationCap className="size-5 text-tertiary" aria-hidden="true" />
-            Kursus & Materi Terkait
+            {t('module.related_courses')}
           </h2>
           <div className="space-y-2.5">
             {courses.map((course, i) => (
@@ -144,6 +146,7 @@ function ModuleArticle({ module }) {
 }
 
 export default function Module() {
+  const { t } = useTranslation();
   const { topicId } = useParams()
   const { activeSession } = useLearningStore()
   const sessionId = activeSession?.id
@@ -223,9 +226,9 @@ export default function Module() {
             <div className="mx-auto max-w-[720px] px-4 md:px-6 py-16">
               <EmptyState
                 icon={BookOpen}
-                title="Modul Terkunci"
-                description="Anda harus menyelesaikan modul sebelumnya terlebih dahulu untuk membuka materi ini."
-                actionLabel="Kembali ke Kurikulum"
+                title={t('module.module_locked')}
+                description={t('module.module_locked_desc')}
+                actionLabel={t('module.back_to_curriculum')}
                 onAction={() => window.location.href = '/curriculum'}
               />
             </div>
@@ -233,9 +236,9 @@ export default function Module() {
             <div className="mx-auto max-w-[720px] px-4 md:px-6 py-16">
               <EmptyState
                 icon={BookOpen}
-                title="Modul tidak ditemukan"
-                description="Topik ini belum memiliki konten modul. Coba kembali nanti."
-                actionLabel="Kembali ke Kurikulum"
+                title={t('module.module_not_found')}
+                description={t('module.module_not_found_desc')}
+                actionLabel={t('module.back_to_curriculum')}
                 onAction={() => window.location.href = '/curriculum'}
               />
             </div>

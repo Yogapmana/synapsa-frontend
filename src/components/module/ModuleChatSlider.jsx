@@ -15,11 +15,12 @@ import { sendMessage, getHistory } from '@/api/chat'
 import ChatBubble from '@/components/chat/ChatBubble'
 
 import ThinkingIndicator from '@/components/chat/ThinkingIndicator'
+import { useTranslation } from 'react-i18next'
 
 /**
  * ModuleChatPanel — sticky right sidebar for the AI tutor.
  *
- * Phase 5.8 redesign — editorial treatment to match the rest of PLA:
+ * Phase 5.8 redesign — editorial treatment to match the rest of Synapsa:
  *  - Header is structured as: avatar → title block → collapse button
  *    (collapse now sits at the FAR RIGHT, where users expect it).
  *  - Top of header has a thin terracotta accent strip + "TUTOR · AI"
@@ -37,27 +38,28 @@ import ThinkingIndicator from '@/components/chat/ThinkingIndicator'
 const EXPANDED_WIDTH = 420
 const COLLAPSED_WIDTH = 56
 
-const SUGGESTED_PROMPTS = [
-  {
-    label: 'Jelaskan lebih detail tentang topik ini',
-    icon: Lightbulb,
-  },
-  {
-    label: 'Beri contoh konkret',
-    icon: MessageCircle,
-  },
-  {
-    label: 'Ringkas poin-poin utama',
-    icon: Sparkles,
-  },
-]
-
 export default function ModuleChatPanel({ sessionId, topicId, moduleTitle }) {
+  const { t } = useTranslation();
   const queryClient = useQueryClient()
   const scrollRef = useRef(null)
   const [isCollapsed, setIsCollapsed] = useState(false)
   const [draftValue, setDraftValue] = useState('')
   const textareaRef = useRef(null)
+
+  const SUGGESTED_PROMPTS = [
+    {
+      label: t('module.tutor_suggestion_1'),
+      icon: Lightbulb,
+    },
+    {
+      label: t('module.tutor_suggestion_2'),
+      icon: MessageCircle,
+    },
+    {
+      label: t('module.tutor_suggestion_3'),
+      icon: Sparkles,
+    },
+  ];
 
   const { data: history = [], isLoading } = useQuery({
     queryKey: ['chat', 'module', topicId],
@@ -96,9 +98,17 @@ export default function ModuleChatPanel({ sessionId, topicId, moduleTitle }) {
         old.filter((msg) => msg.id !== 'optimistic-user')
       )
     },
-    onSuccess: (data) => {
+    onSuccess: (data, newMessage) => {
       queryClient.setQueryData(['chat', 'module', topicId], (old = []) => {
         const filtered = old.filter((msg) => msg.id !== 'optimistic-user')
+        
+        const userMessage = {
+          id: `user-${Date.now()}`,
+          role: 'user',
+          content: newMessage,
+          created_at: new Date().toISOString(),
+        }
+        
         const aiMessage = {
           id: data.message_id || `ai-${Date.now()}`,
           role: 'assistant',
@@ -106,7 +116,7 @@ export default function ModuleChatPanel({ sessionId, topicId, moduleTitle }) {
           sources: data.sources,
           created_at: new Date().toISOString(),
         }
-        return [...filtered, aiMessage]
+        return [...filtered, userMessage, aiMessage]
       })
     },
   })
@@ -170,13 +180,13 @@ export default function ModuleChatPanel({ sessionId, topicId, moduleTitle }) {
               {/* Title block */}
               <div className="min-w-0 flex-1">
                 <h2 className="font-display font-bold text-[14px] text-primary leading-tight truncate">
-                  Tanya Tutor AI
+                  {t('module.tutor_title')}
                 </h2>
                 <p
                   className="text-[11px] text-secondary font-label truncate mt-0.5"
                   title={moduleTitle}
                 >
-                  {moduleTitle || 'Tanya seputar modul ini'}
+                  {moduleTitle}
                 </p>
               </div>
 
@@ -206,13 +216,13 @@ export default function ModuleChatPanel({ sessionId, topicId, moduleTitle }) {
             {isLoading ? (
               <div className="flex items-center justify-center text-text-muted text-sm font-label py-12">
                 <Sparkles className="size-4 mr-2 animate-pulse" />
-                Memuat riwayat chat…
               </div>
             ) : history.length === 0 ? (
               <EmptyChatState
                 moduleTitle={moduleTitle}
                 onSuggestionClick={handleSuggestionClick}
                 disabled={sendMutation.isPending}
+                suggestedPrompts={SUGGESTED_PROMPTS}
               />
             ) : (
               <div className="space-y-5">
@@ -265,7 +275,7 @@ export default function ModuleChatPanel({ sessionId, topicId, moduleTitle }) {
                     }
                   }
                 }}
-                placeholder="Tanyakan sesuatu…"
+                placeholder={t('module.tutor_input_placeholder')}
                 disabled={sendMutation.isPending}
                 className="flex-1 bg-transparent border-none focus:ring-0 focus:outline-none text-[13px] text-primary placeholder:text-secondary/50 resize-none py-1 max-h-[100px] leading-relaxed [&::-webkit-scrollbar]:hidden"
                 ref={textareaRef}
@@ -341,7 +351,8 @@ function CollapsedRail({ onExpand }) {
 
 /* ────────────────────────────────────────────────────────────────── */
 
-function EmptyChatState({ moduleTitle, onSuggestionClick, disabled }) {
+function EmptyChatState({ moduleTitle, onSuggestionClick, disabled, suggestedPrompts }) {
+  const { t } = useTranslation();
   return (
     <div className="relative flex flex-col items-center text-center px-4 py-8 overflow-hidden">
       {/* Soft gradient backdrop — matches the rest of the app's hero treatment */}
@@ -378,15 +389,14 @@ function EmptyChatState({ moduleTitle, onSuggestionClick, disabled }) {
       </div>
 
       {/* Title block */}
-      <p className="eyebrow !text-[10px] mb-1">Selamat datang</p>
+      <p className="eyebrow !text-[10px] mb-1">{t('module.tutor_welcome')}</p>
       <h3 className="font-display font-bold text-lg text-primary leading-tight tracking-tight mb-1.5">
-        Tanya Tutor AI
+        {t('module.tutor_name')}
       </h3>
       <p className="text-[12px] text-secondary font-serif-content leading-relaxed max-w-[300px]">
-        Ada bagian yang kurang jelas? Saya siap menjelaskannya lebih
-        detail berdasarkan materi{' '}
+        {t('module.tutor_intro')}{' '}
         <span className="text-primary font-medium italic">
-          {moduleTitle || 'yang sedang Anda baca'}
+          {moduleTitle}
         </span>
         .
       </p>
@@ -394,9 +404,9 @@ function EmptyChatState({ moduleTitle, onSuggestionClick, disabled }) {
       {/* Suggested prompts — actually clickable */}
       <div className="mt-5 w-full space-y-2">
         <p className="text-[10px] font-label uppercase tracking-widest text-secondary/70 mb-2">
-          Atau coba tanya
+          {t('module.tutor_try_ask')}
         </p>
-        {SUGGESTED_PROMPTS.map(({ label, icon: Icon }) => (
+        {suggestedPrompts.map(({ label, icon: Icon }) => (
           <button
             key={label}
             type="button"

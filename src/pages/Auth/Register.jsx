@@ -100,7 +100,7 @@ export default function Register() {
             <Sparkles className="h-10 w-10 text-white" />
           </div>
           <h1 className="text-5xl font-display font-bold text-primary tracking-tighter leading-none">
-            PLA
+            Synapsa
           </h1>
           <p className="text-lg text-secondary mt-3 font-serif-content leading-relaxed">
             Personal Learning Agent — kurikulum adaptif yang
@@ -142,7 +142,7 @@ export default function Register() {
             <div className="bg-tertiary p-2 rounded-xl">
               <Sparkles className="h-5 w-5 text-white" />
             </div>
-            <span className="text-2xl font-display font-bold tracking-tight text-primary">PLA</span>
+            <span className="text-2xl font-display font-bold tracking-tight text-primary">Synapsa</span>
           </div>
 
           <div className="bg-surface rounded-[2rem] p-8 md:p-10 shadow-warm-xl ring-1 ring-border-subtle/50">

@@ -1,15 +1,16 @@
 import React from 'react';
 import { Flame } from 'lucide-react';
 import { motion, useReducedMotion } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 import { LEVEL_NAMES, LEVEL_THRESHOLDS } from '../../utils/constants';
 import { CountUp } from './CountUp';
 
-function getTimeGreeting() {
+function getTimeGreeting(t) {
   const hour = new Date().getHours();
-  if (hour < 11) return 'Selamat pagi';
-  if (hour < 15) return 'Selamat siang';
-  if (hour < 18) return 'Selamat sore';
-  return 'Selamat malam';
+  if (hour < 11) return t('dashboard.morning', 'Selamat pagi');
+  if (hour < 15) return t('dashboard.afternoon', 'Selamat siang');
+  if (hour < 18) return t('dashboard.evening', 'Selamat sore');
+  return t('dashboard.night', 'Selamat malam');
 }
 
 function getLevelInfo(xp) {
@@ -28,7 +29,8 @@ function getLevelInfo(xp) {
 }
 
 export default function GreetingHero({ username = 'Pelajar', streak = 0, xp = 0 }) {
-  const greeting = getTimeGreeting();
+  const { t } = useTranslation();
+  const greeting = getTimeGreeting(t);
   const levelInfo = getLevelInfo(xp);
   const shouldReduceMotion = useReducedMotion();
 
@@ -49,7 +51,7 @@ export default function GreetingHero({ username = 'Pelajar', streak = 0, xp = 0 
             {greeting}, {username}
           </h1>
           <p className="page-subtitle">
-            Siap untuk melanjutkan petualangan belajarmu hari ini?
+            {t('dashboard.ready', 'Siap untuk melanjutkan petualangan belajarmu hari ini?')}
           </p>
         </div>
 
@@ -64,10 +66,10 @@ export default function GreetingHero({ username = 'Pelajar', streak = 0, xp = 0 
             </motion.div>
             <div>
               <div className="text-[10px] font-label uppercase tracking-wider text-tertiary/80 leading-none">
-                Streak
+                {t('dashboard.streak', 'Streak')}
               </div>
               <div className="text-lg font-bold text-tertiary leading-tight">
-                <CountUp value={streak} /> Hari
+                <CountUp value={streak} /> {t('dashboard.days', 'Hari')}
               </div>
             </div>
           </div>
@@ -75,7 +77,7 @@ export default function GreetingHero({ username = 'Pelajar', streak = 0, xp = 0 
           <div className="flex items-center gap-2.5 bg-surface px-4 py-2.5 rounded-xl border border-[var(--border)] shadow-warm-xs">
             <div>
               <div className="text-[10px] font-label uppercase tracking-wider text-secondary leading-none">
-                Level {levelInfo.level}
+                {t('dashboard.level', 'Level')} {levelInfo.level}
               </div>
               <div className="text-sm font-semibold text-primary leading-tight">
                 {levelInfo.name}

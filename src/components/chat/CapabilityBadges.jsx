@@ -31,7 +31,7 @@ export default function CapabilityBadges() {
       transition={{ delay: 0.15, duration: 0.35, ease: 'easeOut' }}
       className="flex flex-wrap items-center justify-center gap-2"
       role="list"
-      aria-label="Kemampuan PLA Chatbot"
+      aria-label="Kemampuan Synapsa Chatbot"
     >
       {capabilities.map((cap, i) => {
         const Icon = cap.icon;

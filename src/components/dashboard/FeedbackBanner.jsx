@@ -1,6 +1,7 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Repeat, BookOpen, Zap, ChevronRight } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '../ui/button';
 
 /**
@@ -15,7 +16,8 @@ import { Button } from '../ui/button';
 
 const ACTION_CONFIG = {
   repeat: {
-    eyebrow: 'Pemahaman perlu ditingkatkan',
+    eyebrow: 'dashboard.feedback_repeat_eyebrow',
+    defaultEyebrow: 'Pemahaman perlu ditingkatkan',
     icon: Repeat,
     tone: 'warning',
     bgClass: 'bg-gradient-to-br from-warning/[0.08] via-warning/[0.03] to-transparent',
@@ -24,7 +26,8 @@ const ACTION_CONFIG = {
     accentText: 'text-warning-fg',
   },
   review: {
-    eyebrow: 'Sesi review ditambahkan',
+    eyebrow: 'dashboard.feedback_review_eyebrow',
+    defaultEyebrow: 'Sesi review ditambahkan',
     icon: BookOpen,
     tone: 'info',
     bgClass: 'bg-gradient-to-br from-info/[0.08] via-info/[0.03] to-transparent',
@@ -33,7 +36,8 @@ const ACTION_CONFIG = {
     accentText: 'text-info-fg',
   },
   accelerate: {
-    eyebrow: 'Anda sangat cepat!',
+    eyebrow: 'dashboard.feedback_accelerate_eyebrow',
+    defaultEyebrow: 'Anda sangat cepat!',
     icon: Zap,
     tone: 'success',
     bgClass: 'bg-gradient-to-br from-success/[0.08] via-success/[0.03] to-transparent',
@@ -51,6 +55,7 @@ export default function FeedbackBanner({
   onDismiss,
   onAction,
 }) {
+  const { t } = useTranslation();
   const config = action ? ACTION_CONFIG[action] : null;
 
   return (
@@ -80,7 +85,7 @@ export default function FeedbackBanner({
             {/* Content */}
             <div className="flex-1 min-w-0">
               <p className={`eyebrow !text-[10px] mb-1 ${config.accentText}`}>
-                {config.eyebrow}
+                {t(config.eyebrow, config.defaultEyebrow)}
               </p>
               <h3 className="font-display font-bold text-lg text-primary leading-tight mb-1">
                 {title}
@@ -97,7 +102,7 @@ export default function FeedbackBanner({
                     onClick={onAction}
                     className={`rounded-lg ${config.accentText} hover:bg-surface/40 font-label gap-1 pl-0`}
                   >
-                    Lanjut sekarang
+                    {t('dashboard.continue_now', 'Lanjut sekarang')}
                     <ChevronRight className="size-3.5" />
                   </Button>
                 </div>

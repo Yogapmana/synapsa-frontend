@@ -1,6 +1,7 @@
 import React from 'react'
 import { motion } from 'framer-motion'
 import { ShieldCheck, Zap, AlertTriangle, Loader2 } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { cn } from '@/lib/utils'
 import { getRagasSummary } from '@/api/chat'
 
@@ -19,6 +20,7 @@ import { getRagasSummary } from '@/api/chat'
  * friendly "waiting for first response" state.
  */
 function RAGASWidget({ sessionId, isLoading: isLoadingProp }) {
+  const { t } = useTranslation()
   // Fetch RAGAS summary for this session
   const [summary, setSummary] = React.useState(null)
   const [isLoading, setIsLoading] = React.useState(true)
@@ -70,18 +72,18 @@ function RAGASWidget({ sessionId, isLoading: isLoadingProp }) {
             <ShieldCheck size={18} aria-hidden="true" />
           </div>
           <div>
-            <h3 className="font-display font-semibold text-primary">Kualitas RAG</h3>
-            <p className="text-xs text-secondary">RAGAS — otomatis per pesan</p>
+            <h3 className="font-display font-semibold text-primary">{t('dashboard.rag_quality', 'Kualitas RAG')}</h3>
+            <p className="text-xs text-secondary">{t('dashboard.ragas_auto', 'RAGAS — otomatis per pesan')}</p>
           </div>
         </div>
         <div className="rounded-xl border border-dashed border-border bg-bg-secondary/30 p-4 text-center">
           <p className="text-sm text-secondary">
             {total === 0
-              ? 'Belum ada pesan ke Tutor AI.'
-              : 'Menunggu penilaian RAGAS…'}
+              ? t('dashboard.no_messages', 'Belum ada pesan ke Tutor AI.')
+              : t('dashboard.waiting_ragas', 'Menunggu penilaian RAGAS…')}
           </p>
           <p className="text-xs text-secondary/60 mt-1">
-            Skor akan muncul otomatis setiap kali Tutor AI menjawab.
+            {t('dashboard.score_auto', 'Skor akan muncul otomatis setiap kali Tutor AI menjawab.')}
           </p>
         </div>
       </div>
@@ -109,9 +111,9 @@ function RAGASWidget({ sessionId, isLoading: isLoadingProp }) {
             <ShieldCheck size={18} aria-hidden="true" />
           </div>
           <div className="flex-1 min-w-0">
-            <h3 className="font-display font-semibold text-primary">Kualitas RAG</h3>
+            <h3 className="font-display font-semibold text-primary">{t('dashboard.rag_quality', 'Kualitas RAG')}</h3>
             <p className="text-xs text-secondary">
-              {scored} dari {total} pesan dinilai · RAGAS otomatis
+              {t('dashboard.messages_scored', { scored, total, defaultValue: `${scored} dari ${total} pesan dinilai · RAGAS otomatis` })}
             </p>
           </div>
           {flagged > 0 && (
@@ -120,30 +122,30 @@ function RAGASWidget({ sessionId, isLoading: isLoadingProp }) {
               title={`${flagged} pesan memiliki skor di bawah 50%`}
             >
               <AlertTriangle size={10} />
-              {flagged} perlu dicek
+              {flagged} {t('dashboard.needs_check', 'perlu dicek')}
             </span>
           )}
         </div>
 
         <div className="space-y-3">
           <RAGBar
-            label="Faithfulness"
+            label={t('dashboard.faithfulness', 'Faithfulness')}
             value={faithPct}
             tone={overallTone}
-            tooltip="Seberapa konsisten jawaban Tutor dengan konteks yang di-retrieve"
+            tooltip={t('dashboard.faithfulness_tooltip', 'Seberapa konsisten jawaban Tutor dengan konteks yang di-retrieve')}
           />
           <RAGBar
-            label="Answer Relevancy"
+            label={t('dashboard.relevancy', 'Answer Relevancy')}
             value={relevPct}
             tone={overallTone}
-            tooltip="Seberapa relevan jawaban Tutor dengan pertanyaan user"
+            tooltip={t('dashboard.relevancy_tooltip', 'Seberapa relevan jawaban Tutor dengan pertanyaan user')}
           />
         </div>
 
         <div className="mt-4 pt-3 border-t border-border/60 flex items-center justify-between text-[11px] text-secondary font-label">
           <span className="inline-flex items-center gap-1">
             <Zap size={11} className="text-tertiary" />
-            <span>Rata-rata sesi ini</span>
+            <span>{t('dashboard.session_avg', 'Rata-rata sesi ini')}</span>
           </span>
           <span className="tabular-nums">
             p95 {summary?.p95_faithfulness != null ? Math.round(summary.p95_faithfulness * 100) : '—'}/

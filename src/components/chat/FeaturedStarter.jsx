@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { Lightbulb, Sparkles, ArrowRight, BookOpen, Brain } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -43,7 +44,7 @@ const DAILY_PROMPTS = [
     icon: Brain,
   },
   {
-    title: 'Mulai dari nol',
+    title: t('chat.start_from_scratch', 'Mulai dari nol'),
     prompt: 'Saya pemula di [topik]. Buat roadmap belajar 30 hari yang terstruktur dari fundamental hingga mahir',
     icon: BookOpen,
   },

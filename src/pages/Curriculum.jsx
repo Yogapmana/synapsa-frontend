@@ -26,6 +26,7 @@ import PageHeader from '@/components/common/PageHeader'
 import StatusBadge from '@/components/common/StatusBadge'
 import { Button } from '@/components/ui/button'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 
 // Lazy-load the AI mind map view — Mermaid is heavy (~700KB across all
 // diagram types) and only needed when the user toggles to that view.
@@ -56,6 +57,7 @@ const stagger = {
 }
 
 export default function Curriculum() {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const { data: activeSession, isLoading: isLoadingSession } = useActiveSession()
   const sessionId = activeSession?.id
@@ -178,17 +180,17 @@ export default function Curriculum() {
             <BookOpen size={28} />
           </div>
           <h3 className="font-display font-semibold text-xl text-primary">
-            Belum ada kurikulum
+            {t('curriculum.empty_title', 'Belum ada kurikulum')}
           </h3>
           <p className="text-secondary mt-2 max-w-sm mx-auto">
-            Mulai perjalanan belajarmu dengan membuat kurikulum baru melalui onboarding.
+            {t('curriculum.empty_desc', 'Mulai perjalanan belajarmu dengan membuat kurikulum baru melalui onboarding.')}
           </p>
           <Button
             onClick={() => navigate('/onboarding')}
             variant="tertiary"
             className="mt-5 rounded-xl font-label"
           >
-            Mulai Onboarding
+            {t('curriculum.start_onboarding', 'Mulai Onboarding')}
           </Button>
         </div>
       </div>
@@ -201,7 +203,7 @@ export default function Curriculum() {
   return (
     <div className="container mx-auto max-w-5xl py-8 md:py-10 px-4 md:px-8 space-y-7">
       <PageHeader
-        title="Kurikulum"
+        title={t('curriculum.title', 'Kurikulum')}
         subtitle={courseTitle}
         actions={
           <div className="flex items-center gap-2 flex-wrap justify-end">
@@ -218,7 +220,7 @@ export default function Curriculum() {
                   setSelectedWeek(null)
                 }}
                 icon={Network}
-                label="Roadmap"
+                label={t('curriculum.roadmap', 'Roadmap')}
               />
               <ViewTab
                 active={viewMode === 'mindmap'}
@@ -227,12 +229,12 @@ export default function Curriculum() {
                   setSelectedWeek(null)
                 }}
                 icon={Brain}
-                label="Peta Konsep"
+                label={t('curriculum.mindmap', 'Peta Konsep')}
               />
             </div>
             {streak > 0 && (
               <StatusBadge variant="accent" icon={Flame} size="lg">
-                {streak} hari berturut
+                {streak} {t('sidebar.streak_days', 'hari berturut')}
               </StatusBadge>
             )}
           </div>
@@ -264,7 +266,7 @@ export default function Curriculum() {
               size={180}
               strokeWidth={12}
               label={`${Math.round(progressPercentage)}%`}
-              sublabel="Selesai"
+              sublabel={t('curriculum.completed', 'Selesai')}
               tone={allDone ? 'success' : 'tertiary'}
             />
           </motion.div>
@@ -274,25 +276,25 @@ export default function Curriculum() {
             <HeroStat
               icon={Check}
               value={completedTopics}
-              label="Topik Selesai"
+              label={t('curriculum.completed_topics', 'Topik Selesai')}
               tone="success"
             />
             <HeroStat
               icon={Target}
               value={totalTopics - completedTopics}
-              label="Topik Tersisa"
+              label={t('curriculum.remaining_topics', 'Topik Tersisa')}
               tone="tertiary"
             />
             <HeroStat
               icon={Calendar}
               value={weeks.length}
-              label="Minggu Total"
+              label={t('curriculum.total_weeks', 'Minggu Total')}
               tone="info"
             />
             <HeroStat
               icon={Trophy}
               value={allDone ? '✓' : Math.round(progressPercentage) + '%'}
-              label={allDone ? 'Lulus' : 'Progres'}
+              label={allDone ? t('curriculum.passed', 'Lulus') : t('curriculum.progress', 'Progres')}
               tone={allDone ? 'success' : 'warning'}
             />
           </motion.div>
@@ -315,12 +317,12 @@ export default function Curriculum() {
             <div className="min-w-0 space-y-1.5">
               <div className="flex items-center gap-2 flex-wrap">
                 <StatusBadge variant="accent" size="sm" icon={Sparkles}>
-                  Fokus Hari Ini
+                  {t('curriculum.todays_focus', 'Fokus Hari Ini')}
                 </StatusBadge>
                 {activeTopic.duration_minutes && (
                   <span className="inline-flex items-center gap-1 text-xs text-secondary font-label">
                     <Clock size={11} />
-                    <span className="tabular-nums">{activeTopic.duration_minutes} menit</span>
+                    <span className="tabular-nums">{activeTopic.duration_minutes} {t('curriculum.minutes', 'menit')}</span>
                   </span>
                 )}
               </div>
@@ -329,7 +331,7 @@ export default function Curriculum() {
               </h3>
               {activeWeekNumber && (
                 <p className="text-xs text-secondary font-label">
-                  Minggu {activeWeekNumber} dari kurikulum
+                  {t('curriculum.week_of_curriculum', { week: activeWeekNumber, defaultValue: `Minggu ${activeWeekNumber} dari kurikulum` })}
                 </p>
               )}
             </div>
@@ -340,7 +342,7 @@ export default function Curriculum() {
               className="shrink-0 rounded-xl font-label tracking-wide"
             >
               <Play size={16} fill="currentColor" />
-              Mulai Belajar
+              {t('curriculum.start_learning', 'Mulai Belajar')}
             </Button>
           </div>
         </motion.div>
@@ -397,15 +399,15 @@ export default function Curriculum() {
                     className="w-fit -ml-2 text-secondary hover:text-primary gap-2"
                   >
                     <ArrowLeft size={16} />
-                    Kembali ke Daftar Minggu
+                    {t('curriculum.back_to_weeks', 'Kembali ke Daftar Minggu')}
                   </Button>
                   
                   <div className="card-base p-6 border-tertiary/20 bg-gradient-to-br from-tertiary/[0.02] to-transparent">
                     <h2 className="text-2xl font-display font-bold text-primary mb-2">
-                      Minggu {selectedWeek.week_number}: {selectedWeek.title || 'Topik Belajar'}
+                      {t('curriculum.week_title', { week: selectedWeek.week_number, title: selectedWeek.title || 'Topik Belajar', defaultValue: `Minggu ${selectedWeek.week_number}: ${selectedWeek.title || 'Topik Belajar'}` })}
                     </h2>
                     <p className="text-secondary font-label text-sm mb-6">
-                      Pilih modul di bawah ini untuk mulai belajar.
+                      {t('curriculum.select_module', 'Pilih modul di bawah ini untuk mulai belajar.')}
                     </p>
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -455,10 +457,10 @@ export default function Curriculum() {
                 <Calendar size={28} />
               </div>
               <h3 className="font-display font-semibold text-xl text-primary">
-                Kurikulum kosong
+                {t('curriculum.empty_weeks_title', 'Kurikulum kosong')}
               </h3>
               <p className="text-secondary mt-2 max-w-sm mx-auto">
-                Kurikulum ini belum memiliki minggu/topik. Coba mulai ulang onboarding.
+                {t('curriculum.empty_weeks_desc', 'Kurikulum ini belum memiliki minggu/topik. Coba mulai ulang onboarding.')}
               </p>
             </div>
           )}

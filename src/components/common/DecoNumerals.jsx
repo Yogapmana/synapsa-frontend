@@ -2,7 +2,7 @@ import { cn } from '@/lib/utils'
 
 /**
  * Decorative oversized serif numeral — the "secret sauce" of the
- * PLA editorial aesthetic. Used as a background flourish in hero
+ * Synapsa editorial aesthetic. Used as a background flourish in hero
  * sections, feature cards, and section dividers.
  *
  * Borrowed from print magazine layout — these oversized italic

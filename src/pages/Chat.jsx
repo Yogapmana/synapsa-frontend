@@ -14,8 +14,10 @@ import StatusBadge from '@/components/common/StatusBadge';
 import Avatar from '@/components/common/Avatar';
 import { History, Sparkles, Plus, MessageSquare, MessageCircle, Trash2, Menu, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 
 export default function Chat() {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const { activeChatSessionId, setActiveChatSessionId } = useChatStore();
   const { user } = useAuthStore();
@@ -89,9 +91,9 @@ export default function Chat() {
       // If the session was deleted or not found on the backend, clear the frontend cache
       if (err.response?.status === 404) {
         setActiveChatSessionId(null);
-        setUploadToast({ type: 'error', message: 'Sesi percakapan tidak valid. Silakan coba kirim ulang.' });
+        setUploadToast({ type: 'error', message: t('chat.invalid_session', 'Sesi percakapan tidak valid. Silakan coba kirim ulang.') });
       } else {
-        setUploadToast({ type: 'error', message: err.response?.data?.detail || 'Gagal mengirim pesan (Timeout/Error)' });
+        setUploadToast({ type: 'error', message: err.response?.data?.detail || t('chat.send_failed', 'Gagal mengirim pesan (Timeout/Error)') });
       }
       
       setTimeout(() => setUploadToast(null), 4000);
@@ -114,12 +116,12 @@ export default function Chat() {
   const uploadMutation = useMutation({
     mutationFn: ({ file, sessionId }) => uploadDocument(file, sessionId, null),
     onSuccess: (data, variables) => {
-      setUploadToast({ type: 'success', message: 'Dokumen berhasil diunggah dan diindeks!' });
+      setUploadToast({ type: 'success', message: t('chat.upload_success', 'Dokumen berhasil diunggah dan diindeks!') });
       setTimeout(() => setUploadToast(null), 4000);
       queryClient.invalidateQueries({ queryKey: ['chat', 'general', variables.sessionId] });
     },
     onError: (err) => {
-      setUploadToast({ type: 'error', message: err.response?.data?.detail || 'Gagal mengunggah dokumen' });
+      setUploadToast({ type: 'error', message: err.response?.data?.detail || t('chat.upload_failed', 'Gagal mengunggah dokumen') });
       setTimeout(() => setUploadToast(null), 4000);
     }
   });
@@ -143,7 +145,7 @@ export default function Chat() {
   const handleUploadDocument = async (file) => {
     let currentSessionId = activeChatSessionId;
     if (!currentSessionId) {
-      const newSession = await createSessionMutation.mutateAsync("Dokumen Baru");
+      const newSession = await createSessionMutation.mutateAsync(t('chat.new_document', "Dokumen Baru"));
       currentSessionId = newSession.id;
     }
     uploadMutation.mutate({ file, sessionId: currentSessionId });
@@ -167,7 +169,7 @@ export default function Chat() {
           className="group flex items-center gap-2 w-full justify-center px-4 py-2.5 bg-tertiary text-white rounded-xl hover:bg-tertiary-light font-medium text-[13px] transition-all duration-200 shadow-warm-sm hover:shadow-warm-md"
         >
           <Plus size={16} className="transition-transform duration-200 group-hover:rotate-90" />
-          Percakapan Baru
+          {t('chat.new_chat', 'Percakapan Baru')}
         </button>
       </div>
 
@@ -264,15 +266,15 @@ export default function Chat() {
             <div className="flex flex-col min-w-0">
               <div className="flex items-center gap-2.5">
                 <h1 className="font-display font-bold text-[16px] sm:text-lg text-primary tracking-tight leading-none">
-                  Tanya PLA Chatbot
+                  {t('chat.title', 'Tanya Synapsa Chatbot')}
                 </h1>
                 <StatusBadge variant="success" className="flex items-center gap-1.5 hidden sm:flex !py-0.5 !px-2 !text-[10px] shadow-sm">
                   <span className="w-1.5 h-1.5 bg-success rounded-full animate-pulse" />
-                  RAG & Web Search Aktif
+                  {t('chat.rag_active', 'RAG & Web Search Aktif')}
                 </StatusBadge>
               </div>
               <p className="text-[11px] text-secondary font-label mt-1 truncate">
-                Asisten AI General • Jawaban komprehensif
+                {t('chat.subtitle', 'Asisten AI General • Jawaban komprehensif')}
               </p>
             </div>
           </div>
@@ -283,8 +285,8 @@ export default function Chat() {
               "hidden md:flex items-center justify-center size-9 rounded-lg text-secondary hover:text-primary hover:bg-secondary/10 transition-colors",
               "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-tertiary"
             )}
-            title={sidebarCollapsed ? 'Tampilkan riwayat' : 'Sembunyikan riwayat'}
-            aria-label={sidebarCollapsed ? 'Tampilkan riwayat' : 'Sembunyikan riwayat'}
+            title={sidebarCollapsed ? t('chat.show_history', 'Tampilkan riwayat') : t('chat.hide_history', 'Sembunyikan riwayat')}
+            aria-label={sidebarCollapsed ? t('chat.show_history', 'Tampilkan riwayat') : t('chat.hide_history', 'Sembunyikan riwayat')}
           >
             <History size={18} />
           </button>
@@ -311,7 +313,7 @@ export default function Chat() {
                         className="w-1.5 h-1.5 bg-success rounded-full animate-pulse"
                         aria-hidden="true"
                       />
-                      Didukung oleh RAG &amp; Web Search
+                      {t('chat.powered_by', 'Didukung oleh RAG & Web Search')}
                     </div>
                   </div>
                 </motion.div>
@@ -344,7 +346,7 @@ export default function Chat() {
 
                   {sendMutation.isPending && (
                     <ThinkingIndicator
-                      message="Memikirkan jawaban..."
+                      message={t('chat.thinking', 'Memikirkan jawaban...')}
                     />
                   )}
 
@@ -379,7 +381,7 @@ export default function Chat() {
             onUpload={handleUploadDocument}
             isLoading={sendMutation.isPending || createSessionMutation.isPending}
             isUploading={uploadMutation.isPending}
-            placeholder={`Tanya apapun atau unggah dokumen...`}
+            placeholder={t('chat.input_placeholder', 'Tanya apapun atau unggah dokumen...')}
           />
         </div>
       </div>
@@ -399,7 +401,7 @@ export default function Chat() {
       >
         {/* Mobile Header for Sidebar */}
         <div className="md:hidden flex items-center justify-between p-4 border-b border-border/60 shrink-0">
-          <span className="font-display font-bold text-primary">Riwayat Obrolan</span>
+          <span className="font-display font-bold text-primary">{t('chat.chat_history', 'Riwayat Obrolan')}</span>
           <button onClick={() => setSidebarOpen(false)} className="p-2 text-secondary hover:text-primary rounded-lg">
             <X size={20} />
           </button>

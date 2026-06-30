@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Flame, Sparkles, Trophy, X, ArrowRight } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { Flame, Sparkles, Trophy, X, ArrowRight, MoveRight } from 'lucide-react';
 
 /**
  * StreakCelebration — modal shown after the user's first login of
@@ -69,6 +70,7 @@ const Confetti = () => {
 };
 
 export default function StreakCelebration({ streak, onClose }) {
+  const { t } = useTranslation();
   // Defensive: if we get a null streak (e.g. component renders
   // before authStore is ready), bail out cleanly via the parent
   // AnimatePresence.
@@ -231,11 +233,11 @@ export default function StreakCelebration({ streak, onClose }) {
             {isMilestone ? (
               <>
                 <Sparkles size={15} />
-                Lanjutkan!
+                {t('gamification.continue', 'Lanjutkan!')}
               </>
             ) : (
               <>
-                Lanjut Belajar
+                {t('gamification.continue_learning', 'Lanjut Belajar')}
                 <ArrowRight size={15} />
               </>
             )}
@@ -250,7 +252,7 @@ export default function StreakCelebration({ streak, onClose }) {
             onClick={onClose}
             className="mt-2 text-xs text-secondary/60 hover:text-secondary font-label transition-colors"
           >
-            Tutup
+            {t('common.close', 'Tutup')}
           </button>
         </div>
       </motion.div>

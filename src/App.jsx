@@ -123,17 +123,17 @@ function AppRoutes() {
 
   useEffect(() => {
     const path = location.pathname;
-    let title = 'PLA — Personal Learning Agent';
-    if (path.startsWith('/dashboard')) title = 'Dashboard — PLA';
-    else if (path.startsWith('/curriculum')) title = 'Kurikulum — PLA';
-    else if (path.startsWith('/module')) title = 'Modul — PLA';
-    else if (path.startsWith('/chat')) title = 'Chat Tutor — PLA';
-    else if (path.startsWith('/quiz')) title = 'Kuis — PLA';
-    else if (path.startsWith('/progress')) title = 'Riwayat Kuis — PLA';
-    else if (path.startsWith('/settings')) title = 'Pengaturan — PLA';
-    else if (path.startsWith('/login')) title = 'Masuk — PLA';
-    else if (path.startsWith('/register')) title = 'Daftar — PLA';
-    else if (path.startsWith('/onboarding')) title = 'Onboarding — PLA';
+    let title = 'Synapsa — Personal Learning Agent';
+    if (path.startsWith('/dashboard')) title = 'Dashboard — Synapsa';
+    else if (path.startsWith('/curriculum')) title = 'Kurikulum — Synapsa';
+    else if (path.startsWith('/module')) title = 'Modul — Synapsa';
+    else if (path.startsWith('/chat')) title = 'Chat Tutor — Synapsa';
+    else if (path.startsWith('/quiz')) title = 'Kuis — Synapsa';
+    else if (path.startsWith('/progress')) title = 'Riwayat Kuis — Synapsa';
+    else if (path.startsWith('/settings')) title = 'Pengaturan — Synapsa';
+    else if (path.startsWith('/login')) title = 'Masuk — Synapsa';
+    else if (path.startsWith('/register')) title = 'Daftar — Synapsa';
+    else if (path.startsWith('/onboarding')) title = 'Onboarding — Synapsa';
 
     document.title = title;
   }, [location]);

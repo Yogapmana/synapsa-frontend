@@ -45,7 +45,7 @@ export default function StepConfirm({ data }) {
           <span className="italic text-tertiary"> mulai?</span>
         </h2>
         <p className="text-secondary max-w-md mx-auto leading-relaxed font-serif-content">
-          Periksa kembali pilihanmu sebelum PLA mulai merancang
+          Periksa kembali pilihanmu sebelum Synapsa mulai merancang
           kurikulum personal.
         </p>
       </div>
@@ -88,7 +88,7 @@ export default function StepConfirm({ data }) {
       >
         <Sparkles className="h-4 w-4 text-tertiary shrink-0 mt-0.5" />
         <p className="text-sm text-secondary leading-relaxed">
-          PLA akan merancang kurikulum yang disesuaikan dengan target
+          Synapsa akan merancang kurikulum yang disesuaikan dengan target
           belajarmu. Proses ini membutuhkan{' '}
           <span className="text-primary font-semibold">1-2 menit</span>.
         </p>

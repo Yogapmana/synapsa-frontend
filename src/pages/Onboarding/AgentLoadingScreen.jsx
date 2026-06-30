@@ -259,7 +259,7 @@ export default function AgentLoadingScreen({ sessionId }) {
 
           <div className="space-y-2.5">
             <h1 className="font-display text-3xl font-bold tracking-tight text-primary">
-              PLA sedang menyiapkan kurikulum kamu
+              Synapsa sedang menyiapkan kurikulum kamu
             </h1>
             <p className="text-sm text-secondary max-w-md mx-auto font-serif-content">
               {currentStageData?.description || 'Menghubungkan ke agent pipeline…'}

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { CheckCircle2, Sparkles } from 'lucide-react'
 import { useSubmitSignal } from '@/hooks/useProgress'
 import { cn } from '@/lib/utils'
@@ -24,6 +25,7 @@ import SelfAssessment from './SelfAssessment'
  *     background instead of creating a separate "card".
  */
 export default function StickyActionBar({ module, sessionId, topicId }) {
+  const { t } = useTranslation()
   const navigate = useNavigate()
 
   const submitSignalMutation = useSubmitSignal()
@@ -95,7 +97,7 @@ export default function StickyActionBar({ module, sessionId, topicId }) {
               )}
             >
               <CheckCircle2 className="size-4" />
-              {completing ? 'Memuat…' : 'Lanjut ke Kuis'}
+              {completing ? t('module.loading', 'Memuat…') : t('module.continue_to_quiz', 'Lanjut ke Kuis')}
             </button>
             <p className="hidden sm:block text-[11px] font-label text-text-subtle text-center leading-tight">
               Lalu otomatis ke kuis

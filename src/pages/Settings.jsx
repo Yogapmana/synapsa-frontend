@@ -11,11 +11,13 @@ import {
   BookOpen,
   Bell,
   Shield,
+
   CheckCircle2,
   Loader2,
   Sparkles,
 } from 'lucide-react'
 import { motion } from 'framer-motion'
+import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/button'
 import PageHeader from '@/components/common/PageHeader'
@@ -53,12 +55,14 @@ import { useLearningStore } from '@/stores/learningStore'
  *    eyebrow labels, decorative numerals, signature cards.
  */
 
-const SECTIONS = [
-  { id: 'profil', label: 'Profil', icon: User, eyebrow: 'Akun · 01' },
-  { id: 'belajar', label: 'Belajar', icon: BookOpen, eyebrow: 'Preferensi · 02' },
-  { id: 'notifikasi', label: 'Notifikasi', icon: Bell, eyebrow: 'Komunikasi · 03' },
-  { id: 'data', label: 'Data', icon: Shield, eyebrow: 'Akun · 04' },
-]
+function getSections(t) {
+  return [
+    { id: 'profil', label: t('settings.profile', 'Profil'), icon: User, eyebrow: t('settings.account', 'Akun') + ' · 01' },
+    { id: 'belajar', label: t('settings.learning', 'Belajar'), icon: BookOpen, eyebrow: t('settings.preferences', 'Preferensi') + ' · 02' },
+    { id: 'notifikasi', label: t('settings.notifications', 'Notifikasi'), icon: Bell, eyebrow: t('settings.communication', 'Komunikasi') + ' · 03' },
+    { id: 'data', label: t('settings.data', 'Data'), icon: Shield, eyebrow: t('settings.account', 'Akun') + ' · 04' },
+  ]
+}
 
 const fadeUp = {
   hidden: { opacity: 0, y: 12 },
@@ -154,6 +158,7 @@ function SectionCard({ eyebrow, title, subtitle, children, footer }) {
 /* ─── Main ───────────────────────────────────────────────────────── */
 
 export default function Settings() {
+  const { t } = useTranslation()
   const user = useAuthStore((state) => state.user)
   const activeSession = useLearningStore((state) => state.activeSession)
   const [isExporting, setIsExporting] = useState(false)
@@ -175,7 +180,7 @@ export default function Settings() {
       id: session.id || session.session_id || null,
       topic: session.topic || session.title || session.subject || '—',
       duration: session.duration_weeks
-        ? `${session.duration_weeks} minggu`
+        ? t('settings.weeks', { count: session.duration_weeks, defaultValue: `${session.duration_weeks} minggu` })
         : session.duration || '—',
       level: session.level || '—',
     }
@@ -230,6 +235,7 @@ export default function Settings() {
 
   const username = user?.username || 'Pengguna'
   const email = user?.email || '—'
+  const sections = getSections(t)
 
   return (
     <div className="mx-auto w-full max-w-5xl px-4 py-6 sm:px-6 lg:px-0 relative">
@@ -245,20 +251,20 @@ export default function Settings() {
         eyebrow={
           <span className="inline-flex items-center gap-2">
             <Settings2 className="h-3.5 w-3.5" />
-            Pengaturan
+            {t('settings.title', 'Pengaturan')}
           </span>
         }
-        title="Settings"
-        subtitle="Kelola profil, preferensi belajar, tampilan, dan data progresmu."
+        title={t('settings.title', 'Settings')}
+        subtitle={t('settings.desc', 'Kelola profil, preferensi belajar, tampilan, dan data progresmu.')}
       />
 
       <div className="flex gap-6 mt-6">
         {/* Desktop nav rail */}
         <nav className="hidden lg:flex flex-col gap-1 w-56 shrink-0">
           <div className="mb-3">
-            <span className="eyebrow !text-[10px]">Bagian</span>
+            <span className="eyebrow !text-[10px]">{t('settings.section', 'Bagian')}</span>
           </div>
-          {SECTIONS.map((section) => {
+          {sections.map((section) => {
             const Icon = section.icon
             const isActive = activeSection === section.id
             return (
@@ -293,7 +299,7 @@ export default function Settings() {
 
         {/* Mobile horizontal nav */}
         <div className="lg:hidden -mx-4 px-4 sm:mx-0 sm:px-0 mb-4 flex gap-2 overflow-x-auto pb-2 w-full">
-          {SECTIONS.map((section) => {
+          {sections.map((section) => {
             const Icon = section.icon
             const isActive = activeSection === section.id
             return (
@@ -318,21 +324,21 @@ export default function Settings() {
         <div className="flex-1 space-y-5 min-w-0">
           {activeSection === 'profil' && (
             <SectionCard
-              eyebrow="Akun · 01"
-              title="Profil"
-              subtitle="Informasi akun yang terhubung dengan PLA."
+              eyebrow={sections[0].eyebrow}
+              title={t('settings.profile', 'Profil')}
+              subtitle={t('settings.profile_desc', 'Informasi akun yang terhubung dengan Synapsa.')}
               footer={
                 <div className="flex items-center gap-2 text-xs text-secondary font-label">
                   <Sparkles className="size-3.5 text-tertiary" />
-                  Edit profil akan segera tersedia
+                  {t('settings.profile_edit_soon', 'Edit profil akan segera tersedia')}
                 </div>
               }
             >
               <div className="flex flex-col gap-5 sm:flex-row sm:items-start">
                 <ProfileAvatar initial={profileInitial} />
                 <div className="flex-1 space-y-2.5 min-w-0">
-                  <FieldRow icon={User} label="Username" value={username} />
-                  <FieldRow icon={Mail} label="Email" value={email} muted />
+                  <FieldRow icon={User} label={t('settings.username', 'Username')} value={username} />
+                  <FieldRow icon={Mail} label={t('settings.email', 'Email')} value={email} muted />
                 </div>
               </div>
             </SectionCard>
@@ -340,26 +346,26 @@ export default function Settings() {
 
           {activeSection === 'belajar' && (
             <SectionCard
-              eyebrow="Preferensi · 02"
-              title="Belajar"
-              subtitle="Ringkasan sesi belajar aktif dan preferensi belajarmu."
+              eyebrow={sections[1].eyebrow}
+              title={t('settings.learning', 'Belajar')}
+              subtitle={t('settings.learning_desc', 'Ringkasan sesi belajar aktif dan preferensi belajarmu.')}
             >
               <div className="grid gap-3 sm:grid-cols-3">
                 <FieldRow
                   icon={BookOpen}
-                  label="Topik"
+                  label={t('settings.topic', 'Topik')}
                   value={sessionSummary.topic}
                   muted={!activeSession}
                 />
                 <FieldRow
                   icon={Clock3}
-                  label="Durasi"
+                  label={t('settings.duration', 'Durasi')}
                   value={sessionSummary.duration}
                   muted={!activeSession}
                 />
                 <FieldRow
                   icon={User}
-                  label="Level"
+                  label={t('settings.level', 'Level')}
                   value={sessionSummary.level}
                   muted={!activeSession}
                 />
@@ -372,25 +378,25 @@ export default function Settings() {
                     className="rounded-xl font-label gap-2"
                   >
                     <RefreshCw className="h-4 w-4" />
-                    Reset sesi belajar
+                    {t('settings.reset_session', 'Reset sesi belajar')}
                   </Button>
                 </AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
-                    <AlertDialogTitle>Reset sesi belajar?</AlertDialogTitle>
+                    <AlertDialogTitle>{t('settings.reset_session_title', 'Reset sesi belajar?')}</AlertDialogTitle>
                     <AlertDialogDescription>
                       {sessionSummary.id
-                        ? 'Tindakan ini akan menghapus sesi aktif dan progres terkait sesi tersebut.'
-                        : 'Belum ada sesi aktif untuk di-reset.'}
+                        ? t('settings.reset_session_desc_active', 'Tindakan ini akan menghapus sesi aktif dan progres terkait sesi tersebut.')
+                        : t('settings.reset_session_desc_empty', 'Belum ada sesi aktif untuk di-reset.')}
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
-                    <AlertDialogCancel>Batal</AlertDialogCancel>
+                    <AlertDialogCancel>{t('settings.cancel', 'Batal')}</AlertDialogCancel>
                     <AlertDialogAction
                       onClick={sessionSummary.id ? resetSession : undefined}
                       disabled={isResetting || !sessionSummary.id}
                     >
-                      {isResetting ? 'Mereset...' : 'Reset'}
+                      {isResetting ? t('settings.resetting', 'Mereset...') : t('settings.reset', 'Reset')}
                     </AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
@@ -400,21 +406,21 @@ export default function Settings() {
 
           {activeSection === 'notifikasi' && (
             <SectionCard
-              eyebrow="Komunikasi · 03"
-              title="Notifikasi"
-              subtitle="Atur bagaimana PLA menghubungimu."
+              eyebrow={sections[2].eyebrow}
+              title={t('settings.notifications', 'Notifikasi')}
+              subtitle={t('settings.notifications_desc', 'Atur bagaimana Synapsa menghubungimu.')}
             >
               <SettingSwitch
                 icon={Mail}
-                label="Email notifikasi"
-                description="Terima update progres via email"
+                label={t('settings.email_notif', 'Email notifikasi')}
+                description={t('settings.email_notif_desc', 'Terima update progres via email')}
                 checked={emailNotif}
                 onChange={setEmailNotif}
               />
               <SettingSwitch
                 icon={Bell}
-                label="Push notifikasi"
-                description="Terima notifikasi di browser"
+                label={t('settings.push_notif', 'Push notifikasi')}
+                description={t('settings.push_notif_desc', 'Terima notifikasi di browser')}
                 checked={pushNotif}
                 onChange={setPushNotif}
               />
@@ -423,13 +429,13 @@ export default function Settings() {
 
           {activeSection === 'data' && (
             <SectionCard
-              eyebrow="Akun · 04"
-              title="Data"
-              subtitle="Ekspor progresmu atau kelola akun."
+              eyebrow={sections[3].eyebrow}
+              title={t('settings.data', 'Data')}
+              subtitle={t('settings.data_desc', 'Ekspor progresmu atau kelola akun.')}
               footer={
                 <div>
                   <h3 className="text-[10px] font-label uppercase tracking-widest text-danger mb-3">
-                    Zona Berbahaya
+                    {t('settings.danger_zone', 'Zona Berbahaya')}
                   </h3>
                   <AlertDialog open={isDeleting} onOpenChange={setIsDeleting}>
                     <AlertDialogTrigger asChild>
@@ -438,20 +444,20 @@ export default function Settings() {
                         className="rounded-xl font-label gap-2 border-danger/30 text-danger hover:bg-danger/[0.04] hover:text-danger"
                       >
                         <Trash2 className="h-4 w-4" />
-                        Hapus Akun
+                        {t('settings.delete_account', 'Hapus Akun')}
                       </Button>
                     </AlertDialogTrigger>
                     <AlertDialogContent>
                       <AlertDialogHeader>
-                        <AlertDialogTitle>Hapus akun?</AlertDialogTitle>
+                        <AlertDialogTitle>{t('settings.delete_account_title', 'Hapus akun?')}</AlertDialogTitle>
                         <AlertDialogDescription>
-                          Fitur ini belum tersedia. Coming soon.
+                          {t('settings.delete_account_desc', 'Fitur ini belum tersedia. Coming soon.')}
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
-                        <AlertDialogCancel>Batal</AlertDialogCancel>
+                        <AlertDialogCancel>{t('settings.cancel', 'Batal')}</AlertDialogCancel>
                         <AlertDialogAction disabled>
-                          Coming Soon
+                          {t('settings.coming_soon', 'Coming Soon')}
                         </AlertDialogAction>
                       </AlertDialogFooter>
                     </AlertDialogContent>
@@ -472,14 +478,13 @@ export default function Settings() {
                   <Download className="h-4 w-4" />
                 )}
                 {isExporting
-                  ? 'Mengekspor...'
+                  ? t('settings.exporting', 'Mengekspor...')
                   : exportSuccess
-                  ? 'Tersimpan!'
-                  : 'Export Progress'}
+                  ? t('settings.saved', 'Tersimpan!')
+                  : t('settings.export_progress', 'Export Progress')}
               </Button>
               <p className="text-xs text-secondary font-label">
-                Mengunduh seluruh data sesi, topik, dan riwayat kuis
-                dalam format JSON.
+                {t('settings.export_desc', 'Mengunduh seluruh data sesi, topik, dan riwayat kuis dalam format JSON.')}
               </p>
             </SectionCard>
           )}

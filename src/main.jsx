@@ -3,6 +3,7 @@ import React from 'react'
 import { MotionConfig } from 'framer-motion'
 import App from './App'
 import './index.css'
+import './i18n'
 
 /**
  * MotionConfig (Phase 1.8 — accessibility):

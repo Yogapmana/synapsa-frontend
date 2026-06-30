@@ -37,7 +37,7 @@ export default function WelcomeHero({ username }) {
 
       {/* Greeting — clean headline */}
       <h1 className="font-display font-bold text-2xl md:text-3xl text-primary mb-2 tracking-tight leading-tight">
-        Halo! Saya PLA Chatbot 👋
+        Halo! Saya Synapsa Chatbot 👋
       </h1>
 
       {username && (

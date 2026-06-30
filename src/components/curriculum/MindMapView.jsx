@@ -274,7 +274,7 @@ function OverviewContent({
               className="rounded-xl font-label ml-auto"
             >
               <ArrowLeft size={14} />
-              Kembali
+              {t('curriculum.back', 'Kembali')}
             </Button>
           )}
         </div>
@@ -285,7 +285,7 @@ function OverviewContent({
         </h3>
         <p className="text-secondary text-sm mt-1 max-w-2xl leading-relaxed">
           {selectedWeek
-            ? 'Klik topik untuk mulai belajar.'
+            ? t('curriculum.click_to_start', 'Klik topik untuk mulai belajar.')
             : 'Klik minggu untuk melihat detail topik.'}
         </p>
       </div>
@@ -356,7 +356,7 @@ function OverviewContent({
       <div className="px-5 md:px-7 py-3 border-t border-border-subtle bg-surface-1/30 text-center">
         <p className="text-xs text-subtle-readable font-label">
           {selectedWeek
-            ? 'Klik topik untuk mulai belajar • Scroll untuk zoom • Drag untuk menggeser'
+            ? t('curriculum.click_instruction', 'Klik topik untuk mulai belajar • Scroll untuk zoom • Drag untuk menggeser')
             : 'Klik minggu untuk melihat detail topik • Scroll untuk zoom • Drag untuk menggeser'}
         </p>
       </div>

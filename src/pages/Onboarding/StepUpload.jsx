@@ -2,6 +2,7 @@ import { useState, useRef, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import { Upload, FileText, X, AlertCircle, Sparkles } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useTranslation } from 'react-i18next'
 import StepIllustration from './StepIllustration'
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024
@@ -15,6 +16,7 @@ function formatFileSize(bytes) {
 }
 
 export default function StepUpload({ data, onChange }) {
+  const { t } = useTranslation()
   const [isDragOver, setIsDragOver] = useState(false)
   const [validationError, setValidationError] = useState(null)
   const fileInputRef = useRef(null)
@@ -83,16 +85,10 @@ export default function StepUpload({ data, onChange }) {
       <div className="space-y-4 text-center">
         <StepIllustration variant="upload" />
         <div className="flex justify-center">
-          <span className="eyebrow">Langkah 02 — Referensi</span>
+          <span className="eyebrow">{t('onboarding.upload_title')}</span>
         </div>
-        <h2 className="font-display text-2xl md:text-3xl font-bold tracking-tight text-primary leading-tight">
-          Beri konteks ke
-          <br />
-          <span className="italic text-tertiary">PLA</span>
-        </h2>
         <p className="text-secondary max-w-md mx-auto leading-relaxed font-serif-content">
-          Upload CV, materi kuliah, atau dokumen referensi. PLA akan
-          menggunakan untuk menyusun kurikulum yang lebih relevan.
+          {t('onboarding.upload_subtitle')}
         </p>
       </div>
 
@@ -120,7 +116,7 @@ export default function StepUpload({ data, onChange }) {
         </div>
         <div className="space-y-1 text-center">
           <p className="text-sm font-medium text-primary">
-            Drag PDF ke sini, atau klik untuk pilih
+            {t('onboarding.upload_placeholder')}
           </p>
           <p className="text-xs text-secondary font-label">
             PDF · maks 10MB per file · hingga {MAX_FILES} file
@@ -201,7 +197,7 @@ export default function StepUpload({ data, onChange }) {
             Upload bersifat opsional
           </p>
           <p className="text-xs text-secondary leading-relaxed">
-            Bisa langsung lanjut tanpa upload. PLA akan mencari materi
+            Bisa langsung lanjut tanpa upload. Synapsa akan mencari materi
             dari sumber terpercaya secara otomatis.
           </p>
         </div>

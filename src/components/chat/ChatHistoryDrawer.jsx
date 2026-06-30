@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { BookOpen, MessageCircle, Clock } from 'lucide-react';
 import {
   Sheet,
@@ -35,7 +36,7 @@ export default function ChatHistoryDrawer({
               <BookOpen size={24} />
             </div>
             <p className="text-sm text-secondary max-w-[220px] leading-relaxed">
-              Belum ada topik. Mulai sesi belajar untuk membuat kurikulum.
+              {t('chat.no_topic', 'Belum ada topik. Mulai sesi belajar untuk membuat kurikulum.')}
             </p>
           </div>
         ) : (

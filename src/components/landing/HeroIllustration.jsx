@@ -3,12 +3,12 @@ import { BookOpen, Sparkles, Brain, MessageSquare, Search, FileText, Network } f
 import { cn } from '@/lib/utils'
 
 /**
- * HeroIllustration — the signature visual for PLA's marketing.
+ * HeroIllustration — the signature visual for Synapsa's marketing.
  *
  * Replaces the previous literal "agent network SVG diagram" with
  * an editorial, layered illustration: an open book at the center
  * with floating knowledge fragments orbiting it. Each fragment is
- * a "thing PLA does" (research, RAG, multi-agent) represented
+ * a "thing Synapsa does" (research, RAG, multi-agent) represented
  * as an icon card with a small label.
  *
  * Why this works better:

@@ -16,6 +16,7 @@ import { useAuthStore } from '../../stores/authStore';
 import { useUIStore } from '../../stores/uiStore';
 import { useLearningStore } from '../../stores/learningStore';
 import { cn } from '../../utils/cn';
+import { useTranslation } from 'react-i18next';
 
 /**
  * Sidebar — fixed left navigation panel.
@@ -46,16 +47,16 @@ const EXPANDED_WIDTH = 240;
  * @property {'utama' | 'lainnya'} section
  */
 
-/** @type {NavItem[]} */
 const NAV_ITEMS = [
-  { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard', section: 'utama' },
-  { label: 'Kurikulum', icon: CalendarDays, path: '/curriculum', section: 'utama' },
-  { label: 'Chatbot', icon: MessageCircle, path: '/chat', section: 'utama' },
-  { label: 'Riwayat Kuis', icon: History, path: '/progress', section: 'lainnya' },
-  { label: 'Pengaturan', icon: Settings, path: '/settings', section: 'lainnya' },
+  { labelKey: 'sidebar.dashboard', icon: LayoutDashboard, path: '/dashboard', section: 'utama' },
+  { labelKey: 'sidebar.curriculum', icon: CalendarDays, path: '/curriculum', section: 'utama' },
+  { labelKey: 'sidebar.chatbot', icon: MessageCircle, path: '/chat', section: 'utama' },
+  { labelKey: 'sidebar.quiz_history', icon: History, path: '/progress', section: 'lainnya' },
+  { labelKey: 'sidebar.settings', icon: Settings, path: '/settings', section: 'lainnya' },
 ];
 
 const Sidebar = () => {
+  const { t } = useTranslation();
   const { user, logout } = useAuthStore();
   const { sidebarCollapsed, toggleSidebar } = useUIStore();
   const { streak = 0 } = useLearningStore() || {};
@@ -161,7 +162,7 @@ const Sidebar = () => {
                   <Flame size={18} className="text-white" fill="currentColor" />
                 </div>
                 <span className="font-display font-bold text-lg text-primary tracking-tight whitespace-nowrap">
-                  PLA
+                  Synapsa
                 </span>
               </motion.div>
             )}
@@ -241,7 +242,7 @@ const Sidebar = () => {
               <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl bg-tertiary/[0.07]">
                 <Flame size={15} className="text-tertiary" fill="currentColor" />
                 <span className="text-sm font-semibold text-tertiary">
-                  {streak} hari berturut
+                  {t('sidebar.streak_days', { count: streak })}
                 </span>
               </div>
             </motion.div>
@@ -287,7 +288,7 @@ const Sidebar = () => {
           <button
             type="button"
             onClick={logout}
-            aria-label="Keluar"
+            aria-label={t("common.logout", "Keluar")}
             className={cn(
               'flex items-center gap-3 w-full rounded-xl text-secondary',
               'hover:bg-danger/8 hover:text-danger',
@@ -298,7 +299,7 @@ const Sidebar = () => {
           >
             <LogOut size={18} className="shrink-0" />
             {!sidebarCollapsed && (
-              <span className="text-sm font-label font-medium">Keluar</span>
+              <span className="text-sm font-label font-medium">{t('sidebar.logout')}</span>
             )}
           </button>
         </div>
@@ -318,8 +319,8 @@ export default Sidebar;
  * Fills the empty vertical space intentionally.
  */
 function NavGroup({ section, sidebarCollapsed }) {
-  const labels = { utama: 'Utama', lainnya: 'Lainnya' };
-  const label = labels[section];
+  const { t } = useTranslation();
+  const labelKey = section === 'utama' ? 'sidebar.main' : 'sidebar.others';
 
   return (
     <AnimatePresence>
@@ -333,7 +334,7 @@ function NavGroup({ section, sidebarCollapsed }) {
         >
           <div className="px-3 pt-4 pb-1.5 first:pt-1.5">
             <p className="font-label text-[10px] uppercase tracking-widest text-secondary/60 font-semibold">
-              {label}
+              {t(labelKey)}
             </p>
           </div>
         </motion.div>
@@ -352,6 +353,7 @@ function NavGroup({ section, sidebarCollapsed }) {
  *  - Icon color transitions smoothly between states
  */
 function NavItemRow({ item, sidebarCollapsed }) {
+  const { t } = useTranslation();
   const Icon = item.icon;
   const isCollapsed = sidebarCollapsed;
 
@@ -399,7 +401,7 @@ function NavItemRow({ item, sidebarCollapsed }) {
                 isActive ? 'text-tertiary' : 'text-primary'
               )}
             >
-              {item.label}
+              {t(item.labelKey)}
             </span>
           )}
 
@@ -418,7 +420,7 @@ function NavItemRow({ item, sidebarCollapsed }) {
                 'before:border-y-[6px] before:border-r-[6px] before:border-transparent before:border-r-primary'
               )}
             >
-              {item.label}
+              {t(item.labelKey)}
             </span>
           )}
         </>

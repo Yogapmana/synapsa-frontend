@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Star, Sparkles, TrendingUp, ArrowRight } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import XpBar from './XpBar';
 import { getXp } from '@/api/gamification';
 
@@ -40,6 +41,7 @@ const LEVEL_ICONS = {
 };
 
 export default function XpCard() {
+  const { t } = useTranslation();
   const { data, isLoading } = useQuery({
     queryKey: ['gamification', 'xp'],
     queryFn: getXp,
@@ -72,10 +74,10 @@ export default function XpCard() {
           </div>
           <div>
             <h2 className="font-display font-semibold text-primary text-sm">
-              Level &amp; XP
+              {t('dashboard.level_and_xp', 'Level & XP')}
             </h2>
             <p className="text-[11px] text-secondary/70 font-label">
-              XP dari mastery topik
+              {t('dashboard.xp_from_mastery', 'XP dari mastery topik')}
             </p>
           </div>
         </div>
@@ -83,7 +85,7 @@ export default function XpCard() {
           to="/progress"
           className="inline-flex items-center gap-1 text-xs font-label font-semibold text-tertiary hover:text-tertiary-dark transition-colors"
         >
-          Riwayat XP
+          {t('dashboard.xp_history', 'Riwayat XP')}
           <ArrowRight size={12} />
         </Link>
       </div>
@@ -112,7 +114,7 @@ export default function XpCard() {
             </span>
           </div>
           <p className="text-[11px] text-secondary/80 font-label mt-1 tabular-nums">
-            {total_xp.toLocaleString('id-ID')} total XP
+            {total_xp.toLocaleString('id-ID')} {t('dashboard.total_xp', 'total XP')}
           </p>
         </div>
       </div>
@@ -131,13 +133,13 @@ export default function XpCard() {
       {/* "Sisa X XP" hint */}
       {!level_info.is_max_level && (
         <p className="text-[11px] text-secondary/80 font-label mt-2.5">
-          Sisa{' '}
+          {t('dashboard.remaining', 'Sisa')}{' '}
           <span className="font-semibold text-tertiary tabular-nums">
             {level_info.xp_to_next_level}
           </span>{' '}
-          XP untuk naik ke{' '}
+          {t('dashboard.xp_for_next_level', 'XP untuk naik ke')}{' '}
           <span className="font-semibold text-primary">
-            Level {level_info.level + 1}
+            {t('dashboard.level', 'Level')} {level_info.level + 1}
           </span>
         </p>
       )}
@@ -146,7 +148,7 @@ export default function XpCard() {
       {recent_events && recent_events.length > 0 && (
         <div className="mt-4 pt-4 border-t border-border-subtle/60">
           <p className="text-[10.5px] font-label uppercase tracking-wider text-secondary/60 mb-2">
-            XP Terbaru
+            {t('dashboard.recent_xp', 'XP Terbaru')}
           </p>
           <ul className="space-y-1.5">
             {recent_events.slice(0, 3).map((ev) => (
@@ -177,9 +179,9 @@ export default function XpCard() {
       <div className="mt-4 pt-3 border-t border-border-subtle/60 text-[11px] text-secondary/80 leading-relaxed">
         <span className="inline-flex items-center gap-1 font-semibold text-tertiary">
           <TrendingUp size={11} />
-          Tip:
+          {t('dashboard.tip', 'Tip:')}
         </span>{' '}
-        Selesaikan kuis topik untuk naikin mastery → XP.
+        {t('dashboard.complete_quizzes_for_xp', 'Selesaikan kuis topik untuk naikin mastery → XP.')}
       </div>
     </div>
   );

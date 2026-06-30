@@ -2,6 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, useReducedMotion } from 'framer-motion';
 import { BookOpen, PlayCircle, ArrowRight, Sparkles } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '../ui/button';
 import { Progress } from '../ui/progress';
 import StatusBadge from '../common/StatusBadge';
@@ -23,6 +24,7 @@ export default function ContinueLearningHero({
   completedTopics,
   totalTopics,
 }) {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const shouldReduceMotion = useReducedMotion();
 
@@ -45,16 +47,15 @@ export default function ContinueLearningHero({
         <div className="relative z-10 flex flex-col md:flex-row md:items-center gap-6">
           <div className="flex-1 space-y-4">
             <div className="flex items-center gap-2">
-              <span className="eyebrow">Bab 01 — Mulai</span>
+              <span className="eyebrow">{t('dashboard.chapter_start', 'Bab 01 — Mulai')}</span>
             </div>
             <h2 className="text-3xl md:text-[2.5rem] font-display font-bold text-primary leading-[1.05] tracking-tight">
-              Mulai perjalanan
+              {t('dashboard.start_journey', 'Mulai perjalanan')}
               <br />
-              <span className="italic text-tertiary">belajarmu</span>
+              <span className="italic text-tertiary">{t('dashboard.learning', 'belajarmu')}</span>
             </h2>
             <p className="text-secondary max-w-lg leading-relaxed font-serif-content">
-              Belum ada sesi aktif. Buat kurikulum pertamamu dan biarkan
-              Planner Agent menyusun jalur belajar yang dipersonalisasi untukmu.
+              {t('dashboard.no_session_desc', 'Belum ada sesi aktif. Buat kurikulum pertamamu dan biarkan Planner Agent menyusun jalur belajar yang dipersonalisasi untukmu.')}
             </p>
             <div className="pt-2">
               <Button
@@ -64,7 +65,7 @@ export default function ContinueLearningHero({
                 onClick={() => navigate('/onboarding')}
               >
                 <Sparkles className="w-5 h-5" />
-                Buat Kurikulum
+                {t('dashboard.create_curriculum', 'Buat Kurikulum')}
                 <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
               </Button>
             </div>
@@ -97,16 +98,15 @@ export default function ContinueLearningHero({
         <div className="relative z-10 flex flex-col md:flex-row md:items-center gap-6">
           <div className="flex-1 space-y-4">
             <div className="flex items-center gap-2">
-              <StatusBadge variant="success">Lulus</StatusBadge>
+              <StatusBadge variant="success">{t('dashboard.passed', 'Lulus')}</StatusBadge>
             </div>
             <h2 className="text-3xl md:text-[2.5rem] font-display font-bold text-primary leading-[1.05] tracking-tight">
-              Semua topik
+              {t('dashboard.all_topics', 'Semua topik')}
               <br />
-              <span className="italic text-success">sudah selesai</span>
+              <span className="italic text-success">{t('dashboard.finished', 'sudah selesai')}</span>
             </h2>
             <p className="text-secondary max-w-lg leading-relaxed font-serif-content">
-              Kamu sudah menyelesaikan semua materi yang tersedia. Saatnya
-              review atau memulai topik baru.
+              {t('dashboard.all_topics_desc', 'Kamu sudah menyelesaikan semua materi yang tersedia. Saatnya review atau memulai topik baru.')}
             </p>
             <div className="pt-2">
               <Button
@@ -116,7 +116,7 @@ export default function ContinueLearningHero({
                 onClick={() => navigate('/onboarding')}
               >
                 <Sparkles className="w-5 h-5" />
-                Mulai Topik Baru
+                {t('dashboard.start_new_topic', 'Mulai Topik Baru')}
                 <ArrowRight className="w-4 h-4" />
               </Button>
             </div>
@@ -135,7 +135,7 @@ export default function ContinueLearningHero({
   }
 
   const progress = topic.progress || 0;
-  const topicTitle = topic.title || 'Topik berikutnya';
+  const topicTitle = topic.title || t('dashboard.next_topic', 'Topik berikutnya');
   const durationMinutes = topic.duration_minutes || 30;
   const topicIndex = completedTopics + 1;
   const progressFraction = Math.min(1, Math.max(0, progress / 100));
@@ -163,10 +163,10 @@ export default function ContinueLearningHero({
         <div className="space-y-4 min-w-0">
           {/* Eyebrow — establishes hierarchy */}
           <div className="flex items-center gap-2.5 flex-wrap">
-            <span className="eyebrow">Bab {String(topicIndex).padStart(2, '0')} — Lanjutkan</span>
+            <span className="eyebrow">{t('dashboard.chapter_continue', { num: String(topicIndex).padStart(2, '0'), defaultValue: `Bab ${String(topicIndex).padStart(2, '0')} — Lanjutkan` })}</span>
             {totalTopics > 0 && (
               <span className="text-[10px] font-label uppercase tracking-wider text-secondary/70 tabular-nums">
-                {completedTopics} / {totalTopics} topik
+                {t('dashboard.topics_count', { completed: completedTopics, total: totalTopics, defaultValue: `${completedTopics} / ${totalTopics} topik` })}
               </span>
             )}
           </div>
@@ -178,11 +178,11 @@ export default function ContinueLearningHero({
           <div className="flex items-center gap-4 text-sm text-secondary font-label">
             <span className="flex items-center gap-1.5">
               <BookOpen className="w-4 h-4 text-tertiary" />
-              <span className="tabular-nums">{durationMinutes} menit</span>
+              <span className="tabular-nums">{t('dashboard.mins', { duration: durationMinutes, defaultValue: `${durationMinutes} menit` })}</span>
             </span>
             {progress > 0 && (
               <span className="flex items-center gap-1.5 text-tertiary font-semibold">
-                <span className="tabular-nums">{Math.round(progress)}% selesai</span>
+                <span className="tabular-nums">{t('dashboard.percent_finished', { progress: Math.round(progress), defaultValue: `${Math.round(progress)}% selesai` })}</span>
               </span>
             )}
           </div>
@@ -205,7 +205,7 @@ export default function ContinueLearningHero({
               onClick={() => navigate(`/module/${topic.id}`)}
             >
               <PlayCircle className="w-5 h-5" fill="currentColor" />
-              {progress > 0 ? 'Lanjutkan Belajar' : 'Mulai Sekarang'}
+              {progress > 0 ? t('dashboard.continue_learning', 'Lanjutkan Belajar') : t('dashboard.start_now', 'Mulai Sekarang')}
               <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
             </Button>
             <Button
@@ -214,7 +214,7 @@ export default function ContinueLearningHero({
               className="rounded-xl font-semibold text-secondary hover:text-primary"
               onClick={() => navigate('/curriculum')}
             >
-              Lihat kurikulum
+              {t('dashboard.view_curriculum', 'Lihat kurikulum')}
             </Button>
           </div>
         </div>

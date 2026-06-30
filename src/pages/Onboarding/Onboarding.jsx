@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { startLearning } from '@/api/learning'
 import { useLearningStore } from '@/stores/learningStore'
+import { useTranslation } from 'react-i18next'
 import StepGoal from './StepGoal'
 import StepUpload from './StepUpload'
 import StepConfirm from './StepConfirm'
@@ -18,6 +19,7 @@ const STEPS = [
 ]
 
 const INITIAL_DATA = {
+  language: 'id',
   topic: '',
   duration_weeks: null,
   level: null,
@@ -41,6 +43,7 @@ const slideVariants = {
 }
 
 export default function Onboarding() {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const [step, setStep] = useState(0)
   const [direction, setDirection] = useState(1)
@@ -89,7 +92,7 @@ export default function Onboarding() {
         duration_weeks: formData.duration_weeks,
         level: formData.level,
         hours_per_day: formData.hours_per_day,
-        language: 'id',
+        language: formData.language,
         files: formData.files,
       })
 
@@ -350,7 +353,7 @@ export default function Onboarding() {
               ) : (
                 <>
                   <Sparkles className="h-5 w-5" />
-                  Mulai Belajar Sekarang
+                  {t('onboarding.submit')}
                   <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
                 </>
               )}

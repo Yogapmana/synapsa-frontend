@@ -317,7 +317,7 @@ export default function MermaidMindmapView({ sessionId, courseTitle }) {
       {/* Footer hint */}
       <div className="px-5 md:px-7 py-3 border-t border-border-subtle bg-surface-0/40/80 text-center">
         <p className="text-xs text-secondary font-label">
-          Klik konsep untuk melihat detail • Klik topik untuk mulai belajar
+          {t('curriculum.click_instruction', 'Klik konsep untuk melihat detail • Klik topik untuk mulai belajar')}
           {' '}• Klik sumber untuk membuka tautan • Scroll + Ctrl untuk zoom • Drag untuk menggeser
         </p>
       </div>

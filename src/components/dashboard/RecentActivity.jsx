@@ -1,6 +1,7 @@
 import React from 'react';
 import { BookOpen, HelpCircle, MessageSquare, ChevronRight, Inbox, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 
 /**
@@ -21,37 +22,41 @@ const TYPE_CONFIG = {
     colorClass: 'text-success-fg',
     bgClass: 'bg-success-light',
     defaultLabel: 'Selesai',
+    labelKey: 'dashboard.done',
   },
   quiz: {
     icon: HelpCircle,
     colorClass: 'text-info-fg',
     bgClass: 'bg-info-light',
     defaultLabel: 'Kuis',
+    labelKey: 'dashboard.quiz',
   },
   chat: {
     icon: MessageSquare,
     colorClass: 'text-warning-fg',
     bgClass: 'bg-warning-light',
     defaultLabel: 'Chat',
+    labelKey: 'dashboard.chat',
   },
 };
 
 function getScoreConfig(score) {
-  if (score >= 90) return { label: 'Sangat Baik', class: 'pill-success' };
-  if (score >= 75) return { label: 'Baik', class: 'pill-info' };
-  if (score >= 60) return { label: 'Cukup', class: 'pill-warning' };
-  return { label: 'Perlu Review', class: 'pill-danger' };
+  if (score >= 90) return { label: 'quiz.excellent', defaultLabel: 'Sangat Baik', class: 'pill-success' };
+  if (score >= 75) return { label: 'quiz.good', defaultLabel: 'Baik', class: 'pill-info' };
+  if (score >= 60) return { label: 'quiz.fair', defaultLabel: 'Cukup', class: 'pill-warning' };
+  return { label: 'quiz.needs_review', defaultLabel: 'Perlu Review', class: 'pill-danger' };
 }
 
 export default function RecentActivity({ activities = [] }) {
+  const { t } = useTranslation();
   return (
     <div className="card-base overflow-hidden h-full flex flex-col">
       {/* Header */}
       <div className="p-5 flex justify-between items-center">
         <div>
-          <p className="eyebrow !text-[10px] mb-1">Riwayat · Aktivitas</p>
+          <p className="eyebrow !text-[10px] mb-1">{t('dashboard.history_activity', 'Riwayat · Aktivitas')}</p>
           <h3 className="text-lg font-display font-semibold text-primary">
-            Aktivitas Terakhir
+            {t('dashboard.recent_activity', 'Aktivitas Terakhir')}
           </h3>
         </div>
         {activities.length > 0 && (
@@ -59,7 +64,7 @@ export default function RecentActivity({ activities = [] }) {
             to="/progress"
             className="text-sm font-medium text-tertiary hover:text-tertiary-dark transition-colors flex items-center gap-1 group"
           >
-            Lihat semua
+            {t('dashboard.view_all', 'Lihat semua')}
             <ChevronRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
           </Link>
         )}
@@ -74,11 +79,10 @@ export default function RecentActivity({ activities = [] }) {
               <Inbox className="w-7 h-7 text-secondary/50" strokeWidth={1.5} />
             </div>
             <h4 className="font-display font-semibold text-primary text-lg mb-1">
-              Belum ada aktivitas
+              {t('dashboard.no_activity', 'Belum ada aktivitas')}
             </h4>
             <p className="text-sm text-secondary mt-1 max-w-sm mx-auto leading-relaxed">
-              Mulai belajar untuk melihat riwayat aktivitasmu di sini.
-              Selesaikan modul atau ambil kuis untuk mulai mengisi riwayat.
+              {t('dashboard.no_activity_desc', 'Mulai belajar untuk melihat riwayat aktivitasmu di sini. Selesaikan modul atau ambil kuis untuk mulai mengisi riwayat.')}
             </p>
           </div>
         ) : (
@@ -92,7 +96,7 @@ export default function RecentActivity({ activities = [] }) {
               const scoreConfig =
                 type === 'quiz' && score != null
                   ? getScoreConfig(score)
-                  : { label: config.defaultLabel, class: 'pill-neutral' };
+                  : { label: config.labelKey, defaultLabel: config.defaultLabel, class: 'pill-neutral' };
 
               const itemHref =
                 type === 'quiz' && topicId
@@ -118,7 +122,7 @@ export default function RecentActivity({ activities = [] }) {
                         {title}
                       </p>
                       <span className={cn('pill text-[10px] shrink-0', scoreConfig.class)}>
-                        {scoreConfig.label}
+                        {t(scoreConfig.label, scoreConfig.defaultLabel)}
                       </span>
                     </div>
                     <div className="flex items-center justify-between gap-2">

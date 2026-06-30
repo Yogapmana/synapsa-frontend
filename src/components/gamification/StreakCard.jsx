@@ -7,6 +7,7 @@ import { useAuthStore } from '@/stores/authStore';
 import { useLearningStore } from '@/stores/learningStore';
 import { format, parseISO } from 'date-fns';
 import { id as idLocale } from 'date-fns/locale';
+import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 
 /**
@@ -25,6 +26,7 @@ import { cn } from '@/lib/utils';
  * updated by the login response) so the headline is instant.
  */
 export default function StreakCard() {
+  const { t } = useTranslation();
   const { user } = useAuthStore();
   const streak = useLearningStore((s) => s.streak) || 0;
   const longestStreak = user?.longest_streak || 0;
@@ -57,12 +59,12 @@ export default function StreakCard() {
           </div>
           <div>
             <h2 className="font-display font-semibold text-primary text-sm">
-              Konsistensi Belajar
+              {t('dashboard.learning_consistency', 'Konsistensi Belajar')}
             </h2>
             <p className="text-[11px] text-secondary/70 font-label">
               {lastLoginLabel
-                ? `Login terakhir: ${lastLoginLabel}`
-                : 'Aktivitas login & belajar'}
+                ? `${t('dashboard.last_login', 'Login terakhir: ')}${lastLoginLabel}`
+                : t('dashboard.login_learning_activity', 'Aktivitas login & belajar')}
             </p>
           </div>
         </div>
@@ -70,7 +72,7 @@ export default function StreakCard() {
           to="/progress"
           className="inline-flex items-center gap-1 text-xs font-label font-semibold text-tertiary hover:text-tertiary-dark transition-colors"
         >
-          Riwayat
+          {t('dashboard.history', 'Riwayat')}
           <ArrowRight size={12} />
         </Link>
       </div>
@@ -85,10 +87,10 @@ export default function StreakCard() {
             >
               {streak}
             </span>
-            <span className="text-[11px] text-secondary/70 font-label">hari</span>
+            <span className="text-[11px] text-secondary/70 font-label">{t('dashboard.day', 'hari')}</span>
           </div>
           <p className="text-[11px] text-secondary/80 font-label mt-1">
-            Berturut-turut
+            {t('dashboard.consecutive', 'Berturut-turut')}
           </p>
         </div>
         <div className="rounded-xl bg-secondary/8 border border-border-subtle p-3">
@@ -99,11 +101,11 @@ export default function StreakCard() {
             >
               {longestStreak}
             </span>
-            <span className="text-[11px] text-secondary/70 font-label">hari</span>
+            <span className="text-[11px] text-secondary/70 font-label">{t('dashboard.day', 'hari')}</span>
           </div>
           <p className="text-[11px] text-secondary/80 font-label mt-1 flex items-center gap-1">
             <Trophy size={10} className="text-warning" />
-            Rekor pribadi
+            {t('dashboard.personal_record', 'Rekor pribadi')}
           </p>
         </div>
       </div>
@@ -117,8 +119,8 @@ export default function StreakCard() {
           className="text-[11px] text-secondary/70 font-label mt-3"
           aria-label={`${data.total_active_days} hari aktif dari ${data.days} hari terakhir`}
         >
-          {data.total_active_days} hari aktif dari {data.days} hari terakhir ·{' '}
-          {data.total_logins} total login
+          {data.total_active_days} {t('dashboard.active_days_from', 'hari aktif dari')} {data.days} {t('dashboard.last_days', 'hari terakhir')} ·{' '}
+          {data.total_logins} {t('dashboard.total_logins', 'total login')}
         </p>
       )}
 
@@ -132,11 +134,11 @@ export default function StreakCard() {
       >
         {streak > 0 ? (
           <>
-            💡 Login besok untuk tambah streak. Skip satu hari ={' '}
-            <span className="font-semibold text-tertiary">ulang dari 1</span>.
+            {t('dashboard.login_tomorrow_streak', '💡 Login besok untuk tambah streak. Skip satu hari = ')}
+            <span className="font-semibold text-tertiary">{t('dashboard.restart_from_1', 'ulang dari 1')}</span>.
           </>
         ) : (
-          <>💡 Login hari ini untuk mulai streak pertamamu.</>
+          <>{t('dashboard.login_today_streak', '💡 Login hari ini untuk mulai streak pertamamu.')}</>
         )}
       </div>
     </div>

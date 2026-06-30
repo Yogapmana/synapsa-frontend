@@ -7,9 +7,9 @@ import {
   submitQuiz,
 } from '../api/quiz'
 
-export function useQuiz(topicId, numQuestions = 5) {
+export function useQuiz(topicId, numQuestions) {
   return useQuery({
-    queryKey: ['quiz', topicId],
+    queryKey: ['quiz', topicId, numQuestions],
     queryFn: () => getQuiz(topicId, numQuestions),
     enabled: !!topicId,
   })

@@ -14,7 +14,7 @@ export default function Quiz() {
   const { toast } = useToast();
   const { activeSession } = useLearningStore();
   
-  const { data: quizData, isLoading, error, refetch } = useQuiz(topicId, 5);
+  const { data: quizData, isLoading, error, refetch } = useQuiz(topicId);
   const submitQuiz = useSubmitQuiz();
   
   const [currentIndex, setCurrentIndex] = useState(0);

@@ -3,6 +3,7 @@ import { cn } from '@/lib/utils'
 import { Input } from '@/components/ui/input'
 import { DURATION_OPTIONS, LEVEL_OPTIONS, HOURS_PER_DAY_OPTIONS } from '@/utils/constants'
 import { Lightbulb, Sparkles } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import StepIllustration from './StepIllustration'
 
 const QUICK_SUGGESTIONS = [
@@ -51,8 +52,15 @@ function RadioCardGroup({ label, options, selected, onSelect }) {
 }
 
 export default function StepGoal({ data, onChange }) {
+  const { t, i18n } = useTranslation()
+
   const isValid =
-    data.topic.trim() && data.duration_weeks && data.level && data.hours_per_day
+    data.language && data.topic.trim() && data.duration_weeks && data.level && data.hours_per_day
+
+  const handleLanguageChange = (val) => {
+    i18n.changeLanguage(val)
+    onChange({ language: val })
+  }
 
   return (
     <div className="space-y-7 relative">
@@ -60,31 +68,36 @@ export default function StepGoal({ data, onChange }) {
       <div className="space-y-4 text-center">
         <StepIllustration variant="goal" />
         <div className="flex justify-center">
-          <span className="eyebrow">Langkah 01 — Tujuan</span>
+          <span className="eyebrow">{t('onboarding.welcome_title')}</span>
         </div>
         <h2 className="font-display text-2xl md:text-3xl font-bold tracking-tight text-primary leading-tight">
-          Apa yang ingin
-          <br />
-          <span className="italic text-tertiary">kamu pelajari?</span>
+          {t('onboarding.welcome_subtitle')}
         </h2>
-        <p className="text-secondary max-w-md mx-auto leading-relaxed font-serif-content">
-          Beri tahu PLA, dan kami akan rancang kurikulum personal untukmu.
-        </p>
       </div>
 
       <div className="space-y-6">
+        <RadioCardGroup
+          label={t('onboarding.language_label')}
+          options={[
+            { label: 'Indonesia', value: 'id' },
+            { label: 'English', value: 'en' },
+          ]}
+          selected={data.language}
+          onSelect={handleLanguageChange}
+        />
+
         <div className="space-y-2.5">
           <label
             htmlFor="topic"
             className="font-label text-xs uppercase tracking-wider text-secondary"
           >
-            Topik utama
+            {t('onboarding.topic_label')}
           </label>
           <Input
             id="topic"
             value={data.topic}
             onChange={(e) => onChange({ topic: e.target.value })}
-            placeholder="mis. Machine Learning, Desain UI/UX, Bahasa Jepang..."
+            placeholder={t('onboarding.topic_placeholder')}
             className="h-12 rounded-xl border-border bg-surface text-base focus-visible:ring-tertiary"
           />
           <div className="flex flex-wrap items-center gap-2 pt-1.5">
@@ -111,21 +124,21 @@ export default function StepGoal({ data, onChange }) {
         </div>
 
         <RadioCardGroup
-          label="Level saat ini"
+          label={t('onboarding.level_label')}
           options={LEVEL_OPTIONS}
           selected={data.level}
           onSelect={(value) => onChange({ level: value })}
         />
 
         <RadioCardGroup
-          label="Durasi belajar"
+          label={t('onboarding.duration_label')}
           options={DURATION_OPTIONS}
           selected={data.duration_weeks}
           onSelect={(value) => onChange({ duration_weeks: value })}
         />
 
         <RadioCardGroup
-          label="Waktu belajar per hari"
+          label={t('onboarding.hours_label')}
           options={HOURS_PER_DAY_OPTIONS}
           selected={data.hours_per_day}
           onSelect={(value) => onChange({ hours_per_day: value })}

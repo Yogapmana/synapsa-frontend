@@ -1,4 +1,5 @@
 import React from 'react'
+import { useTranslation } from 'react-i18next';
 import { Handle, Position } from '@xyflow/react'
 import { Check, Lock, Play, Circle, Clock } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -16,54 +17,58 @@ import { cn } from '@/lib/utils'
  *
  * Click navigates to /module/{id} (handled in MindMapView).
  */
-const STATUS_THEMES = {
-  completed: {
-    ring: 'ring-1 ring-success/40 hover:ring-success/70',
-    icon: Check,
-    iconBg: 'bg-success-light text-success-fg',
-    badge: 'bg-success-light text-success-fg',
-    label: 'Selesai',
-    edge: 'bg-success',
-  },
-  active: {
-    ring: 'ring-2 ring-tertiary/50 hover:ring-tertiary shadow-[0_0_0_3px_rgb(var(--tertiary)/0.12)]',
-    icon: Play,
-    iconBg: 'bg-tertiary text-white',
-    badge: 'bg-tertiary text-white',
-    label: 'Mulai',
-    edge: 'bg-tertiary',
-  },
-  locked: {
-    ring: 'ring-1 ring-border-subtle hover:ring-secondary/40 opacity-80',
-    icon: Lock,
-    iconBg: 'bg-surface-1 text-subtle-readable',
-    badge: 'bg-surface-1 text-secondary',
-    label: 'Terkunci',
-    edge: 'bg-border-default',
-  },
-  review: {
-    ring: 'ring-1 ring-info/40 hover:ring-info/70',
-    icon: Circle,
-    iconBg: 'bg-info-light text-info-fg',
-    badge: 'bg-info-light text-info-fg',
-    label: 'Review',
-    edge: 'bg-info',
-  },
-  pending: {
-    ring: 'ring-1 ring-warning/40 hover:ring-warning/70',
-    icon: Clock,
-    iconBg: 'bg-warning-light text-warning-fg',
-    badge: 'bg-warning-light text-warning-fg',
-    label: 'Tertunda',
-    edge: 'bg-warning',
-  },
+const getTheme = (status, t) => {
+  const STATUS_THEMES = {
+    completed: {
+      ring: 'ring-1 ring-success/40 hover:ring-success/70',
+      icon: Check,
+      iconBg: 'bg-success-light text-success-fg',
+      badge: 'bg-success-light text-success-fg',
+      label: t('curriculum.completed', 'Selesai'),
+      edge: 'bg-success',
+    },
+    active: {
+      ring: 'ring-2 ring-tertiary/50 hover:ring-tertiary shadow-[0_0_0_3px_rgb(var(--tertiary)/0.12)]',
+      icon: Play,
+      iconBg: 'bg-tertiary text-white',
+      badge: 'bg-tertiary text-white',
+      label: t('curriculum.start', 'Mulai'),
+      edge: 'bg-tertiary',
+    },
+    locked: {
+      ring: 'ring-1 ring-border-subtle hover:ring-secondary/40 opacity-80',
+      icon: Lock,
+      iconBg: 'bg-surface-1 text-subtle-readable',
+      badge: 'bg-surface-1 text-secondary',
+      label: t('curriculum.locked', 'Terkunci'),
+      edge: 'bg-border-default',
+    },
+    review: {
+      ring: 'ring-1 ring-info/40 hover:ring-info/70',
+      icon: Circle,
+      iconBg: 'bg-info-light text-info-fg',
+      badge: 'bg-info-light text-info-fg',
+      label: t('curriculum.review', 'Review'),
+      edge: 'bg-info',
+    },
+    pending: {
+      ring: 'ring-1 ring-warning/40 hover:ring-warning/70',
+      icon: Clock,
+      iconBg: 'bg-warning-light text-warning-fg',
+      badge: 'bg-warning-light text-warning-fg',
+      label: t('curriculum.pending', 'Tertunda'),
+      edge: 'bg-warning',
+    },
+  }
+  return STATUS_THEMES[status] || STATUS_THEMES.locked
 }
 
 export function TopicNode({ data, selected }) {
+  const { t } = useTranslation();
   const status = data?.status || 'locked'
   // Defensive: any unrecognized status (e.g. a future enum value) falls
   // back to the locked theme instead of throwing.
-  const theme = STATUS_THEMES[status] || STATUS_THEMES.locked
+  const theme = getTheme(status, t)
 
   const StatusIcon = theme.icon
 

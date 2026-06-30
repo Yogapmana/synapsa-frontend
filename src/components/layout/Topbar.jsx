@@ -72,7 +72,7 @@ const Topbar = () => {
           aria-label="Breadcrumb"
         >
           <span className="font-display font-semibold text-tertiary shrink-0 tracking-tight">
-            PLA
+            Synapsa
           </span>
           {breadcrumbs.map((crumb, idx) => (
             <React.Fragment key={idx}>

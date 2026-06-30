@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 import { Star, Sparkles, Trophy, X, ArrowRight } from 'lucide-react';
 
 /**
@@ -73,6 +74,7 @@ const Confetti = () => {
 };
 
 export default function LevelUpCelebration({ levelUp, onClose }) {
+  const { t } = useTranslation();
   // ESC closes the modal — same a11y pattern as StreakCelebration.
   useEffect(() => {
     if (!levelUp) return;
@@ -192,7 +194,7 @@ export default function LevelUpCelebration({ levelUp, onClose }) {
                 whileTap={{ scale: 0.98 }}
                 className="w-full inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-tertiary text-white text-sm font-label font-semibold hover:bg-tertiary-dark transition-colors shadow-warm-sm"
               >
-                Lanjutkan Belajar
+                {t('gamification.continue_learning', 'Lanjutkan Belajar')}
                 <ArrowRight size={15} />
               </motion.button>
 

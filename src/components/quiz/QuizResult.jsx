@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion, useReducedMotion, useMotionValue, useTransform, animate } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { CheckCircle2, XCircle, ChevronDown, ChevronUp, Sparkles, Trophy, RefreshCw, BookOpen } from 'lucide-react';
@@ -19,6 +20,7 @@ import { useCompleteTopic } from '@/hooks/useLearning';
  *  - Bigger celebratory moment for passing
  */
 export function QuizResult({ result, questions, topicId, sessionId, onRetry }) {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const completeTopic = useCompleteTopic();
   const { percentage, correct_answers, total_questions } = result;
@@ -203,7 +205,7 @@ export function QuizResult({ result, questions, topicId, sessionId, onRetry }) {
               className="w-full rounded-xl font-label"
             >
               <BookOpen className="size-4" />
-              Kembali ke Materi
+              {t('quiz.back_to_material', 'Kembali ke Materi')}
             </Button>
             <Button
               size="lg"
@@ -218,8 +220,8 @@ export function QuizResult({ result, questions, topicId, sessionId, onRetry }) {
               className="w-full rounded-xl font-label gap-2 shadow-warm-md"
             >
               {isPassed
-                ? 'Lanjut Topik Berikutnya'
-                : 'Lulus Kuis (Min 60%) untuk Lanjut'}
+                ? t('quiz.next_topic', 'Lanjut Topik Berikutnya')
+                : t('quiz.pass_to_continue', 'Lulus Kuis (Min 60%) untuk Lanjut')}
             </Button>
             <Button
               variant="ghost"
