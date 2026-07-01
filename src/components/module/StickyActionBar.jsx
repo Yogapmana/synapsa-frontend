@@ -6,6 +6,7 @@ import { useSubmitSignal } from '@/hooks/useProgress'
 import { cn } from '@/lib/utils'
 import MaterialRating from './MaterialRating'
 import SelfAssessment from './SelfAssessment'
+import { PdfExportButton } from './PdfExportButton'
 
 /**
  * StickyActionBar — bottom action bar for the module reading page.
@@ -80,10 +81,9 @@ export default function StickyActionBar({ module, sessionId, topicId }) {
             />
           </div>
 
-          {/* RIGHT — primary action: Tandai Selesai.
-              The Tanya Tutor button is gone — chat is opened via the
-              FloatingChatButton on the right side of the page. */}
+          {/* RIGHT — primary action: Tandai Selesai & Export PDF. */}
           <div className="flex sm:flex-col sm:items-stretch gap-2 shrink-0">
+            <PdfExportButton module={module} sessionId={sessionId} topicId={topicId} />
             <button
               onClick={handleComplete}
               disabled={completing}

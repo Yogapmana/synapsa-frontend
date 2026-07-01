@@ -7,10 +7,20 @@ import { Check, Copy, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 
+function extractText(node) {
+  if (typeof node === 'string') return node;
+  if (typeof node === 'number') return String(node);
+  if (Array.isArray(node)) return node.map(extractText).join('');
+  if (node && node.props && node.props.children) {
+    return extractText(node.props.children);
+  }
+  return '';
+}
+
 function CodeBlock({ inline, className, children, ...props }) {
   const [copied, setCopied] = useState(false)
   const match = /language-(\w+)/.exec(className || '')
-  const code = String(children).replace(/\n$/, '')
+  const code = extractText(children).replace(/\n$/, '')
 
   const handleCopy = async () => {
     try {
@@ -22,7 +32,11 @@ function CodeBlock({ inline, className, children, ...props }) {
     }
   }
 
-  if (inline) {
+  // Treat as inline if it's explicitly inline OR if it's a very short single-line string (max 2 words)
+  const wordCount = code.trim().split(/\s+/).length;
+  const isActuallyInline = inline || (!code.includes('\n') && wordCount <= 2);
+
+  if (isActuallyInline) {
     return (
       <code
         className={cn(

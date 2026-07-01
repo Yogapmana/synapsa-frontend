@@ -17,6 +17,7 @@ import { getRagasSummary } from '../api/chat';
 import ContinueLearningHero from '../components/dashboard/ContinueLearningHero';
 import RecentActivity from '../components/dashboard/RecentActivity';
 import FeedbackBanner from '../components/dashboard/FeedbackBanner';
+import LearningAnalytics from '../components/dashboard/LearningAnalytics';
 import { Skeleton } from '../components/ui/skeleton';
 
 const stagger = {
@@ -275,6 +276,11 @@ export default function Dashboard() {
             // widget fetches via the api directly — see RAGASWidget.jsx
           />
         </motion.div>
+      )}
+
+      {/* Analytics Charts */}
+      {topics.length > 0 && (
+        <LearningAnalytics topics={topics} quizHistory={quizHistory} />
       )}
 
       {/* 4. Recent Activity — full width */}
