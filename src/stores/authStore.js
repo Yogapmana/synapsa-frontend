@@ -201,5 +201,13 @@ if (typeof window !== 'undefined') {
       user: storedSession.user,
       isAuthenticated: true,
     })
+    const restoredStreak = storedSession.user?.current_streak
+    if (typeof restoredStreak === 'number') {
+      try {
+        useLearningStore.getState().setStreak(restoredStreak)
+      } catch (err) {
+        // non-fatal
+      }
+    }
   }
 }

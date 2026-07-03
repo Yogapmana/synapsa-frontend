@@ -6,9 +6,10 @@ import * as z from 'zod'
 import { Sparkles, Loader2, Eye, EyeOff, Brain, BookOpen, MessageSquare } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { cn } from '@/lib/utils'
-import { register as registerApi } from '@/api/auth'
+import { register as registerApi, googleLogin as googleLoginApi } from '@/api/auth'
 import { useAuthStore } from '@/stores/authStore'
 import { useQueryClient } from '@tanstack/react-query'
+import { GoogleLogin } from '@react-oauth/google'
 
 const registerSchema = z.object({
   username: z.string()
@@ -283,6 +284,41 @@ export default function Register() {
               </button>
             </form>
 
+            <div className="relative my-6">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-border/60" />
+              </div>
+              <div className="relative flex justify-center text-xs">
+                <span className="bg-surface px-3 text-secondary">atau</span>
+              </div>
+            </div>
+
+            <div className="flex justify-center mt-4">
+              <GoogleLogin
+                onSuccess={async (credentialResponse) => {
+                  try {
+                    setError(null)
+                    const response = await googleLoginApi(credentialResponse.credential)
+                    const login = useAuthStore.getState().login
+                    useAuthStore.getState().logout()
+                    queryClient.clear()
+                    login(response.access_token, response.user, response.streak)
+                    navigate('/dashboard')
+                  } catch (err) {
+                    setError(err.response?.data?.detail || 'Pendaftaran Google gagal.')
+                  }
+                }}
+                onError={() => {
+                  setError('Pendaftaran Google dibatalkan.')
+                }}
+                shape="rectangular"
+                theme="outline"
+                size="large"
+                width="100%"
+                text="signup_with"
+              />
+            </div>
+          
             <p className="text-sm text-center text-secondary mt-6">
               Sudah punya akun?{' '}
               <Link to="/login" className="text-tertiary hover:text-tertiary-light font-semibold transition-colors">

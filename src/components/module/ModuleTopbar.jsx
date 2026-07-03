@@ -22,7 +22,7 @@ import { useTranslation } from 'react-i18next'
  *    so the topbar reads as a clear "header" without being a
  *    hard card glued on the page.
  */
-export default function ModuleTopbar({ module, scrollContainerRef }) {
+export default function ModuleTopbar({ module, topic, scrollContainerRef }) {
   const { t } = useTranslation();
   const [showQuizButton, setShowQuizButton] = useState(false)
   const { topicId } = useParams()
@@ -48,27 +48,18 @@ export default function ModuleTopbar({ module, scrollContainerRef }) {
 
   const estimatedMinutes = module?.estimated_read_minutes ?? 0
 
-  // Pseudo "topic number" — derived from the URL id (last 2 chars of
-  // the topic hash, padded to 2 digits). This gives the user a sense
-  // of where they are in the curriculum without us needing to fetch
-  // the full topic list. A real implementation could pull this from
-  // useTopics() and pass it as a prop.
+  // Topic number in "week.day" format (e.g. "1.1", "2.3")
   const topicNumber = (() => {
-    if (!topicId) return null
-    const hash = String(topicId).split('-').pop() || topicId
-    const num = parseInt(String(hash).replace(/\D/g, '').slice(-2) || '0', 10)
-    return num > 0 ? String(num).padStart(2, '0') : null
+    const wk = topic?.week_number
+    const dy = topic?.day_number
+    if (wk != null && dy != null) return `${wk}.${dy}`
+    return null
   })()
 
   return (
     <div className="sticky top-0 z-30 backdrop-blur-md bg-neutral/85 pt-2 md:pt-3">
-      {/* Full-width row — NO max-w / NO mx-auto.
-          The topbar sits inside the main content area (left of the
-          420px chat panel), and we want the back button + title to
-          anchor to the LEFT EDGE of that area, not to the center
-          of the page. */}
       <div className="flex h-14 items-center gap-2.5 px-4 md:px-6 pb-2">
-        {/* Back button — at the very left */}
+        {/* Back button */}
         <Link
           to="/curriculum"
           aria-label="Kembali ke kurikulum"
@@ -82,7 +73,7 @@ export default function ModuleTopbar({ module, scrollContainerRef }) {
           <ChevronLeft size={18} />
         </Link>
 
-        {/* Book icon — small decorative anchor next to the title */}
+        {/* Book icon */}
         <div
           className="hidden sm:flex size-7 items-center justify-center rounded-lg bg-tertiary/10 text-tertiary shrink-0"
           aria-hidden="true"
@@ -90,13 +81,11 @@ export default function ModuleTopbar({ module, scrollContainerRef }) {
           <BookOpen className="size-3.5" />
         </div>
 
-        {/* Title block — eyebrow ABOVE the title, both LEFT-aligned.
-            No max-w on the title (let it size to content) so the
-            block doesn't "float" in the middle of empty space. */}
+        {/* Title block */}
         <div className="min-w-0 shrink text-left">
           <div className="hidden md:flex items-center gap-1.5 mb-0.5">
             <span className="text-[10px] font-label uppercase tracking-[0.18em] text-tertiary font-bold whitespace-nowrap">
-              {topicNumber ? t('module.topic_number', { number: topicNumber }) : t('module.topic')}
+              {topicNumber ? t('module.topic_number', { number: topicNumber, defaultValue: `Topic ${topicNumber}` }) : t('module.topic', 'Topic')}
             </span>
             <span className="size-1 rounded-full bg-tertiary/40" aria-hidden="true" />
             <span className="text-[10px] font-label uppercase tracking-[0.18em] text-secondary/70 whitespace-nowrap">

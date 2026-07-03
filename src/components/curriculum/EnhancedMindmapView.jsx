@@ -3,7 +3,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Brain,
   Sparkles,
-  Lightbulb,
   AlertCircle,
   AlertTriangle,
 } from 'lucide-react';
@@ -25,15 +24,15 @@ function buildEnhancedMarkdown(payload) {
   let md = `# ${payload.course_title || 'Mindmap'}\n`;
   
   payload.themes.forEach(theme => {
-    // Theme
-    md += `## ${theme.emoji ? theme.emoji + ' ' : ''}${theme.label || 'Tema'}\n`;
+    // Theme — no emoji
+    md += `## ${theme.label || 'Tema'}\n`;
     
     (theme.concepts || []).forEach(concept => {
-      // Concept
-      md += `### ${concept.emoji ? concept.emoji + ' ' : ''}${concept.label || 'Konsep'}\n`;
+      // Concept — no emoji
+      md += `### ${concept.label || 'Konsep'}\n`;
       
       (concept.key_points || []).forEach(kp => {
-        // Key point
+        // Key point — label only, description as hover/tooltip context
         let content = kp.label || 'Poin';
         if (kp.description) {
           content += `: ${kp.description}`;
@@ -119,12 +118,66 @@ export default function EnhancedMindmapView({ sessionId }) {
       if (!mmRef.current) {
         mmRef.current = Markmap.create(svgRef.current, {
           autoFit: true,
-          style: (id) => `
-            .markmap-node text { fill: rgb(var(--primary)); font-family: Inter, sans-serif; font-weight: 500; }
-            .markmap-node circle { fill: rgb(var(--surface-0)); stroke: rgb(var(--tertiary)); stroke-width: 2px; }
-            .markmap-link { stroke: rgb(var(--border-default)); stroke-width: 1.5px; }
-          `
+          initialExpandLevel: 2,
+          spacingVertical: 12,
+          spacingHorizontal: 120,
+          paddingX: 16,
+          nodeMinHeight: 28,
         }, root);
+        
+        // Inject custom CSS for boxed nodes
+        const styleEl = document.createElementNS('http://www.w3.org/2000/svg', 'style');
+        styleEl.textContent = `
+          .markmap-node > rect {
+            rx: 8;
+            ry: 8;
+            stroke-width: 1.5;
+            stroke-opacity: 0.5;
+            fill-opacity: 0.08;
+          }
+          .markmap-node[data-depth="0"] > rect {
+            fill: #b45309;
+            stroke: #b45309;
+            fill-opacity: 0.12;
+          }
+          .markmap-node[data-depth="1"] > rect {
+            fill: #0369a1;
+            stroke: #0369a1;
+            fill-opacity: 0.08;
+          }
+          .markmap-node[data-depth="2"] > rect {
+            fill: #15803d;
+            stroke: #15803d;
+            fill-opacity: 0.06;
+          }
+          .markmap-node[data-depth="3"] > rect,
+          .markmap-node[data-depth="4"] > rect {
+            fill: #6b7280;
+            stroke: #d1d5db;
+            fill-opacity: 0.04;
+          }
+          .markmap-node text {
+            font-family: 'Inter', system-ui, sans-serif;
+            font-weight: 500;
+            font-size: 14px;
+          }
+          .markmap-node[data-depth="0"] text {
+            font-weight: 700;
+            font-size: 16px;
+          }
+          .markmap-node[data-depth="1"] text {
+            font-weight: 600;
+            font-size: 14px;
+          }
+          .markmap-node circle {
+            stroke-width: 2;
+          }
+          .markmap-link {
+            stroke-width: 1.8;
+            stroke-opacity: 0.35;
+          }
+        `;
+        svgRef.current.prepend(styleEl);
         
         // Add toolbar
         if (toolbarRef.current) {

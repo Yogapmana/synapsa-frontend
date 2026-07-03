@@ -1,6 +1,7 @@
 import ReactDOM from 'react-dom/client'
 import React from 'react'
 import { MotionConfig } from 'framer-motion'
+import { GoogleOAuthProvider } from '@react-oauth/google'
 import App from './App'
 import './index.css'
 import './i18n'
@@ -24,7 +25,9 @@ const motionDefaults = {
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <MotionConfig reducedMotion="user" transition={motionDefaults}>
-      <App />
+      <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID || 'dummy_client_id'}>
+        <App />
+      </GoogleOAuthProvider>
     </MotionConfig>
   </React.StrictMode>,
 )

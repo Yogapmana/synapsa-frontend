@@ -19,3 +19,8 @@ export function register({ username, email, password }) {
 export function getMe() {
   return api.get('/auth/me').then((response) => response.data)
 }
+
+export function googleLogin(credential) {
+  return api.post('/auth/google', { credential })
+    .then((response) => response.data)
+}

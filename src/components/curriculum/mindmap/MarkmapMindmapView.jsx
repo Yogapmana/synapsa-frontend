@@ -55,7 +55,7 @@ function buildMarkmapMarkdown(nodes, edges, fallbackCourseTitle) {
     let label = n.label || '';
     if (n.kind === 'cluster') return `M${n.week_number}: ${label}`;
     if (n.kind === 'topic') return `${n.day_number ? n.day_number + '. ' : ''}${label}`;
-    if (n.kind === 'resource') return `🔗 ${label}`;
+    if (n.kind === 'resource') return label;
     return label;
   };
 
@@ -113,18 +113,71 @@ export default function MarkmapMindmapView({ sessionId, courseTitle }) {
       if (!mmRef.current) {
         mmRef.current = Markmap.create(svgRef.current, {
           autoFit: true,
-          style: (id) => `
-            .markmap-node text { fill: rgb(var(--primary)); font-family: Inter, sans-serif; font-weight: 500; }
-            .markmap-node circle { fill: rgb(var(--surface-0)); stroke: rgb(var(--tertiary)); stroke-width: 2px; }
-            .markmap-link { stroke: rgb(var(--border-default)); stroke-width: 1.5px; }
-          `
+          initialExpandLevel: 2,
+          spacingVertical: 12,
+          spacingHorizontal: 120,
+          paddingX: 16,
+          nodeMinHeight: 28,
         }, root)
+        
+        // Inject custom CSS for boxed nodes
+        const styleEl = document.createElementNS('http://www.w3.org/2000/svg', 'style')
+        styleEl.textContent = `
+          .markmap-node > rect {
+            rx: 8;
+            ry: 8;
+            stroke-width: 1.5;
+            stroke-opacity: 0.5;
+            fill-opacity: 0.08;
+          }
+          .markmap-node[data-depth="0"] > rect {
+            fill: #b45309;
+            stroke: #b45309;
+            fill-opacity: 0.12;
+          }
+          .markmap-node[data-depth="1"] > rect {
+            fill: #0369a1;
+            stroke: #0369a1;
+            fill-opacity: 0.08;
+          }
+          .markmap-node[data-depth="2"] > rect {
+            fill: #15803d;
+            stroke: #15803d;
+            fill-opacity: 0.06;
+          }
+          .markmap-node[data-depth="3"] > rect,
+          .markmap-node[data-depth="4"] > rect {
+            fill: #6b7280;
+            stroke: #d1d5db;
+            fill-opacity: 0.04;
+          }
+          .markmap-node text {
+            font-family: 'Inter', system-ui, sans-serif;
+            font-weight: 500;
+            font-size: 14px;
+          }
+          .markmap-node[data-depth="0"] text {
+            font-weight: 700;
+            font-size: 16px;
+          }
+          .markmap-node[data-depth="1"] text {
+            font-weight: 600;
+            font-size: 14px;
+          }
+          .markmap-node circle {
+            stroke-width: 2;
+          }
+          .markmap-link {
+            stroke-width: 1.8;
+            stroke-opacity: 0.35;
+          }
+        `
+        svgRef.current.prepend(styleEl)
         
         // Add toolbar
         if (toolbarRef.current) {
           toolbarRef.current.innerHTML = ''
           const { el } = Toolbar.create(mmRef.current)
-          // Add custom classes to toolbar if needed
           el.className = cn(el.className, 'absolute bottom-4 right-4 !z-10 shadow-warm-md rounded-xl overflow-hidden')
           toolbarRef.current.appendChild(el)
         }

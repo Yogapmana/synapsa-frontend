@@ -211,7 +211,7 @@ export default function Module() {
       {/* Article container — flex-1 takes remaining width. */}
       <div className="flex-1 min-w-0 flex flex-col relative">
         <ReadingProgressBar scrollContainerRef={scrollContainerRef} />
-        <ModuleTopbar module={module} scrollContainerRef={scrollContainerRef} />
+        <ModuleTopbar module={module} topic={currentTopic} scrollContainerRef={scrollContainerRef} />
 
         <ReadingTracker
           sessionId={sessionId}
