@@ -229,26 +229,6 @@ const Sidebar = () => {
           ))}
         </nav>
 
-        {/* ── Streak badge (when expanded AND streak > 0) ── */}
-        <AnimatePresence>
-          {!sidebarCollapsed && streak > 0 && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.2 }}
-              className="px-3 pb-3 overflow-hidden shrink-0"
-            >
-              <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl bg-tertiary/[0.07]">
-                <Flame size={15} className="text-tertiary" fill="currentColor" />
-                <span className="text-sm font-semibold text-tertiary">
-                  {t('sidebar.streak_days', { count: streak })}
-                </span>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
         {/* ── User profile + logout (footer) ── */}
         <div className="p-2.5 shrink-0 shadow-[inset_0_1px_0_rgba(58,41,22,0.06)]">
           <div

@@ -280,7 +280,7 @@ export default function Dashboard() {
 
       {/* Analytics Charts */}
       {topics.length > 0 && (
-        <LearningAnalytics topics={topics} quizHistory={quizHistory} />
+        <LearningAnalytics topics={topics} quizHistory={quizHistory} sessionId={activeSession?.id} />
       )}
 
       {/* 4. Recent Activity — full width */}

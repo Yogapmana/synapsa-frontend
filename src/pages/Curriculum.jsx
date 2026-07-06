@@ -232,11 +232,6 @@ export default function Curriculum() {
                 label={t('curriculum.mindmap', 'Peta Konsep')}
               />
             </div>
-            {streak > 0 && (
-              <StatusBadge variant="accent" icon={Flame} size="lg">
-                {streak} {t('sidebar.streak_days', 'hari berturut')}
-              </StatusBadge>
-            )}
           </div>
         }
       />

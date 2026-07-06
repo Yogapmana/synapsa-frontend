@@ -5,7 +5,9 @@ import { getHistory } from '@/api/chat';
 import { getQuizHistoryByTopic } from '@/api/quiz';
 import { PdfExportTemplate } from './PdfExportTemplate';
 
-export const PdfExportButton = ({ module, sessionId, topicId }) => {
+import { cn } from '@/lib/utils';
+
+export const PdfExportButton = ({ module, sessionId, topicId, className }) => {
   const [isExporting, setIsExporting] = useState(false);
   const [chatHistory, setChatHistory] = useState(null);
   const [quizHistory, setQuizHistory] = useState(null);
@@ -72,7 +74,10 @@ export const PdfExportButton = ({ module, sessionId, topicId }) => {
       <button
         onClick={handleExport}
         disabled={isExporting}
-        className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 hover:text-primary transition-colors disabled:opacity-50"
+        className={cn(
+          "flex items-center justify-center gap-2 px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 hover:text-primary transition-colors disabled:opacity-50",
+          className
+        )}
       >
         {isExporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
         <span className="hidden sm:inline">{isExporting ? 'Memproses...' : 'Ekspor PDF'}</span>

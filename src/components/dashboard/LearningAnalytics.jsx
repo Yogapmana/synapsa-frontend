@@ -1,12 +1,11 @@
 import React, { useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { 
   ResponsiveContainer, 
   BarChart, 
   Bar, 
   LineChart, 
   Line, 
-  AreaChart, 
-  Area,
   XAxis, 
   YAxis, 
   CartesianGrid, 
@@ -15,56 +14,39 @@ import {
 } from 'recharts';
 import { useTranslation } from 'react-i18next';
 import { format, parseISO } from 'date-fns';
-import { id } from 'date-fns/locale';
+import { id as idLocale } from 'date-fns/locale';
+import { getDailyStudyTime } from '../../api/progress';
 
-export default function LearningAnalytics({ topics, quizHistory }) {
+export default function LearningAnalytics({ topics, quizHistory, sessionId }) {
   const { t } = useTranslation();
 
-  // 1. Prepare Daily Study Time Data (Bar Chart)
-  // Combines reading duration from completed topics and time spent from quizzes
+  // 1. Fetch actual daily study time from backend
+  const { data: rawStudyTime = [] } = useQuery({
+    queryKey: ['daily-study-time', sessionId],
+    queryFn: () => getDailyStudyTime(sessionId, 30),
+    enabled: !!sessionId,
+    staleTime: 60_000,
+  });
+
+  // Format for chart — last 7 active days
   const studyTimeData = useMemo(() => {
-    const dailyMap = {};
-
-    // Process completed topics
-    topics.forEach(topic => {
-      if (topic.status === 'completed' && topic.completed_at) {
-        try {
-          const dateStr = format(parseISO(topic.completed_at), 'yyyy-MM-dd');
-          if (!dailyMap[dateStr]) dailyMap[dateStr] = 0;
-          dailyMap[dateStr] += topic.duration_minutes || 0;
-        } catch (e) { /* ignore invalid dates */ }
-      }
-    });
-
-    // Process quiz attempts
-    quizHistory.forEach(quiz => {
-      if (quiz.created_at) {
-        try {
-          const dateStr = format(parseISO(quiz.created_at), 'yyyy-MM-dd');
-          if (!dailyMap[dateStr]) dailyMap[dateStr] = 0;
-          dailyMap[dateStr] += Math.round((quiz.time_spent_seconds || 0) / 60);
-        } catch (e) { /* ignore */ }
-      }
-    });
-
-    // Sort by date and format for Recharts
-    return Object.keys(dailyMap)
-      .sort()
-      .map(dateStr => {
-        const dateObj = parseISO(dateStr);
+    return rawStudyTime
+      .map(entry => {
+        const dateObj = parseISO(entry.date);
         return {
-          fullDate: dateStr,
-          label: format(dateObj, 'd MMM', { locale: id }), // e.g. "12 Jun"
-          minutes: dailyMap[dateStr],
+          fullDate: entry.date,
+          label: format(dateObj, 'd MMM', { locale: idLocale }),
+          reading: entry.reading_minutes,
+          quiz: entry.quiz_minutes,
+          total: entry.total_minutes,
         };
       })
-      .slice(-7); // only show the last 7 active days
-  }, [topics, quizHistory]);
+      .slice(-7);
+  }, [rawStudyTime]);
 
 
-  // 2. Prepare Mastery Progress Data (Line/Area Chart)
+  // 2. Prepare Mastery Progress Data (Line Chart)
   const masteryData = useMemo(() => {
-    // We only want completed topics that have a mastery_score
     const completedTopics = topics
       .filter(t => t.status === 'completed' && t.completed_at)
       .sort((a, b) => new Date(a.completed_at) - new Date(b.completed_at));
@@ -72,7 +54,6 @@ export default function LearningAnalytics({ topics, quizHistory }) {
     let masteryHistory = [];
     
     completedTopics.forEach(topic => {
-      // Use short title for X-Axis (e.g. max 15 chars)
       let shortTitle = topic.title.length > 15 
         ? topic.title.substring(0, 15) + '...' 
         : topic.title;
@@ -85,7 +66,6 @@ export default function LearningAnalytics({ topics, quizHistory }) {
       });
     });
 
-    // To prevent clutter, limit to last 10 topics
     return masteryHistory.slice(-10);
   }, [topics]);
 
@@ -96,7 +76,7 @@ export default function LearningAnalytics({ topics, quizHistory }) {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 w-full">
       
-      {/* Chart 1: Daily Study Time */}
+      {/* Chart 1: Daily Study Time (stacked bar: reading + quiz) */}
       <div className="card-base p-6 flex flex-col h-full">
         <h3 className="text-lg font-bold text-primary mb-1">
           {t('analytics.study_time_title', 'Waktu Belajar Harian')}
@@ -120,20 +100,38 @@ export default function LearningAnalytics({ topics, quizHistory }) {
                 <YAxis 
                   axisLine={false} 
                   tickLine={false} 
-                  tick={{ fontSize: 12, fill: '#6B7280' }} 
+                  tick={{ fontSize: 12, fill: '#6B7280' }}
+                  label={{ value: 'menit', angle: -90, position: 'insideLeft', style: { fontSize: 11, fill: '#9CA3AF' } }}
                 />
                 <Tooltip 
                   cursor={{ fill: 'rgba(59, 130, 246, 0.05)' }}
                   contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                  formatter={(value) => [`${value} menit`, 'Durasi']}
+                  formatter={(value, name) => {
+                    const label = name === 'reading' ? 'Membaca Modul' : 'Mengerjakan Kuis';
+                    return [`${value} menit`, label];
+                  }}
                   labelStyle={{ color: '#374151', fontWeight: 'bold', marginBottom: '4px' }}
                 />
+                <Legend 
+                  iconType="circle" 
+                  wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }}
+                  formatter={(value) => value === 'reading' ? 'Membaca Modul' : 'Kuis'}
+                />
                 <Bar 
-                  dataKey="minutes" 
+                  dataKey="reading" 
+                  stackId="study"
                   fill="#3B82F6" 
+                  radius={[0, 0, 0, 0]} 
+                  barSize={32}
+                  name="reading"
+                />
+                <Bar 
+                  dataKey="quiz" 
+                  stackId="study"
+                  fill="#8B5CF6" 
                   radius={[4, 4, 0, 0]} 
                   barSize={32}
-                  name="Durasi"
+                  name="quiz"
                 />
               </BarChart>
             </ResponsiveContainer>

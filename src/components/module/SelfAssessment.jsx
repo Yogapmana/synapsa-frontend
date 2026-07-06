@@ -4,10 +4,22 @@ import { useDebounce } from '@/hooks/useDebounce'
 
 const LABELS = ['Tidak yakin sama sekali', 'Kurang yakin', 'Cukup yakin', 'Yakin', 'Sangat yakin']
 
-export default function SelfAssessment({ sessionId, topicId, onAssess }) {
-  const [value, setValue] = useState(3)
+export default function SelfAssessment({ sessionId, topicId, initialValue, onAssess }) {
+  // Convert 0-1 ratio from backend to 1-5 slider value, default to 3
+  const defaultVal = initialValue !== undefined && initialValue !== null 
+    ? Math.round(initialValue * 5) 
+    : 3;
+    
+  const [value, setValue] = useState(defaultVal)
   const debouncedValue = useDebounce(value, 500)
   const { mutate: submitSignal } = useSubmitSignal()
+
+  useEffect(() => {
+    if (initialValue !== undefined && initialValue !== null) {
+      // Don't override if user already changed it (we can just trust initial load here)
+      setValue(Math.round(initialValue * 5) || 1)
+    }
+  }, [initialValue])
 
   useEffect(() => {
     if (debouncedValue) {

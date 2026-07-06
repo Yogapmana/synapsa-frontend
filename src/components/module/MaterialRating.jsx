@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { cn } from '@/lib/utils'
 import { useSubmitSignal } from '@/hooks/useProgress'
 import { ThumbsUp, Meh, ThumbsDown } from 'lucide-react'
@@ -9,9 +9,16 @@ const OPTIONS = [
   { value: 0.0, label: 'Tidak Paham', icon: ThumbsDown, activeClass: 'feedback-pill-active-danger' },
 ]
 
-export default function MaterialRating({ sessionId, topicId, onRate }) {
-  const [selected, setSelected] = useState(null)
+export default function MaterialRating({ sessionId, topicId, initialValue, onRate }) {
+  const [selected, setSelected] = useState(initialValue || null)
   const { mutate: submitSignal } = useSubmitSignal()
+
+  // Update selected if initialValue is loaded later
+  useEffect(() => {
+    if (initialValue !== undefined && initialValue !== null) {
+      setSelected(initialValue)
+    }
+  }, [initialValue])
 
   const handleClick = (option) => {
     setSelected(option.value)
