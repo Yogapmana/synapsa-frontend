@@ -94,15 +94,27 @@ export function TopicNode({ topic }) {
       </div>
 
       <div className="flex-1 min-w-0">
-        <h4
-          className={cn(
-            'text-sm font-semibold leading-snug',
-            'line-clamp-2',
-            topic.status === 'locked' ? 'text-secondary' : 'text-primary'
+        <div className="flex items-center gap-2">
+          <h4
+            className={cn(
+              'text-sm font-semibold leading-snug',
+              'line-clamp-2',
+              topic.status === 'locked' ? 'text-secondary' : 'text-primary'
+            )}
+          >
+            {topic.title}
+          </h4>
+          {topic.has_remedial && (
+            <span className="hidden sm:inline-block px-1.5 py-0.5 text-[9px] font-bold bg-red-500/10 text-red-600 border border-red-500/20 rounded shrink-0 uppercase tracking-wider">
+              Remedial
+            </span>
           )}
-        >
-          {topic.title}
-        </h4>
+          {topic.has_deep_dive && (
+            <span className="hidden sm:inline-block px-1.5 py-0.5 text-[9px] font-bold bg-tertiary/10 text-tertiary border border-tertiary/20 rounded shrink-0 uppercase tracking-wider">
+              Pengayaan
+            </span>
+          )}
+        </div>
         {topic.description && (
           <p
             title={topic.description}

@@ -141,6 +141,38 @@ function ModuleArticle({ module }) {
           </div>
         </section>
       )}
+
+      {/* Supplementary Materials (Remedial & Deep Dive) */}
+      {(module.remedial_markdown || module.deep_dive_markdown) && (
+        <section className="mt-12 pt-8 border-t border-border">
+          <div className="mb-5">
+            <span className="eyebrow">Materi Tambahan</span>
+          </div>
+          <div className="flex flex-col sm:flex-row gap-4">
+            {module.remedial_markdown && (
+              <a 
+                href={`/module/${module.topic_id}/remedial`}
+                className="flex-1 rounded-xl border border-red-500/20 bg-red-500/10 p-5 hover:bg-red-500/20 transition-colors"
+              >
+                <h3 className="font-display font-bold text-red-600 dark:text-red-400 mb-2">Materi Remedial Tersedia</h3>
+                <p className="text-sm text-secondary mb-4">Pelajari kembali konsep dasar yang terlewat pada kuis sebelumnya.</p>
+                <span className="text-sm font-semibold text-red-600 dark:text-red-400">Buka Remedial →</span>
+              </a>
+            )}
+            
+            {module.deep_dive_markdown && (
+              <a 
+                href={`/module/${module.topic_id}/deep-dive`}
+                className="flex-1 rounded-xl border border-tertiary/20 bg-tertiary/10 p-5 hover:bg-tertiary/20 transition-colors"
+              >
+                <h3 className="font-display font-bold text-tertiary mb-2">Materi Pengayaan (Deep Dive)</h3>
+                <p className="text-sm text-secondary mb-4">Eksplorasi studi kasus teknis dan materi tingkat lanjut untuk topik ini.</p>
+                <span className="text-sm font-semibold text-tertiary">Buka Pengayaan →</span>
+              </a>
+            )}
+          </div>
+        </section>
+      )}
     </article>
   )
 }

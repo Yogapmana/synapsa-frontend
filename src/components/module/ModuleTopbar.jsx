@@ -106,6 +106,28 @@ export default function ModuleTopbar({ module, topic, scrollContainerRef }) {
 
         {/* Right cluster — reading time + (after 80%) quiz button */}
         <div className="flex items-center gap-2 shrink-0">
+          
+          {/* Supplementary material indicators */}
+          {module?.remedial_markdown && (
+            <Link 
+              to={`/module/${module.topic_id}/remedial`}
+              title="Materi Remedial Tersedia"
+              className="hidden sm:inline-flex items-center gap-1 text-[11px] font-bold text-red-600 bg-red-500/10 border border-red-500/20 px-2 py-1 rounded-lg hover:bg-red-500/20 transition-colors"
+            >
+              Remedial
+            </Link>
+          )}
+
+          {module?.deep_dive_markdown && (
+            <Link 
+              to={`/module/${module.topic_id}/deep-dive`}
+              title="Materi Pengayaan Tersedia"
+              className="hidden sm:inline-flex items-center gap-1 text-[11px] font-bold text-tertiary bg-tertiary/10 border border-tertiary/20 px-2 py-1 rounded-lg hover:bg-tertiary/20 transition-colors"
+            >
+              Pengayaan
+            </Link>
+          )}
+
           {estimatedMinutes > 0 && (
             <span className="hidden sm:inline-flex items-center gap-1.5 text-xs text-secondary font-label tabular-nums px-2.5 py-1 rounded-lg bg-bg-secondary/40 border border-border/40">
               <Clock className="size-3.5" aria-hidden="true" />

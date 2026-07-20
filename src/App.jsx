@@ -15,6 +15,8 @@ const Register = lazy(() => import('./pages/Auth/Register'))
 const Dashboard = lazy(() => import('./pages/Dashboard'))
 const Curriculum = lazy(() => import('./pages/Curriculum'))
 const Module = lazy(() => import('./pages/Module'))
+const Remedial = lazy(() => import('./pages/Remedial'))
+const DeepDive = lazy(() => import('./pages/DeepDive'))
 const Chat = lazy(() => import('./pages/Chat'))
 const Quiz = lazy(() => import('./pages/Quiz'))
 const QuizHistory = lazy(() => import('./pages/QuizHistory'))
@@ -189,6 +191,30 @@ function AppRoutes() {
               <SessionGuard>
                 <ProtectedApp>
                   <Module />
+                </ProtectedApp>
+              </SessionGuard>
+            </ErrorBoundary>
+          }
+        />
+        <Route
+          path="/module/:topicId/remedial"
+          element={
+            <ErrorBoundary>
+              <SessionGuard>
+                <ProtectedApp>
+                  <Remedial />
+                </ProtectedApp>
+              </SessionGuard>
+            </ErrorBoundary>
+          }
+        />
+        <Route
+          path="/module/:topicId/deep-dive"
+          element={
+            <ErrorBoundary>
+              <SessionGuard>
+                <ProtectedApp>
+                  <DeepDive />
                 </ProtectedApp>
               </SessionGuard>
             </ErrorBoundary>

@@ -8,6 +8,7 @@ import { ConfettiEffect } from './ConfettiEffect';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Button } from '@/components/ui/button';
 import { useCompleteTopic } from '@/hooks/useLearning';
+import { CooldownTimer } from '@/pages/Quiz';
 
 /**
  * QuizResult — the final score reveal.
@@ -204,34 +205,77 @@ export function QuizResult({ result, questions, topicId, sessionId, onRetry }) {
               onClick={() => navigate(`/module/${topicId}`)}
               className="w-full rounded-xl font-label"
             >
-              <BookOpen className="size-4" />
+              <BookOpen className="size-4 mr-2" />
               {t('quiz.back_to_material', 'Kembali ke Materi')}
             </Button>
-            <Button
-              size="lg"
-              variant="tertiary"
-              onClick={async () => {
-                if (sessionId) {
-                  await completeTopic.mutateAsync({ sessionId, topicId });
-                }
-                navigate('/curriculum');
-              }}
-              disabled={!isPassed}
-              className="w-full rounded-xl font-label gap-2 shadow-warm-md"
-            >
-              {isPassed
-                ? t('quiz.next_topic', 'Lanjut Topik Berikutnya')
-                : t('quiz.pass_to_continue', 'Lulus Kuis (Min 60%) untuk Lanjut')}
-            </Button>
-            <Button
-              variant="ghost"
-              size="lg"
-              onClick={onRetry}
-              className="w-full sm:col-span-2 rounded-xl font-label gap-2"
-            >
-              <RefreshCw className="size-4" />
-              Ulangi Kuis
-            </Button>
+
+            {percentage > 85 ? (
+              <Button
+                variant="default"
+                size="lg"
+                onClick={() => window.open(`/module/${topicId}/deep-dive`, "_blank")}
+                className="w-full rounded-xl font-label bg-amber-500 hover:bg-amber-600 text-white"
+              >
+                <Sparkles className="size-4 mr-2" />
+                Jelajahi Materi Deep Dive
+              </Button>
+            ) : (
+              <Button
+                size="lg"
+                variant="tertiary"
+                onClick={async () => {
+                  if (sessionId) {
+                    await completeTopic.mutateAsync({ sessionId, topicId });
+                  }
+                  navigate('/curriculum');
+                }}
+                disabled={!isPassed}
+                className="w-full rounded-xl font-label shadow-warm-md"
+              >
+                {isPassed
+                  ? t('quiz.next_topic', 'Lanjut Topik Berikutnya')
+                  : t('quiz.pass_to_continue', 'Lulus Kuis (Min 60%) untuk Lanjut')}
+              </Button>
+            )}
+
+            {percentage > 85 && (
+              <Button
+                size="lg"
+                variant="tertiary"
+                onClick={async () => {
+                  if (sessionId) {
+                    await completeTopic.mutateAsync({ sessionId, topicId });
+                  }
+                  navigate('/curriculum');
+                }}
+                disabled={!isPassed}
+                className="w-full sm:col-span-2 rounded-xl font-label shadow-warm-md"
+              >
+                Lanjut Topik Berikutnya
+              </Button>
+            )}
+
+            {percentage <= 85 && (
+              result.cooldown_remaining_seconds > 0 ? (
+                <div className="col-span-1 sm:col-span-2 mt-4">
+                  <CooldownTimer 
+                    initialSeconds={result.cooldown_remaining_seconds} 
+                    onComplete={() => window.location.reload()} 
+                    topicId={topicId}
+                  />
+                </div>
+              ) : (
+                <Button
+                  variant="ghost"
+                  size="lg"
+                  onClick={onRetry}
+                  className="w-full sm:col-span-2 rounded-xl font-label gap-2"
+                >
+                  <RefreshCw className="size-4" />
+                  Ulangi Kuis
+                </Button>
+              )
+            )}
           </motion.div>
         </div>
       </div>

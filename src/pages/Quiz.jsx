@@ -5,8 +5,50 @@ import { useToast } from '@/hooks/use-toast';
 import { useLearningStore } from '@/stores/learningStore';
 import { QuizCard } from '@/components/quiz/QuizCard';
 import { QuizResult } from '@/components/quiz/QuizResult';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Clock, BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+
+export function CooldownTimer({ initialSeconds, onComplete, topicId }) {
+  const [seconds, setSeconds] = useState(initialSeconds);
+
+  useEffect(() => {
+    if (seconds <= 0) {
+      onComplete();
+      return;
+    }
+    const timer = setInterval(() => setSeconds(s => s - 1), 1000);
+    return () => clearInterval(timer);
+  }, [seconds, onComplete]);
+
+  const mins = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  
+  return (
+    <div className="flex flex-col items-center justify-center space-y-4 p-8 bg-card rounded-xl border border-border">
+      <Clock className="w-12 h-12 text-primary animate-pulse" />
+      <h3 className="text-xl font-bold text-primary">Jeda Kuis Aktif</h3>
+      <p className="text-secondary text-center max-w-md">
+        Nilai kuis Anda sebelumnya di bawah 60%. Silakan baca dan pelajari materi remedial yang baru saja digenerate untuk Anda.
+      </p>
+      
+      <div className="mt-4 w-full max-w-xs">
+        <Button 
+          variant="default" 
+          className="w-full text-lg h-12 mb-4 bg-tertiary hover:bg-tertiary/90 text-white"
+          onClick={() => window.open(`/module/${topicId}/remedial`, "_blank")}
+        >
+          <BookOpen className="w-5 h-5 mr-2" />
+          Buka Materi Remedial
+        </Button>
+      </div>
+
+      <div className="text-3xl font-mono font-bold text-foreground bg-muted px-6 py-3 rounded-lg">
+        {String(mins).padStart(2, '0')}:{String(secs).padStart(2, '0')}
+      </div>
+      <p className="text-sm text-tertiary">Kuis akan terbuka secara otomatis setelah waktu habis.</p>
+    </div>
+  );
+}
 
 export default function Quiz() {
   const { topicId } = useParams();
@@ -39,6 +81,19 @@ export default function Quiz() {
   }
 
   if (error || !quizData) {
+    const errorDetail = error?.response?.data?.detail;
+    if (errorDetail && errorDetail.message === 'cooldown') {
+      return (
+        <div className="flex flex-col h-[calc(100vh-4rem)] items-center justify-center p-4">
+          <CooldownTimer 
+            initialSeconds={errorDetail.remaining_seconds} 
+            onComplete={() => refetch()} 
+            topicId={topicId}
+          />
+        </div>
+      );
+    }
+
     return (
       <div className="flex flex-col h-[calc(100vh-4rem)] items-center justify-center text-center p-4">
         <h2 className="text-xl font-bold text-primary mb-2">Gagal Memuat Kuis</h2>
