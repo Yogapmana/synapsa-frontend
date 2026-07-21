@@ -11,6 +11,7 @@ import { useAuthStore } from '../../stores/authStore';
 import { useUIStore } from '../../stores/uiStore';
 import { useLearningStore } from '../../stores/learningStore';
 import { cn } from '../../utils/cn';
+import { NotificationDropdown } from './NotificationDropdown';
 
 /**
  * Topbar — global navigation bar.
@@ -123,14 +124,8 @@ const Topbar = () => {
           </motion.div>
         )}
 
-        {/* Notification bell */}
-        <button
-          className="relative p-2 rounded-xl text-secondary hover:text-primary hover:bg-secondary/10 transition-colors duration-200"
-          aria-label="Notifikasi"
-        >
-          <Bell size={19} />
-          <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-tertiary ring-2 ring-neutral/60" />
-        </button>
+        {/* Notification Dropdown */}
+        <NotificationDropdown />
 
         {/* Subtle dot separator — softer than the previous solid line */}
         <span

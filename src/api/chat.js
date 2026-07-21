@@ -39,9 +39,7 @@ export function uploadDocument(file, session_id, topic_id = null) {
   }).then((response) => response.data);
 }
 
-export function getRagasSummary(sessionId) {
-  return api.get(`/chat/ragas-summary/${sessionId}`).then((response) => response.data);
-}
+
 
 export function getChatSessions() {
   return api.get('/chat/sessions').then((response) => response.data);

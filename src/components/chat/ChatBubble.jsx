@@ -3,7 +3,7 @@ import { motion, useReducedMotion } from 'framer-motion';
 import { Copy, Check, RefreshCw } from 'lucide-react';
 import Avatar from '@/components/common/Avatar';
 import MarkdownRenderer from '@/components/common/MarkdownRenderer';
-import RAGASBadge from './RAGASBadge';
+
 import SourceAccordion from './SourceAccordion';
 import { format } from 'date-fns';
 
@@ -61,16 +61,6 @@ const ChatBubble = ({ message, isAI, sources, timestamp, isLastAiMessage = false
             <SourceAccordion sources={sources} />
           )}
 
-          {/* RAGAS quality badge (assistant messages only) */}
-          {isAI && messageId && (
-            <div className="mt-1.5 ml-1">
-              <RAGASBadge
-                faithfulness={rag_faithfulness}
-                answer_relevancy={rag_answer_relevancy}
-                status={rag_faithfulness == null && rag_answer_relevancy == null ? 'scoring' : 'scored'}
-              />
-            </div>
-          )}
 
           {isAI && (
             <div className="flex items-center gap-1 mt-1.5 ml-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity duration-200">

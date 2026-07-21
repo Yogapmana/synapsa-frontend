@@ -12,8 +12,7 @@ import GreetingHero from '../components/dashboard/GreetingHero';
 import { StatCards } from '../components/data/StatCards';
 import StreakCard from '../components/gamification/StreakCard';
 import XpCard from '../components/gamification/XpCard';
-import RAGASWidget from '../components/data/RAGASWidget';
-import { getRagasSummary } from '../api/chat';
+
 import ContinueLearningHero from '../components/dashboard/ContinueLearningHero';
 import RecentActivity from '../components/dashboard/RecentActivity';
 import FeedbackBanner from '../components/dashboard/FeedbackBanner';
@@ -267,16 +266,6 @@ export default function Dashboard() {
           <XpCard />
         </motion.div>
       </div>
-
-      {/* 3b. RAGAS quality widget (RAG faithfulness + relevancy) */}
-      {activeSession?.id && (
-        <motion.div variants={fadeUp}>
-          <RAGASWidget
-            sessionId={activeSession.id}
-            // widget fetches via the api directly — see RAGASWidget.jsx
-          />
-        </motion.div>
-      )}
 
       {/* Analytics Charts */}
       {topics.length > 0 && (

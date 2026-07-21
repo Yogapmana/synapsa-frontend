@@ -76,6 +76,7 @@ function GeneratingState() {
 
 function ModuleArticle({ module }) {
   const { t } = useTranslation();
+  const [activeVideoUrl, setActiveVideoUrl] = useState(null)
   const sources = module.sources ?? []
   const courses = module.courses ?? []
 
@@ -115,6 +116,8 @@ function ModuleArticle({ module }) {
               <ResourceCard
                 key={`${source.url || source.title}-${i}`}
                 source={source}
+                activeVideoUrl={activeVideoUrl}
+                onToggleVideo={setActiveVideoUrl}
               />
             ))}
           </div>
