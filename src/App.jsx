@@ -98,6 +98,10 @@ function SessionGuard({ children }) {
   }
 
   if (location.pathname === '/onboarding' && hasSession) {
+    const isNewRequest = new URLSearchParams(location.search).get('new') === 'true'
+    if (isNewRequest) {
+      return children
+    }
     const sessionStatus = fetchedSession?.status || activeSession?.status
     if (sessionStatus === 'processing') {
       return children

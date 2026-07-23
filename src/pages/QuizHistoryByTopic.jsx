@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useActiveSession } from '@/hooks/useLearning'
@@ -22,19 +22,17 @@ import {
   RotateCcw,
   Calendar,
   Inbox,
-  Sparkles,
   X,
   HelpCircle,
   BarChart3,
-  Target,
   Zap,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { format } from 'date-fns'
-import { id as idLocale } from 'date-fns/locale'
+import { id as idLocale, enUS } from 'date-fns/locale'
 
 function getScorePill(percentage, t) {
-  if (!t) return { variant: "neutral", label: "—" }
+  if (!t) return { variant: 'neutral', label: '—' }
   if (percentage == null) return { variant: 'neutral', label: '—' }
   if (percentage >= 90) return { variant: 'success', label: t('quiz.excellent', 'Sangat Baik') }
   if (percentage >= 75) return { variant: 'info', label: t('quiz.good', 'Baik') }
@@ -42,18 +40,18 @@ function getScorePill(percentage, t) {
   return { variant: 'danger', label: t('quiz.needs_review', 'Perlu Review') }
 }
 
-function formatTimeSpent(seconds) {
+function formatTimeSpent(seconds, t) {
   if (seconds == null || seconds <= 0) return null
   const minutes = Math.round(seconds / 60)
-  if (minutes < 1) return '< 1 mnt'
-  return `${minutes} mnt`
+  if (minutes < 1) return t('quiz.less_than_1m', '< 1 mnt')
+  return t('quiz.mins_format', { mins: minutes, defaultValue: `${minutes} mnt` })
 }
 
-function formatDate(iso, withTime = true) {
+function formatDate(iso, withTime = true, locale) {
   if (!iso) return '—'
   try {
     const pattern = withTime ? 'd MMM yyyy, HH:mm' : 'd MMM yyyy'
-    return format(new Date(iso), pattern, { locale: idLocale })
+    return format(new Date(iso), pattern, { locale })
   } catch {
     return '—'
   }
@@ -70,18 +68,20 @@ const stagger = {
 }
 
 export default function QuizHistoryByTopic() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const { topicId } = useParams()
+  const navigate = useNavigate()
   const { data: session } = useActiveSession()
   const sessionId = session?.id
   const decodedTopicId = topicId ? decodeURIComponent(topicId) : null
   const { data, isLoading } = useQuizHistoryByTopic(sessionId, decodedTopicId)
   const completeTopic = useCompleteTopic()
+  const dateLocale = i18n.language?.startsWith('en') ? enUS : idLocale
 
   const [reviewAttempt, setReviewAttempt] = useState(null)
 
   const attempts = data?.attempts || []
-  const topicTitle = data?.topic_title || 'Topik'
+  const topicTitle = data?.topic_title || t('quiz.untitled_topic', 'Topik tanpa judul')
 
   const summary = useMemo(() => {
     if (attempts.length === 0) {
@@ -93,17 +93,35 @@ export default function QuizHistoryByTopic() {
     const best = Math.max(...percentages)
     const trend = (() => {
       if (latest > first + 5)
-        return { icon: TrendingUp, color: 'text-success', label: 'Membaik' }
+        return {
+          icon: TrendingUp,
+          color: 'text-success',
+          label: t('quiz.trend_improving', 'Membaik'),
+          short: t('quiz.trend_up_short', 'Naik'),
+          tone: 'success',
+        }
       if (latest < first - 5)
-        return { icon: TrendingDown, color: 'text-danger', label: 'Menurun' }
-      return { icon: Minus, color: 'text-secondary', label: 'Stabil' }
+        return {
+          icon: TrendingDown,
+          color: 'text-danger',
+          label: t('quiz.trend_declining', 'Menurun'),
+          short: t('quiz.trend_down_short', 'Turun'),
+          tone: 'danger',
+        }
+      return {
+        icon: Minus,
+        color: 'text-secondary',
+        label: t('quiz.trend_stable', 'Stabil'),
+        short: t('quiz.dash', '—'),
+        tone: 'tertiary',
+      }
     })()
     const totalTime = attempts.reduce(
       (s, a) => s + (a.time_spent_seconds || 0),
       0
     )
     return { best, latest, first, trend, totalTime }
-  }, [attempts])
+  }, [attempts, t])
 
   const handleRetry = async () => {
     if (!decodedTopicId) return
@@ -115,12 +133,11 @@ export default function QuizHistoryByTopic() {
     } catch {
       // completeTopic may 409 if topic not completed
     }
-    window.location.href = `/quiz/${encodeURIComponent(decodedTopicId)}`
+    navigate(`/quiz/${encodeURIComponent(decodedTopicId)}`)
   }
 
   return (
     <div className="max-w-5xl mx-auto">
-      {/* Back link */}
       <Link
         to="/progress"
         className="inline-flex items-center gap-1.5 text-sm text-secondary hover:text-primary font-label transition-colors mb-6 group"
@@ -129,21 +146,22 @@ export default function QuizHistoryByTopic() {
         {t('quiz.back_to_history', 'Kembali ke Riwayat Kuis')}
       </Link>
 
-      {/* ─── Hero Section ─── */}
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, ease: [0.25, 1, 0.5, 1] }}
         className="relative rounded-3xl p-6 md:p-8 mb-8 overflow-hidden bg-gradient-to-br from-surface-1 via-surface-0 to-surface-1 border border-border-subtle"
       >
-        {/* Decorative blobs */}
         <div aria-hidden="true" className="absolute -right-20 -top-20 w-64 h-64 rounded-full bg-tertiary/[0.04] blur-3xl pointer-events-none" />
         <div aria-hidden="true" className="absolute -left-16 -bottom-16 w-48 h-48 rounded-full bg-warning/[0.05] blur-3xl pointer-events-none" />
 
         <div className="relative z-10">
           <PageHeader
             title={topicTitle}
-            subtitle={`Riwayat kuis per topik — ${attempts.length} percobaan.`}
+            subtitle={t('quiz.history_by_topic_subtitle', {
+              count: attempts.length,
+              defaultValue: `Riwayat kuis per topik — ${attempts.length} percobaan.`,
+            })}
             icon={Trophy}
             actions={
               attempts.length > 0 ? (
@@ -156,7 +174,7 @@ export default function QuizHistoryByTopic() {
                   )}
                 >
                   <RotateCcw size={14} />
-                  Coba Lagi
+                  {t('quiz.try_again', 'Coba Lagi')}
                 </button>
               ) : null
             }
@@ -173,9 +191,9 @@ export default function QuizHistoryByTopic() {
       ) : attempts.length === 0 ? (
         <EmptyState
           icon={Inbox}
-          title={t("quiz.no_attempts", "Belum ada percobaan kuis")}
-          description={t('quiz.no_attempts_desc', "Klik 'Coba Lagi' untuk mengerjakan kuis topik ini.")}
-          actionLabel={t("quiz.start_quiz", "Mulai Kuis")}
+          title={t('quiz.history_by_topic_no_attempts_title', 'Belum ada percobaan kuis')}
+          description={t('quiz.history_by_topic_no_attempts_desc', "Klik 'Coba Lagi' untuk mengerjakan kuis topik ini.")}
+          actionLabel={t('quiz.try_again', 'Coba Lagi')}
           onAction={handleRetry}
         />
       ) : (
@@ -185,61 +203,49 @@ export default function QuizHistoryByTopic() {
           animate="visible"
           className="space-y-6"
         >
-          {/* ─── Stats Row ─── */}
           <motion.div variants={fadeUp} className="grid grid-cols-2 md:grid-cols-4 gap-3">
             <SummaryCard
               icon={Trophy}
-              label="Skor Terbaik"
+              label={t('quiz.best_score', 'SKOR TERBAIK')}
               value={`${summary.best}%`}
               tone="success"
             />
             <SummaryCard
               icon={Zap}
-              label="Skor Terbaru"
+              label={t('quiz.latest_score', 'SKOR TERBARU')}
               value={`${summary.latest}%`}
               tone="info"
             />
             <SummaryCard
               icon={BarChart3}
-              label="Total Percobaan"
+              label={t('quiz.total_attempts', 'TOTAL PERCOBAAN')}
               value={attempts.length}
               tone="tertiary"
             />
             <SummaryCard
               icon={summary.trend?.icon || Minus}
-              label={summary.trend?.label || 'Stabil'}
-              value={
-                summary.trend?.color === 'text-success'
-                  ? 'Naik'
-                  : summary.trend?.color === 'text-danger'
-                    ? 'Turun'
-                    : '—'
-              }
-              tone={
-                summary.trend?.color === 'text-success'
-                  ? 'success'
-                  : summary.trend?.color === 'text-danger'
-                    ? 'danger'
-                    : 'tertiary'
-              }
+              label={summary.trend?.label || t('quiz.trend_stable', 'Stabil')}
+              value={summary.trend?.short || t('quiz.dash', '—')}
+              tone={summary.trend?.tone || 'tertiary'}
             />
           </motion.div>
 
-          {/* ─── Score Progression ─── */}
           {attempts.length >= 2 && (
             <motion.div variants={fadeUp}>
               <ScoreProgression attempts={attempts} />
             </motion.div>
           )}
 
-          {/* ─── Attempt List ─── */}
           <motion.div variants={fadeUp} className="card-base overflow-hidden">
             <div className="p-5 flex items-center justify-between border-b border-border-subtle/60">
               <h2 className="font-display font-semibold text-primary">
-                Riwayat Percobaan
+                {t('quiz.attempt_history', 'Riwayat Percobaan')}
               </h2>
               <span className="text-xs text-secondary font-label px-2.5 py-1 rounded-lg bg-surface-2/60">
-                {t('quiz.entries_count', { count: attempts.length, defaultValue: `${attempts.length} entri` })}
+                {t('quiz.entries_count', {
+                  count: attempts.length,
+                  defaultValue: `${attempts.length} entri`,
+                })}
               </span>
             </div>
             <ol className="divide-y divide-border-subtle/60">
@@ -249,6 +255,7 @@ export default function QuizHistoryByTopic() {
                   attempt={a}
                   index={idx}
                   total={attempts.length}
+                  dateLocale={dateLocale}
                   onReview={() =>
                     setReviewAttempt({ attempt: a, number: idx + 1 })
                   }
@@ -259,13 +266,13 @@ export default function QuizHistoryByTopic() {
         </motion.div>
       )}
 
-      {/* Review modal */}
       <AnimatePresence>
         {reviewAttempt && (
           <ReviewModal
             attempt={reviewAttempt.attempt}
             attemptNumber={reviewAttempt.number}
             topicTitle={topicTitle}
+            dateLocale={dateLocale}
             onClose={() => setReviewAttempt(null)}
           />
         )}
@@ -274,7 +281,6 @@ export default function QuizHistoryByTopic() {
   )
 }
 
-/* ─── Summary Card ─── */
 function SummaryCard({ icon: Icon, label, value, tone = 'tertiary' }) {
   const toneClasses = {
     tertiary: 'bg-tertiary/8 text-tertiary',
@@ -299,8 +305,8 @@ function SummaryCard({ icon: Icon, label, value, tone = 'tertiary' }) {
   )
 }
 
-/* ─── Score Progression ─── */
 function ScoreProgression({ attempts }) {
+  const { t } = useTranslation()
   const percentages = attempts.map((a) => a.percentage ?? 0)
   const width = 600
   const height = 80
@@ -313,15 +319,13 @@ function ScoreProgression({ attempts }) {
   const pathD = points
     .map((pt, i) => `${i === 0 ? 'M' : 'L'} ${pt.x.toFixed(1)} ${pt.y.toFixed(1)}`)
     .join(' ')
-
-  // Create area fill path
   const areaD = `${pathD} L ${width} ${height} L 0 ${height} Z`
 
   return (
     <div className="card-base p-5 overflow-hidden">
       <div className="flex items-center justify-between mb-4">
         <h3 className="font-display font-semibold text-primary text-base">
-          Progres Skor
+          {t('quiz.score_progression', 'Progres Skor')}
         </h3>
         <div className="flex items-center gap-2 text-xs text-secondary font-label">
           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-surface-2/60">
@@ -337,9 +341,8 @@ function ScoreProgression({ attempts }) {
         viewBox={`-10 -15 ${width + 20} ${height + 25}`}
         className="w-full h-24"
         preserveAspectRatio="none"
-        aria-label="Score progression chart"
+        aria-label={t('quiz.score_progression', 'Progres Skor')}
       >
-        {/* Threshold line at 60% */}
         <line
           x1="0"
           x2={width}
@@ -350,13 +353,7 @@ function ScoreProgression({ attempts }) {
           strokeWidth="0.8"
           opacity="0.5"
         />
-        {/* Area fill */}
-        <path
-          d={areaD}
-          fill="rgb(var(--tertiary))"
-          opacity="0.06"
-        />
-        {/* Line */}
+        <path d={areaD} fill="rgb(var(--tertiary))" opacity="0.06" />
         <path
           d={pathD}
           fill="none"
@@ -365,7 +362,6 @@ function ScoreProgression({ attempts }) {
           strokeLinecap="round"
           strokeLinejoin="round"
         />
-        {/* Points */}
         {points.map((pt, i) => (
           <g key={i}>
             <circle
@@ -393,11 +389,10 @@ function ScoreProgression({ attempts }) {
   )
 }
 
-/* ─── Attempt Row ─── */
-function AttemptRow({ attempt, index, total, onReview }) {
-  const { t } = useTranslation();
+function AttemptRow({ attempt, index, total, dateLocale, onReview }) {
+  const { t } = useTranslation()
   const pill = getScorePill(attempt.percentage, t)
-  const time = formatTimeSpent(attempt.time_spent_seconds)
+  const time = formatTimeSpent(attempt.time_spent_seconds, t)
   const isLatest = index === total - 1
   const score = attempt.percentage ?? 0
 
@@ -408,7 +403,6 @@ function AttemptRow({ attempt, index, total, onReview }) {
         isLatest && 'bg-tertiary/[0.02]'
       )}
     >
-      {/* Attempt number badge */}
       <div
         className={cn(
           'w-12 h-12 rounded-2xl flex flex-col items-center justify-center shrink-0 font-bold tabular-nums transition-all',
@@ -418,30 +412,36 @@ function AttemptRow({ attempt, index, total, onReview }) {
         )}
       >
         <span className="text-[9px] uppercase tracking-wider font-label opacity-70">
-          Coba
+          {t('quiz.attempt_label', 'Coba')}
         </span>
         <span className="text-base leading-none">
           {attempt.attempt_number || index + 1}
         </span>
       </div>
 
-      {/* Content */}
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 mb-1 flex-wrap">
           <p className="text-sm font-semibold text-primary">
-            {t('quiz.score_percent', { score, defaultValue: `Skor ${score}%` })}
+            {t('quiz.score_percent', {
+              score,
+              defaultValue: `Skor ${score}%`,
+            })}
           </p>
           <StatusBadge variant={pill.variant}>{pill.label}</StatusBadge>
           {isLatest && (
             <span className="text-[10px] uppercase tracking-wider font-label font-semibold text-tertiary px-1.5 py-0.5 rounded-md bg-tertiary/8">
-              Terbaru
+              {t('quiz.latest', 'TERBARU')}
             </span>
           )}
         </div>
         <p className="text-xs text-secondary font-label flex items-center gap-2.5 flex-wrap">
           <span className="inline-flex items-center gap-1">
             <CheckCircle2 size={11} className="text-success" />
-            {t('quiz.correct_count', { correct: attempt.correct_answers, total: attempt.total_questions, defaultValue: `${attempt.correct_answers}/${attempt.total_questions} benar` })}
+            {t('quiz.correct_count', {
+              correct: attempt.correct_answers,
+              total: attempt.total_questions,
+              defaultValue: `${attempt.correct_answers}/${attempt.total_questions} benar`,
+            })}
           </span>
           {time && (
             <span className="inline-flex items-center gap-1">
@@ -449,12 +449,11 @@ function AttemptRow({ attempt, index, total, onReview }) {
             </span>
           )}
           <span className="inline-flex items-center gap-1">
-            <Calendar size={11} /> {formatDate(attempt.created_at)}
+            <Calendar size={11} /> {formatDate(attempt.created_at, true, dateLocale)}
           </span>
         </p>
       </div>
 
-      {/* Mini score bar */}
       <div className="hidden sm:flex flex-col items-end gap-1.5 w-20 shrink-0">
         <span className="text-xs font-label font-semibold text-primary tabular-nums">{score}%</span>
         <div className="w-full h-1.5 rounded-full bg-surface-2 overflow-hidden">
@@ -471,7 +470,6 @@ function AttemptRow({ attempt, index, total, onReview }) {
         </div>
       </div>
 
-      {/* Review button */}
       <button
         onClick={onReview}
         className={cn(
@@ -481,16 +479,15 @@ function AttemptRow({ attempt, index, total, onReview }) {
           'transition-all duration-200'
         )}
       >
-        Review
+        {t('quiz.review_btn', 'Review >')}
         <ChevronRight size={14} className="transition-transform group-hover:translate-x-0.5" />
       </button>
     </li>
   )
 }
 
-/* ─── Review Modal ─── */
-function ReviewModal({ attempt, attemptNumber, topicTitle, onClose }) {
-  const { t } = useTranslation();
+function ReviewModal({ attempt, attemptNumber, topicTitle, dateLocale, onClose }) {
+  const { t } = useTranslation()
   const {
     data: detail,
     isLoading: detailLoading,
@@ -511,7 +508,7 @@ function ReviewModal({ attempt, attemptNumber, topicTitle, onClose }) {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-neutral/40 backdrop-blur-sm p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-primary/45 p-4"
       onClick={onClose}
     >
       <motion.div
@@ -519,40 +516,47 @@ function ReviewModal({ attempt, attemptNumber, topicTitle, onClose }) {
         animate={{ opacity: 1, y: 0, scale: 1 }}
         exit={{ opacity: 0, y: 16, scale: 0.97 }}
         transition={{ type: 'spring', stiffness: 320, damping: 30 }}
-        className="bg-surface-0 rounded-2xl shadow-warm-xl border border-border-subtle w-full max-w-2xl max-h-[85vh] flex flex-col"
+        className="bg-surface rounded-2xl shadow-warm-xl border border-border w-full max-w-2xl max-h-[85vh] flex flex-col overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
-        <header className="flex items-start justify-between gap-3 p-5 border-b border-border-subtle/60">
+        <header className="flex items-start justify-between gap-3 p-5 border-b border-border bg-surface shrink-0">
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 mb-2">
-              <span className="text-[10px] font-label uppercase tracking-wider text-tertiary font-semibold px-2 py-0.5 rounded-md bg-tertiary/8">
-                Review Jawaban
+              <span className="text-[10px] font-label uppercase tracking-wider text-tertiary font-semibold px-2 py-0.5 rounded-md bg-neutral border border-tertiary/15">
+                {t('quiz.review_answers', 'Review Jawaban')}
               </span>
               <StatusBadge variant={pill.variant}>{pill.label}</StatusBadge>
             </div>
             <h2 className="font-display font-semibold text-lg text-primary leading-tight">
-              {t('quiz.attempt_title', { num: attemptNumber, defaultValue: `Percobaan #${attemptNumber}` })}
+              {t('quiz.attempt_title', {
+                num: attemptNumber,
+                defaultValue: `Percobaan #${attemptNumber}`,
+              })}
             </h2>
             <p className="text-xs text-secondary font-label mt-1 flex items-center gap-2 flex-wrap">
               <span>{topicTitle}</span>
               <span className="text-secondary/40">·</span>
-              <span>{formatDate(fullAttempt.created_at, false)}</span>
+              <span>{formatDate(fullAttempt.created_at, false, dateLocale)}</span>
               <span className="text-secondary/40">·</span>
-              <span className="font-semibold">{t('quiz.correct_count', { correct: correctAnswers, total: totalQuestions, defaultValue: `${correctAnswers}/${totalQuestions} benar` })}</span>
+              <span className="font-semibold">
+                {t('quiz.correct_count', {
+                  correct: correctAnswers,
+                  total: totalQuestions,
+                  defaultValue: `${correctAnswers}/${totalQuestions} benar`,
+                })}
+              </span>
             </p>
           </div>
           <button
             onClick={onClose}
-            aria-label="Tutup review"
-            className="p-2 rounded-xl text-secondary hover:text-primary hover:bg-surface-2/60 transition-colors shrink-0"
+            aria-label={t('quiz.close_review', 'Tutup review')}
+            className="p-2 rounded-xl text-secondary hover:text-primary hover:bg-neutral transition-colors shrink-0"
           >
             <X size={18} />
           </button>
         </header>
 
-        {/* Body */}
-        <div className="flex-1 overflow-y-auto p-5 space-y-3">
+        <div className="flex-1 overflow-y-auto p-5 space-y-3 bg-neutral">
           {detailLoading ? (
             <ReviewDetailSkeleton />
           ) : detailError ? (
@@ -564,34 +568,38 @@ function ReviewModal({ attempt, attemptNumber, topicTitle, onClose }) {
             <EmptyReviewState
               attempt={fullAttempt}
               topicId={fullAttempt?.topic_id}
+              dateLocale={dateLocale}
             />
           ) : (
             answers.map((a) => (
               <div
                 key={a.question_index}
                 className={cn(
-                  'rounded-xl border p-4 transition-colors',
+                  'rounded-xl border p-4 shadow-warm-xs',
                   a.is_correct
-                    ? 'border-success/20 bg-success-light/50 hover:bg-success-light'
-                    : 'border-danger/20 bg-danger-light/50 hover:bg-danger-light',
+                    ? 'border-success/25 bg-success-light'
+                    : 'border-danger/25 bg-danger-light',
                 )}
               >
                 <div className="flex items-center gap-2 mb-2">
                   {a.is_correct ? (
-                    <div className="w-6 h-6 rounded-lg bg-success/10 flex items-center justify-center">
+                    <div className="w-6 h-6 rounded-lg bg-surface flex items-center justify-center border border-success/20">
                       <CheckCircle2 size={14} className="text-success-fg" />
                     </div>
                   ) : (
-                    <div className="w-6 h-6 rounded-lg bg-danger/10 flex items-center justify-center">
+                    <div className="w-6 h-6 rounded-lg bg-surface flex items-center justify-center border border-danger/20">
                       <XCircle size={14} className="text-danger-fg" />
                     </div>
                   )}
                   <span className="text-xs font-label font-semibold text-primary">
-                    {t('quiz.question_num', { num: a.question_index + 1, defaultValue: `Pertanyaan ${a.question_index + 1}` })}
+                    {t('quiz.question_num', {
+                      num: a.question_index + 1,
+                      defaultValue: `Pertanyaan ${a.question_index + 1}`,
+                    })}
                   </span>
                   <span className={cn(
-                    'ml-auto text-[10px] font-label font-semibold uppercase tracking-wider px-2 py-0.5 rounded-md',
-                    a.is_correct ? 'bg-success/10 text-success-fg' : 'bg-danger/10 text-danger-fg'
+                    'ml-auto text-[10px] font-label font-semibold uppercase tracking-wider px-2 py-0.5 rounded-md border bg-surface',
+                    a.is_correct ? 'border-success/25 text-success-fg' : 'border-danger/25 text-danger-fg'
                   )}>
                     {a.is_correct ? t('quiz.correct', 'Benar') : t('quiz.incorrect', 'Salah')}
                   </span>
@@ -605,14 +613,18 @@ function ReviewModal({ attempt, attemptNumber, topicTitle, onClose }) {
 
                 <div className="space-y-1 text-sm">
                   <p className="text-primary">
-                    <span className="text-secondary text-xs font-label">Jawaban Anda: </span>
+                    <span className="text-secondary text-xs font-label">
+                      {t('quiz.your_answer', 'Jawaban Anda: ')}
+                    </span>
                     <span className={cn('font-semibold', a.is_correct ? 'text-success-fg' : 'text-danger-fg')}>
                       {a.selected || t('quiz.unanswered', '— tidak dijawab —')}
                     </span>
                   </p>
                   {!a.is_correct && (
                     <p className="text-primary">
-                      <span className="text-secondary text-xs font-label">Jawaban benar: </span>
+                      <span className="text-secondary text-xs font-label">
+                        {t('quiz.correct_answer', 'Jawaban benar: ')}
+                      </span>
                       <span className="font-semibold text-success-fg">
                         {a.correct}
                       </span>
@@ -629,17 +641,18 @@ function ReviewModal({ attempt, attemptNumber, topicTitle, onClose }) {
 }
 
 function ReviewDetailSkeleton() {
+  const { t } = useTranslation()
   return (
     <div
       className="space-y-3"
       role="status"
       aria-live="polite"
-      aria-label="Memuat detail jawaban"
+      aria-label={t('quiz.loading_detail', 'Memuat detail jawaban')}
     >
       {[0, 1, 2].map((i) => (
         <div
           key={i}
-          className="rounded-xl border border-border-subtle p-4 space-y-2.5"
+          className="rounded-xl border border-border bg-surface p-4 space-y-2.5"
         >
           <div className="flex items-center gap-2">
             <Skeleton className="size-4 rounded-full skeleton-shimmer" />
@@ -654,18 +667,20 @@ function ReviewDetailSkeleton() {
 }
 
 function ReviewErrorState({ error, topicId }) {
-  const { t } = useTranslation();
+  const { t } = useTranslation()
   return (
     <div className="flex flex-col items-center justify-center text-center py-10 px-4">
       <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-4 bg-danger-light text-danger-fg">
         <HelpCircle size={26} />
       </div>
       <h3 className="font-display font-semibold text-base text-primary mb-2">
-        Gagal memuat detail
+        {t('quiz.failed_load_detail', 'Gagal memuat detail')}
       </h3>
       <p className="text-sm text-secondary max-w-md leading-relaxed mb-5">
-        Tidak dapat mengambil detail percobaan ini dari server.
-        Coba tutup dan buka kembali modal Review.
+        {t(
+          'quiz.failed_load_detail_desc',
+          'Tidak dapat mengambil detail percobaan ini dari server. Coba tutup dan buka kembali modal Review.'
+        )}
       </p>
       {topicId && (
         <Link
@@ -680,8 +695,8 @@ function ReviewErrorState({ error, topicId }) {
   )
 }
 
-function EmptyReviewState({ attempt, topicId }) {
-  const { t } = useTranslation();
+function EmptyReviewState({ attempt, topicId, dateLocale }) {
+  const { t } = useTranslation()
   const total = attempt?.total_questions ?? 0
   const correct = attempt?.correct_answers ?? 0
   const isZeroQ = total === 0
@@ -704,22 +719,22 @@ function EmptyReviewState({ attempt, topicId }) {
       </h3>
 
       <p className="text-sm text-secondary max-w-md leading-relaxed mb-5">
-        {isZeroQ ? (
-          <>
-            {t('quiz.no_detail_zero_desc', "Percobaan ini terekam dengan 0 pertanyaan. Kemungkinan sistem gagal membuat soal kuis saat percobaan ini. Detail per-soal tidak bisa ditampilkan karena tidak ada soal yang dinilai.")}{' '}
-            
-          </>
-        ) : (
-          <>
-            {t('quiz.no_detail_desc', { correct, total, defaultValue: `Detail per-soal untuk percobaan ini belum terekam. Skor keseluruhan (${correct}/${total}) tetap tersimpan.` })}
-          </>
-        )}
+        {isZeroQ
+          ? t(
+              'quiz.no_detail_zero_desc',
+              'Percobaan ini terekam dengan 0 pertanyaan. Kemungkinan sistem gagal membuat soal kuis saat percobaan ini. Detail per-soal tidak bisa ditampilkan karena tidak ada soal yang dinilai.'
+            )
+          : t('quiz.no_detail_desc', {
+              correct,
+              total,
+              defaultValue: `Detail per-soal untuk percobaan ini belum terekam. Skor keseluruhan (${correct}/${total}) tetap tersimpan.`,
+            })}
       </p>
 
       <div className="flex flex-col items-center gap-2 text-xs text-text-subtle font-label">
         <span className="inline-flex items-center gap-1.5">
           <Calendar size={12} />
-          {formatDate(attempt?.created_at, false)}
+          {formatDate(attempt?.created_at, false, dateLocale)}
         </span>
         {topicId && (
           <Link

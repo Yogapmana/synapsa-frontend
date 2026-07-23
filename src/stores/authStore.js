@@ -146,6 +146,17 @@ export const useAuthStore = create((set, get) => ({
     set({ token: newToken })
   },
 
+  /** Merge profile fields into the current user and re-persist. */
+  updateUser: (partial) => {
+    const current = get().user
+    if (!current) return
+    const nextUser = { ...current, ...partial }
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem(USER_KEY, JSON.stringify(nextUser))
+    }
+    set({ user: nextUser })
+  },
+
   /** Dismiss the streak celebration modal (one-shot). */
   clearStreakCelebration: () => set({ pendingStreakCelebration: null }),
 

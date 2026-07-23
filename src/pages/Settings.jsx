@@ -1,25 +1,28 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { format } from 'date-fns'
 import {
   User,
   Mail,
   Clock3,
   Download,
-  RefreshCw,
   Trash2,
   Settings2,
   BookOpen,
   Bell,
   Shield,
-
   CheckCircle2,
   Loader2,
-  Sparkles,
+  Pencil,
+  X,
+  Languages,
+  CircleDot,
 } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
+import { useQueryClient } from '@tanstack/react-query'
 
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import PageHeader from '@/components/common/PageHeader'
 import {
   AlertDialog,
@@ -33,27 +36,56 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
 import { Switch } from '@/components/ui/switch'
-import api from '@/api/client'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import {
+  deleteAccount,
+  updateLanguagePreference,
+  updateProfile,
+} from '@/api/auth'
 import { getQuizHistory } from '@/api/quiz'
-import { getSession, getTopics } from '@/api/learning'
+import { deleteSession, getSession, getTopics } from '@/api/learning'
 import { cn } from '@/lib/utils'
 import { useAuthStore } from '@/stores/authStore'
 import { useLearningStore } from '@/stores/learningStore'
+import { useAllSessions } from '@/hooks/useLearning'
+import i18n from '@/i18n'
 
 /* Phase 5.7 — Settings simplified & polished.
  *
- * Changes vs the previous version:
- *  - Removed all "Coming Soon" placeholder buttons (clutter).
- *    Disabled controls are kept where needed; non-functional
- *    controls are simply not shown.
- *  - Removed the inline Save button + fake "Tersimpan" flash;
- *    dark-mode toggle and email/push switches save instantly
- *    (they're already wired to zustand/local state).
- *  - Cleaner section navigation: left rail on desktop, top
- *    horizontal scroll on mobile.
- *  - Visual treatment aligned with Phase 5 design system:
- *    eyebrow labels, decorative numerals, signature cards.
+ * Interactive tabs:
+ *  - Profil: editable username + language preference
+ *  - Belajar: list of sessions with per-item delete
+ *  - Notifikasi: functional email/push toggles (persisted locally)
+ *  - Data: export + confirmed delete account
  */
+
+const NOTIF_STORAGE_KEY = 'pla_notification_prefs'
+
+function readNotifPrefs() {
+  if (typeof window === 'undefined') return { email: true, push: false }
+  try {
+    const raw = window.localStorage.getItem(NOTIF_STORAGE_KEY)
+    if (!raw) return { email: true, push: false }
+    const parsed = JSON.parse(raw)
+    return {
+      email: typeof parsed.email === 'boolean' ? parsed.email : true,
+      push: typeof parsed.push === 'boolean' ? parsed.push : false,
+    }
+  } catch {
+    return { email: true, push: false }
+  }
+}
+
+function writeNotifPrefs(prefs) {
+  if (typeof window === 'undefined') return
+  window.localStorage.setItem(NOTIF_STORAGE_KEY, JSON.stringify(prefs))
+}
 
 function getSections(t) {
   return [
@@ -86,7 +118,7 @@ function ProfileAvatar({ initial }) {
   )
 }
 
-function FieldRow({ icon: Icon, label, value, muted = false }) {
+function FieldRow({ icon: Icon, label, value, muted = false, action }) {
   return (
     <div className="flex items-start gap-3.5 rounded-xl border border-border/60 bg-bg-secondary/40 p-4">
       <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-tertiary/10 text-tertiary">
@@ -105,24 +137,30 @@ function FieldRow({ icon: Icon, label, value, muted = false }) {
           {value}
         </p>
       </div>
+      {action}
     </div>
   )
 }
 
 function SettingSwitch({ icon: Icon, label, description, checked, onChange }) {
   return (
-    <div className="flex items-center justify-between gap-4 rounded-xl border border-border/60 bg-bg-secondary/40 p-4">
-      <div className="flex items-start gap-3 min-w-0">
+    <label className="flex cursor-pointer items-center justify-between gap-4 rounded-xl border border-border/60 bg-bg-secondary/40 p-4 transition-colors hover:border-tertiary/25">
+      <div className="flex min-w-0 items-center gap-3">
         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-tertiary/10 text-tertiary">
           <Icon className="h-4 w-4" />
         </div>
         <div className="min-w-0">
           <p className="text-sm font-semibold text-primary">{label}</p>
-          <p className="text-xs text-secondary mt-0.5">{description}</p>
+          <p className="mt-0.5 text-xs text-secondary">{description}</p>
         </div>
       </div>
-      <Switch checked={checked} onCheckedChange={onChange} />
-    </div>
+      <Switch
+        checked={checked}
+        onCheckedChange={onChange}
+        className="shrink-0"
+        aria-label={label}
+      />
+    </label>
   )
 }
 
@@ -155,19 +193,66 @@ function SectionCard({ eyebrow, title, subtitle, children, footer }) {
   )
 }
 
+function statusLabel(status, t) {
+  const map = {
+    active: t('settings.session_status_active', 'Aktif'),
+    ready: t('settings.session_status_ready', 'Siap'),
+    processing: t('settings.session_status_processing', 'Memproses'),
+  }
+  return map[status] || status || '—'
+}
+
+function statusTone(status) {
+  if (status === 'active' || status === 'ready') return 'text-success bg-success/10 border-success/20'
+  if (status === 'processing') return 'text-warning bg-warning/10 border-warning/20'
+  return 'text-secondary bg-secondary/10 border-border/60'
+}
+
 /* ─── Main ───────────────────────────────────────────────────────── */
 
 export default function Settings() {
-  const { t } = useTranslation()
+  const { t, i18n: i18nInstance } = useTranslation()
+  const queryClient = useQueryClient()
   const user = useAuthStore((state) => state.user)
+  const updateUser = useAuthStore((state) => state.updateUser)
+  const logout = useAuthStore((state) => state.logout)
   const activeSession = useLearningStore((state) => state.activeSession)
+  const setActiveSession = useLearningStore((state) => state.setActiveSession)
+
+  const { data: sessions = [], isLoading: sessionsLoading, refetch: refetchSessions } = useAllSessions()
+
   const [isExporting, setIsExporting] = useState(false)
-  const [isResetting, setIsResetting] = useState(false)
-  const [isDeleting, setIsDeleting] = useState(false)
-  const [emailNotif, setEmailNotif] = useState(true)
-  const [pushNotif, setPushNotif] = useState(false)
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false)
+  const [deleteAccountOpen, setDeleteAccountOpen] = useState(false)
+  const [deletingSessionId, setDeletingSessionId] = useState(null)
   const [activeSection, setActiveSection] = useState('profil')
   const [exportSuccess, setExportSuccess] = useState(false)
+
+  // Username edit
+  const [isEditingUsername, setIsEditingUsername] = useState(false)
+  const [usernameDraft, setUsernameDraft] = useState(user?.username || '')
+  const [isSavingUsername, setIsSavingUsername] = useState(false)
+  const [usernameError, setUsernameError] = useState('')
+  const [usernameSaved, setUsernameSaved] = useState(false)
+
+  // Language
+  const [isSavingLanguage, setIsSavingLanguage] = useState(false)
+  const currentLang = (user?.language_preference || i18nInstance.language || 'id').startsWith('en')
+    ? 'en'
+    : 'id'
+
+  // Notifications — fully interactive local state with persistence
+  const initialNotif = useMemo(() => readNotifPrefs(), [])
+  const [emailNotif, setEmailNotif] = useState(initialNotif.email)
+  const [pushNotif, setPushNotif] = useState(initialNotif.push)
+
+  useEffect(() => {
+    setUsernameDraft(user?.username || '')
+  }, [user?.username])
+
+  useEffect(() => {
+    writeNotifPrefs({ email: emailNotif, push: pushNotif })
+  }, [emailNotif, pushNotif])
 
   const profileInitial = useMemo(
     () => (user?.username?.[0] || 'U').toUpperCase(),
@@ -184,7 +269,16 @@ export default function Settings() {
         : session.duration || '—',
       level: session.level || '—',
     }
-  }, [activeSession])
+  }, [activeSession, t])
+
+  const sortedSessions = useMemo(() => {
+    if (!Array.isArray(sessions)) return []
+    return [...sessions].sort((a, b) => {
+      const da = a?.created_at ? new Date(a.created_at).getTime() : 0
+      const db = b?.created_at ? new Date(b.created_at).getTime() : 0
+      return db - da
+    })
+  }, [sessions])
 
   const exportProgress = useCallback(async () => {
     setIsExporting(true)
@@ -195,6 +289,7 @@ export default function Settings() {
         exported_at: new Date().toISOString(),
         user,
         active_session: activeSession,
+        sessions: sortedSessions,
       }
       if (sessionId) {
         const [session, topics, quizHistory] = await Promise.all([
@@ -220,18 +315,99 @@ export default function Settings() {
     } finally {
       setIsExporting(false)
     }
-  }, [activeSession, sessionSummary.id, user])
+  }, [activeSession, sessionSummary.id, sortedSessions, user])
 
-  const resetSession = useCallback(async () => {
-    if (!sessionSummary.id) return
-    setIsResetting(true)
-    try {
-      await api.delete(`/learning/${sessionSummary.id}`)
-      window.location.reload()
-    } finally {
-      setIsResetting(false)
+  const handleSaveUsername = useCallback(async () => {
+    const next = usernameDraft.trim()
+    setUsernameError('')
+    if (!next) {
+      setUsernameError(t('settings.username_required', 'Username tidak boleh kosong'))
+      return
     }
-  }, [sessionSummary.id])
+    if (next.length < 2) {
+      setUsernameError(t('settings.username_too_short', 'Username minimal 2 karakter'))
+      return
+    }
+    if (next === user?.username) {
+      setIsEditingUsername(false)
+      return
+    }
+
+    setIsSavingUsername(true)
+    try {
+      const updated = await updateProfile({ username: next })
+      updateUser({ username: updated.username })
+      setIsEditingUsername(false)
+      setUsernameSaved(true)
+      setTimeout(() => setUsernameSaved(false), 2000)
+    } catch (err) {
+      const detail = err?.response?.data?.detail
+      setUsernameError(
+        typeof detail === 'string'
+          ? detail
+          : t('settings.username_save_failed', 'Gagal menyimpan username')
+      )
+    } finally {
+      setIsSavingUsername(false)
+    }
+  }, [t, updateUser, user?.username, usernameDraft])
+
+  const handleCancelUsername = useCallback(() => {
+    setUsernameDraft(user?.username || '')
+    setUsernameError('')
+    setIsEditingUsername(false)
+  }, [user?.username])
+
+  const handleLanguageChange = useCallback(
+    async (lang) => {
+      if (!lang || lang === currentLang) return
+      setIsSavingLanguage(true)
+      try {
+        await i18n.changeLanguage(lang)
+        try {
+          const updated = await updateLanguagePreference(lang)
+          updateUser({ language_preference: updated.language_preference || lang })
+        } catch {
+          // UI language already switched; backend sync is best-effort
+          updateUser({ language_preference: lang })
+        }
+      } finally {
+        setIsSavingLanguage(false)
+      }
+    },
+    [currentLang, updateUser]
+  )
+
+  const handleDeleteSession = useCallback(
+    async (sessionId) => {
+      if (!sessionId) return
+      setDeletingSessionId(sessionId)
+      try {
+        await deleteSession(sessionId)
+        if (activeSession?.id === sessionId) {
+          setActiveSession(null)
+        }
+        await queryClient.invalidateQueries({ queryKey: ['sessions'] })
+        await queryClient.invalidateQueries({ queryKey: ['active-session'] })
+        await refetchSessions()
+      } finally {
+        setDeletingSessionId(null)
+      }
+    },
+    [activeSession?.id, queryClient, refetchSessions, setActiveSession]
+  )
+
+  const handleDeleteAccount = useCallback(async () => {
+    setIsDeletingAccount(true)
+    try {
+      await deleteAccount()
+      logout()
+      window.location.replace('/login')
+    } catch {
+      setIsDeletingAccount(false)
+      setDeleteAccountOpen(false)
+    }
+  }, [logout])
 
   const username = user?.username || 'Pengguna'
   const email = user?.email || '—'
@@ -239,7 +415,6 @@ export default function Settings() {
 
   return (
     <div className="mx-auto w-full max-w-5xl px-4 py-6 sm:px-6 lg:px-0 relative">
-      {/* Decorative numeral */}
       <span
         aria-hidden="true"
         className="absolute -top-2 -right-2 deco-num deco-num-secondary hidden md:block"
@@ -270,6 +445,7 @@ export default function Settings() {
             return (
               <button
                 key={section.id}
+                type="button"
                 onClick={() => setActiveSection(section.id)}
                 className={cn(
                   'group relative flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all text-left',
@@ -305,6 +481,7 @@ export default function Settings() {
             return (
               <button
                 key={section.id}
+                type="button"
                 onClick={() => setActiveSection(section.id)}
                 className={cn(
                   'flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium whitespace-nowrap transition-colors font-label shrink-0',
@@ -328,17 +505,136 @@ export default function Settings() {
               title={t('settings.profile', 'Profil')}
               subtitle={t('settings.profile_desc', 'Informasi akun yang terhubung dengan Synapsa.')}
               footer={
-                <div className="flex items-center gap-2 text-xs text-secondary font-label">
-                  <Sparkles className="size-3.5 text-tertiary" />
-                  {t('settings.profile_edit_soon', 'Edit profil akan segera tersedia')}
-                </div>
+                usernameSaved ? (
+                  <div className="flex items-center gap-2 text-xs text-success font-label">
+                    <CheckCircle2 className="size-3.5" />
+                    {t('settings.username_saved', 'Username disimpan')}
+                  </div>
+                ) : null
               }
             >
               <div className="flex flex-col gap-5 sm:flex-row sm:items-start">
                 <ProfileAvatar initial={profileInitial} />
                 <div className="flex-1 space-y-2.5 min-w-0">
-                  <FieldRow icon={User} label={t('settings.username', 'Username')} value={username} />
+                  {/* Editable username */}
+                  <div className="rounded-xl border border-border/60 bg-bg-secondary/40 p-4">
+                    <div className="flex items-start gap-3.5">
+                      <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-tertiary/10 text-tertiary">
+                        <User className="h-4 w-4" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[10px] font-label uppercase tracking-widest text-secondary">
+                          {t('settings.username', 'Username')}
+                        </p>
+                        {isEditingUsername ? (
+                          <div className="mt-2 space-y-2">
+                            <Input
+                              value={usernameDraft}
+                              onChange={(e) => setUsernameDraft(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') handleSaveUsername()
+                                if (e.key === 'Escape') handleCancelUsername()
+                              }}
+                              autoFocus
+                              maxLength={100}
+                              className="h-9 rounded-lg border-border bg-surface text-sm"
+                              aria-label={t('settings.username', 'Username')}
+                            />
+                            {usernameError && (
+                              <p className="text-xs text-danger">{usernameError}</p>
+                            )}
+                            <div className="flex flex-wrap items-center gap-2">
+                              <Button
+                                type="button"
+                                size="sm"
+                                onClick={handleSaveUsername}
+                                disabled={isSavingUsername}
+                                className="h-8 rounded-lg bg-tertiary hover:bg-tertiary-light text-white font-label gap-1.5"
+                              >
+                                {isSavingUsername ? (
+                                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                ) : (
+                                  <CheckCircle2 className="h-3.5 w-3.5" />
+                                )}
+                                {t('settings.save', 'Simpan')}
+                              </Button>
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="outline"
+                                onClick={handleCancelUsername}
+                                disabled={isSavingUsername}
+                                className="h-8 rounded-lg font-label gap-1.5"
+                              >
+                                <X className="h-3.5 w-3.5" />
+                                {t('settings.cancel', 'Batal')}
+                              </Button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="mt-0.5 flex items-center justify-between gap-3">
+                            <p className="truncate text-sm font-semibold text-primary">{username}</p>
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                setUsernameDraft(username)
+                                setUsernameError('')
+                                setIsEditingUsername(true)
+                              }}
+                              className="h-8 shrink-0 rounded-lg font-label gap-1.5"
+                            >
+                              <Pencil className="h-3.5 w-3.5" />
+                              {t('settings.edit', 'Edit')}
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
                   <FieldRow icon={Mail} label={t('settings.email', 'Email')} value={email} muted />
+
+                  {/* Language preference */}
+                  <div className="rounded-xl border border-border/60 bg-bg-secondary/40 p-4">
+                    <div className="flex items-start gap-3.5">
+                      <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-tertiary/10 text-tertiary">
+                        <Languages className="h-4 w-4" />
+                      </div>
+                      <div className="min-w-0 flex-1 space-y-2.5">
+                        <div>
+                          <p className="text-[10px] font-label uppercase tracking-widest text-secondary">
+                            {t('settings.language', 'Pengaturan Bahasa')}
+                          </p>
+                          <p className="text-xs text-secondary mt-0.5">
+                            {t('settings.language_desc', 'Bahasa antarmuka aplikasi')}
+                          </p>
+                        </div>
+                        <Select
+                          value={currentLang}
+                          onValueChange={handleLanguageChange}
+                          disabled={isSavingLanguage}
+                        >
+                          <SelectTrigger className="h-9 w-full max-w-xs rounded-lg border-border bg-surface text-sm">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="id">Bahasa Indonesia</SelectItem>
+                            <SelectItem value="en">English</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <div className="rounded-lg border border-border/50 bg-surface/60 px-3 py-2.5">
+                          <p className="text-xs leading-relaxed text-secondary">
+                            {t(
+                              'settings.language_note',
+                              'Catatan: Perubahan bahasa hanya berlaku untuk antarmuka dan modul yang akan dibuat. Modul yang sudah digenerate sebelumnya tidak akan berubah bahasa.'
+                            )}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </SectionCard>
@@ -348,59 +644,134 @@ export default function Settings() {
             <SectionCard
               eyebrow={sections[1].eyebrow}
               title={t('settings.learning', 'Belajar')}
-              subtitle={t('settings.learning_desc', 'Ringkasan sesi belajar aktif dan preferensi belajarmu.')}
+              subtitle={t('settings.learning_desc', 'Kelola semua sesi belajar aktif dan sebelumnya.')}
             >
-              <div className="grid gap-3 sm:grid-cols-3">
-                <FieldRow
-                  icon={BookOpen}
-                  label={t('settings.topic', 'Topik')}
-                  value={sessionSummary.topic}
-                  muted={!activeSession}
-                />
-                <FieldRow
-                  icon={Clock3}
-                  label={t('settings.duration', 'Durasi')}
-                  value={sessionSummary.duration}
-                  muted={!activeSession}
-                />
-                <FieldRow
-                  icon={User}
-                  label={t('settings.level', 'Level')}
-                  value={sessionSummary.level}
-                  muted={!activeSession}
-                />
-              </div>
+              {sessionsLoading ? (
+                <div className="flex items-center justify-center gap-2 py-10 text-sm text-secondary font-label">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  {t('settings.loading_sessions', 'Memuat sesi...')}
+                </div>
+              ) : sortedSessions.length === 0 ? (
+                <div className="rounded-xl border border-dashed border-border/70 bg-bg-secondary/30 px-4 py-10 text-center">
+                  <BookOpen className="mx-auto mb-3 h-8 w-8 text-secondary/50" />
+                  <p className="text-sm font-semibold text-primary">
+                    {t('settings.no_sessions_title', 'Belum ada sesi belajar')}
+                  </p>
+                  <p className="mt-1 text-xs text-secondary max-w-sm mx-auto">
+                    {t(
+                      'settings.no_sessions_desc',
+                      'Mulai sesi baru dari onboarding untuk membuat kurikulum personal.'
+                    )}
+                  </p>
+                </div>
+              ) : (
+                <ul className="space-y-2.5">
+                  {sortedSessions.map((session) => {
+                    const isActive = activeSession?.id === session.id
+                    const isDeleting = deletingSessionId === session.id
+                    const created = session.created_at
+                      ? format(new Date(session.created_at), 'dd MMM yyyy')
+                      : '—'
+                    return (
+                      <li
+                        key={session.id}
+                        className={cn(
+                          'group flex items-start gap-3 rounded-xl border bg-bg-secondary/40 p-4 transition-colors',
+                          isActive
+                            ? 'border-tertiary/30 bg-tertiary/[0.04]'
+                            : 'border-border/60 hover:border-tertiary/25'
+                        )}
+                      >
+                        <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-tertiary/10 text-tertiary">
+                          <BookOpen className="h-4 w-4" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <p className="truncate text-sm font-semibold text-primary">
+                              {session.topic || t('settings.untitled_session', 'Sesi tanpa judul')}
+                            </p>
+                            <span
+                              className={cn(
+                                'inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-label uppercase tracking-wider',
+                                statusTone(session.status)
+                              )}
+                            >
+                              <CircleDot className="h-2.5 w-2.5" />
+                              {statusLabel(session.status, t)}
+                            </span>
+                            {isActive && (
+                              <span className="rounded-full bg-tertiary/10 px-2 py-0.5 text-[10px] font-label uppercase tracking-wider text-tertiary">
+                                {t('settings.current_session', 'Sesi saat ini')}
+                              </span>
+                            )}
+                          </div>
+                          <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-1 text-xs text-secondary font-label">
+                            <span className="inline-flex items-center gap-1">
+                              <Clock3 className="h-3 w-3" />
+                              {session.duration_weeks
+                                ? t('settings.weeks', {
+                                    count: session.duration_weeks,
+                                    defaultValue: `${session.duration_weeks} minggu`,
+                                  })
+                                : '—'}
+                            </span>
+                            <span>{session.level || '—'}</span>
+                            <span>{created}</span>
+                          </div>
+                        </div>
 
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className="rounded-xl font-label gap-2"
-                  >
-                    <RefreshCw className="h-4 w-4" />
-                    {t('settings.reset_session', 'Reset sesi belajar')}
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>{t('settings.reset_session_title', 'Reset sesi belajar?')}</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      {sessionSummary.id
-                        ? t('settings.reset_session_desc_active', 'Tindakan ini akan menghapus sesi aktif dan progres terkait sesi tersebut.')
-                        : t('settings.reset_session_desc_empty', 'Belum ada sesi aktif untuk di-reset.')}
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>{t('settings.cancel', 'Batal')}</AlertDialogCancel>
-                    <AlertDialogAction
-                      onClick={sessionSummary.id ? resetSession : undefined}
-                      disabled={isResetting || !sessionSummary.id}
-                    >
-                      {isResetting ? t('settings.resetting', 'Mereset...') : t('settings.reset', 'Reset')}
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <button
+                              type="button"
+                              disabled={isDeleting}
+                              aria-label={t('settings.delete_session', 'Hapus sesi')}
+                              className={cn(
+                                'mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg text-secondary/60',
+                                'opacity-70 transition-all hover:bg-danger/[0.08] hover:text-danger hover:opacity-100',
+                                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-danger/40',
+                                'disabled:pointer-events-none disabled:opacity-40',
+                                'sm:opacity-0 sm:group-hover:opacity-100 sm:focus-visible:opacity-100'
+                              )}
+                            >
+                              {isDeleting ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <Trash2 className="h-4 w-4" />
+                              )}
+                            </button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent className="rounded-2xl">
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>
+                                {t('settings.delete_session_title', 'Hapus sesi belajar?')}
+                              </AlertDialogTitle>
+                              <AlertDialogDescription>
+                                {t(
+                                  'settings.delete_session_desc',
+                                  'Sesi “{{topic}}” dan progres terkait akan dihapus permanen. Tindakan ini tidak dapat dibatalkan.',
+                                  { topic: session.topic || '—' }
+                                )}
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel className="rounded-xl">
+                                {t('settings.cancel', 'Batal')}
+                              </AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={() => handleDeleteSession(session.id)}
+                                className="rounded-xl bg-danger hover:bg-danger/90 text-white"
+                              >
+                                {t('settings.delete', 'Hapus')}
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </li>
+                    )
+                  })}
+                </ul>
+              )}
             </SectionCard>
           )}
 
@@ -424,6 +795,12 @@ export default function Settings() {
                 checked={pushNotif}
                 onChange={setPushNotif}
               />
+              <p className="text-xs text-secondary font-label pt-1">
+                {t(
+                  'settings.notif_prefs_hint',
+                  'Preferensi disimpan di perangkat ini.'
+                )}
+              </p>
             </SectionCard>
           )}
 
@@ -437,7 +814,7 @@ export default function Settings() {
                   <h3 className="text-[10px] font-label uppercase tracking-widest text-danger mb-3">
                     {t('settings.danger_zone', 'Zona Berbahaya')}
                   </h3>
-                  <AlertDialog open={isDeleting} onOpenChange={setIsDeleting}>
+                  <AlertDialog open={deleteAccountOpen} onOpenChange={setDeleteAccountOpen}>
                     <AlertDialogTrigger asChild>
                       <Button
                         variant="outline"
@@ -447,17 +824,41 @@ export default function Settings() {
                         {t('settings.delete_account', 'Hapus Akun')}
                       </Button>
                     </AlertDialogTrigger>
-                    <AlertDialogContent>
+                    <AlertDialogContent className="rounded-2xl">
                       <AlertDialogHeader>
-                        <AlertDialogTitle>{t('settings.delete_account_title', 'Hapus akun?')}</AlertDialogTitle>
+                        <AlertDialogTitle>
+                          {t('settings.delete_account_title', 'Hapus akun?')}
+                        </AlertDialogTitle>
                         <AlertDialogDescription>
-                          {t('settings.delete_account_desc', 'Fitur ini belum tersedia. Coming soon.')}
+                          {t(
+                            'settings.delete_account_desc',
+                            'Apakah kamu yakin? Tindakan ini tidak dapat dibatalkan. Semua data akun, sesi belajar, dan progres akan dihapus permanen.'
+                          )}
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
-                        <AlertDialogCancel>{t('settings.cancel', 'Batal')}</AlertDialogCancel>
-                        <AlertDialogAction disabled>
-                          {t('settings.coming_soon', 'Coming Soon')}
+                        <AlertDialogCancel
+                          className="rounded-xl"
+                          disabled={isDeletingAccount}
+                        >
+                          {t('settings.cancel', 'Batal')}
+                        </AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={(e) => {
+                            e.preventDefault()
+                            handleDeleteAccount()
+                          }}
+                          disabled={isDeletingAccount}
+                          className="rounded-xl bg-danger hover:bg-danger/90 text-white gap-2"
+                        >
+                          {isDeletingAccount ? (
+                            <>
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                              {t('settings.deleting', 'Menghapus...')}
+                            </>
+                          ) : (
+                            t('settings.confirm_delete', 'Ya, hapus akun')
+                          )}
                         </AlertDialogAction>
                       </AlertDialogFooter>
                     </AlertDialogContent>

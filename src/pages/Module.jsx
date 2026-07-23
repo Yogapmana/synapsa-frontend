@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { useParams } from 'react-router-dom'
+import { useParams, useNavigate } from 'react-router-dom'
 import { useLearningStore } from '@/stores/learningStore'
 import { useModule, useTopics } from '@/hooks/useLearning'
 import { generateModule } from '@/api/learning'
@@ -14,6 +14,7 @@ import ReadingTracker from '@/components/module/ReadingTracker'
 import ModuleChatPanel from '@/components/module/ModuleChatSlider'
 import { BookOpen, GraduationCap, Loader2 } from 'lucide-react'
 import ReadingProgressBar from '@/components/module/ReadingProgressBar'
+import { Button } from '@/components/ui/button'
 import { useTranslation } from 'react-i18next'
 
 /**
@@ -21,14 +22,10 @@ import { useTranslation } from 'react-i18next'
  *
  * Layout (final):
  *   - Single page scroll, same as every other page in the app.
- *   - The article is on the left (`flex-1` in the main row). The
- *     Tutor AI chat is a persistent right sidebar at 420px — always
- *     visible, no toggle, no FAB. The user can always read AND chat.
- *     This is the standard pattern (Notion AI, Linear AI, Cursor).
- *   - The chat panel is `position: sticky; top: 3.5rem` and
- *     `height: calc(100vh - 3.5rem)` so it stays visible at the top
- *     of the viewport as the user scrolls the article. Long
- *     conversations overflow internally (chat has its own scrollbar).
+ *   - Article column is `flex-1` and shrinks when Tutor AI is open.
+ *   - Desktop (lg+): Tutor AI is a collapsible + resizable split-pane
+ *     sidebar that takes real layout width (not an overlay drawer).
+ *   - Mobile/tablet: floating semi-circle trigger + bottom sheet.
  *   - The StickyActionBar lives INSIDE the article column, sticky to
  *     the bottom of the viewport. "Tandai Selesai" stays visible.
  */
@@ -70,6 +67,27 @@ function GeneratingState() {
       <p className="text-secondary max-w-md text-center text-sm leading-relaxed">
         {t('module.generating_desc')}
       </p>
+    </div>
+  )
+}
+
+function GenerationFailedState({ onRetry, onBack }) {
+  const { t } = useTranslation();
+  return (
+    <div className="flex min-h-[60vh] flex-col items-center justify-center px-4 text-center">
+      <div className="flex size-16 items-center justify-center rounded-2xl bg-danger/10 mb-6">
+        <Loader2 className="size-8 text-danger" />
+      </div>
+      <h2 className="text-xl font-display font-bold tracking-tight text-primary mb-2">
+        {t('module.generation_failed_title', 'Gagal Membuat Modul')}
+      </h2>
+      <p className="text-secondary max-w-md text-sm leading-relaxed mb-6">
+        {t('module.generation_failed_desc', 'Proses pembuatan modul memakan waktu terlalu lama atau terjadi kesalahan. Silakan coba lagi.')}
+      </p>
+      <div className="flex items-center gap-3">
+        <Button variant="ghost" onClick={onBack}>{t('module.back_to_curriculum')}</Button>
+        <Button onClick={onRetry}>{t('module.retry', 'Coba Lagi')}</Button>
+      </div>
     </div>
   )
 }
@@ -155,11 +173,11 @@ function ModuleArticle({ module }) {
             {module.remedial_markdown && (
               <a 
                 href={`/module/${module.topic_id}/remedial`}
-                className="flex-1 rounded-xl border border-red-500/20 bg-red-500/10 p-5 hover:bg-red-500/20 transition-colors"
+                className="flex-1 rounded-xl border border-danger/20 bg-danger/10 p-5 hover:bg-danger/20 transition-colors"
               >
-                <h3 className="font-display font-bold text-red-600 dark:text-red-400 mb-2">Materi Remedial Tersedia</h3>
+                <h3 className="font-display font-bold text-danger mb-2">Materi Remedial Tersedia</h3>
                 <p className="text-sm text-secondary mb-4">Pelajari kembali konsep dasar yang terlewat pada kuis sebelumnya.</p>
-                <span className="text-sm font-semibold text-red-600 dark:text-red-400">Buka Remedial →</span>
+                <span className="text-sm font-semibold text-danger">Buka Remedial →</span>
               </a>
             )}
             
@@ -183,18 +201,18 @@ function ModuleArticle({ module }) {
 export default function Module() {
   const { t } = useTranslation();
   const { topicId } = useParams()
+  const navigate = useNavigate()
   const { activeSession } = useLearningStore()
   const sessionId = activeSession?.id
 
-  // The Module page is the SCROLL CONTAINER — not the page itself.
-  // The AppLayout locks the page at h-screen overflow-hidden so
-  // the body never gets a scrollbar. That means sticky elements
-  // (the chat panel at top-14, the bottom action bar at bottom-0,
-  // the topbar at top-0) need a scrollable ancestor INSIDE the
-  // module. This `scrollContainerRef` is attached to the root div
-  // and passed to ModuleTopbar so the topbar's 80%-scroll quiz
-  // button can read the right `scrollTop` / `scrollHeight` pair
-  // (it can't use `window.scrollY` because the body doesn't scroll).
+  // The article column is the SCROLL CONTAINER — not the page itself.
+  // AppLayout locks the page at h-screen overflow-hidden so the body
+  // never gets a scrollbar. Sticky elements (topbar, bottom action bar)
+  // need a scrollable ancestor INSIDE the module. This ref is attached
+  // to the article column (left pane of the split) so ModuleTopbar's
+  // 80%-scroll quiz button reads the right scrollTop/scrollHeight.
+  // Desktop Tutor AI sits in a sticky right pane and does not scroll
+  // with the article.
   const scrollContainerRef = useRef(null)
 
   const { data: module, isLoading, error, refetch } = useModule(sessionId, topicId)
@@ -206,26 +224,38 @@ export default function Module() {
 
   const [generating, setGenerating] = useState(false)
   const [generationTriggered, setGenerationTriggered] = useState(false)
+  const [generationFailed, setGenerationFailed] = useState(false)
+  const retryCountRef = useRef(0)
+  const MAX_RETRIES = 60 // 60 × 5s = 5 minutes max polling
 
   useEffect(() => {
     let interval
-    if (!isLoading && !module && !generating && !generationTriggered && sessionId && topicId && !isLocked) {
+    if (!isLoading && !module && !generating && !generationTriggered && !generationFailed && sessionId && topicId && !isLocked) {
       setGenerating(true)
       setGenerationTriggered(true)
+      retryCountRef.current = 0
       generateModule(sessionId, topicId)
         .then(() => {
           interval = setInterval(() => {
+            retryCountRef.current += 1
+            if (retryCountRef.current >= MAX_RETRIES) {
+              clearInterval(interval)
+              setGenerating(false)
+              setGenerationFailed(true)
+              return
+            }
             refetch()
           }, 5000)
         })
         .catch(() => {
           setGenerating(false)
+          setGenerationFailed(true)
         })
     }
     return () => {
       if (interval) clearInterval(interval)
     }
-  }, [isLoading, module, generating, generationTriggered, sessionId, topicId, refetch])
+  }, [isLoading, module, generating, generationTriggered, generationFailed, sessionId, topicId, refetch])
 
   useEffect(() => {
     if (module && generating) {
@@ -233,18 +263,25 @@ export default function Module() {
     }
   }, [module, generating])
 
+  const handleGenerationRetry = () => {
+    setGenerationFailed(false)
+    setGenerationTriggered(false)
+    setGenerating(false)
+    retryCountRef.current = 0
+  }
+
   // The chat panel needs a `module.title` for the topic pill. Only
   // render it once the module is loaded — for loading/locked/error
   // states the page chrome is shown alone.
   const moduleTitle = module?.title
 
   return (
-    <div 
-      ref={scrollContainerRef}
-      className="flex h-full relative overflow-y-auto items-start"
-    >
-      {/* Article container — flex-1 takes remaining width. */}
-      <div className="flex-1 min-w-0 flex flex-col relative">
+    <div className="flex h-full min-h-0 relative items-stretch overflow-hidden">
+      {/* Article column — scrolls independently; shrinks when Tutor AI opens. */}
+      <div
+        ref={scrollContainerRef}
+        className="flex-1 min-w-0 flex flex-col relative overflow-y-auto h-full"
+      >
         <ReadingProgressBar scrollContainerRef={scrollContainerRef} />
         <ModuleTopbar module={module} topic={currentTopic} scrollContainerRef={scrollContainerRef} />
 
@@ -257,6 +294,11 @@ export default function Module() {
         <main className="flex-1 min-w-0">
           {isLoading || generating ? (
             <>{generating ? <GeneratingState /> : <ModuleSkeleton />}</>
+          ) : generationFailed ? (
+            <GenerationFailedState
+              onRetry={handleGenerationRetry}
+              onBack={() => navigate('/curriculum')}
+            />
           ) : isLocked ? (
             <div className="mx-auto max-w-[720px] px-4 md:px-6 py-16">
               <EmptyState
@@ -264,7 +306,7 @@ export default function Module() {
                 title={t('module.module_locked')}
                 description={t('module.module_locked_desc')}
                 actionLabel={t('module.back_to_curriculum')}
-                onAction={() => window.location.href = '/curriculum'}
+                onAction={() => navigate('/curriculum')}
               />
             </div>
           ) : error || !module ? (
@@ -274,7 +316,7 @@ export default function Module() {
                 title={t('module.module_not_found')}
                 description={t('module.module_not_found_desc')}
                 actionLabel={t('module.back_to_curriculum')}
-                onAction={() => window.location.href = '/curriculum'}
+                onAction={() => navigate('/curriculum')}
               />
             </div>
           ) : (
@@ -290,11 +332,8 @@ export default function Module() {
         </main>
       </div>
 
-      {/* Chat panel — OUTSIDE the article scroll container.
-          This lets it be sticky relative to the page viewport
-          instead of scrolling with the article. It sits to the
-          right of the article and stays in place as the user
-          scrolls through the content. */}
+      {/* Tutor AI — desktop: in-layout collapsible/resizable split pane.
+          Mobile: floating trigger + bottom sheet. Mounted once module loads. */}
       {module && (
         <ModuleChatPanel
           sessionId={sessionId}

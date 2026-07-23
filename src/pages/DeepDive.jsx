@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { useParams } from 'react-router-dom'
+import { useParams, useNavigate } from 'react-router-dom'
 import { useLearningStore } from '@/stores/learningStore'
 import { useModule, useTopics } from '@/hooks/useLearning'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -61,6 +61,7 @@ function ModuleArticle({ module }) {
 export default function DeepDive() {
   const { t } = useTranslation();
   const { topicId } = useParams()
+  const navigate = useNavigate()
   const { activeSession } = useLearningStore()
   const sessionId = activeSession?.id
 
@@ -92,12 +93,14 @@ export default function DeepDive() {
 
   const moduleTitle = module?.title
 
+  // Match Module layout: article column scrolls independently; Tutor AI
+  // stays as a sticky right pane sibling (does not scroll with content).
   return (
-    <div 
-      ref={scrollContainerRef}
-      className="flex h-full relative overflow-y-auto items-start"
-    >
-      <div className="flex-1 min-w-0 flex flex-col relative">
+    <div className="flex h-full min-h-0 relative items-stretch overflow-hidden">
+      <div
+        ref={scrollContainerRef}
+        className="flex-1 min-w-0 flex flex-col relative overflow-y-auto h-full"
+      >
         <ReadingProgressBar scrollContainerRef={scrollContainerRef} />
         <ModuleTopbar module={module} topic={currentTopic} scrollContainerRef={scrollContainerRef} />
 
@@ -113,7 +116,7 @@ export default function DeepDive() {
                 title={t('module.module_locked')}
                 description={t('module.module_locked_desc')}
                 actionLabel={t('module.back_to_curriculum')}
-                onAction={() => window.location.href = '/curriculum'}
+                onAction={() => navigate('/curriculum')}
               />
             </div>
           ) : error || !module ? (
@@ -123,13 +126,11 @@ export default function DeepDive() {
                 title={t('module.module_not_found')}
                 description={t('module.module_not_found_desc')}
                 actionLabel={t('module.back_to_curriculum')}
-                onAction={() => window.location.href = '/curriculum'}
+                onAction={() => navigate('/curriculum')}
               />
             </div>
           ) : (
-            <>
-              <ModuleArticle module={module} />
-            </>
+            <ModuleArticle module={module} />
           )}
         </main>
       </div>

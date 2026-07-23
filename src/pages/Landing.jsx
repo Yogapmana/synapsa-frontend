@@ -1,6 +1,10 @@
+import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
+import { cn } from '@/lib/utils'
 import { Sparkles } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import LanguageToggle from '@/components/common/LanguageToggle'
 import HeroSection from '@/components/landing/HeroSection'
 import FeaturesBento from '@/components/landing/FeaturesBento'
 import HowItWorksSection from '@/components/landing/HowItWorksSection'
@@ -20,25 +24,40 @@ function scrollToSection(id) {
  * Sections live in components/landing/* for maintainability.
  */
 export default function Landing() {
+  const { t } = useTranslation()
+  const [isScrolled, setIsScrolled] = useState(false)
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 20)
+    }
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
+
   return (
     <div className="min-h-screen bg-neutral texture-grain">
       <nav
-        className="fixed top-0 left-0 right-0 z-50 bg-surface/80 backdrop-blur-md shadow-[0_1px_3px_rgba(58,41,22,0.06),0_1px_0_rgba(58,41,22,0.08)]"
+        className={cn(
+          "fixed left-0 right-0 z-50 transition-all duration-300",
+          isScrolled 
+            ? "top-4 mx-4 sm:mx-8 lg:mx-auto max-w-5xl rounded-full bg-surface/90 backdrop-blur-md shadow-warm-lg ring-1 ring-border-subtle/50" 
+            : "top-0 bg-transparent"
+        )}
         aria-label="Main"
       >
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <Link
               to="/"
+              onClick={(e) => {
+                e.preventDefault()
+                window.scrollTo({ top: 0, behavior: 'smooth' })
+              }}
               className="flex items-center gap-2.5 group"
               aria-label="Synapsa home"
             >
-              <div className="bg-tertiary p-2 rounded-xl transition-transform duration-300 group-hover:scale-105">
-                <Sparkles className="h-5 w-5 text-white" />
-              </div>
-              <span className="text-xl font-display font-bold text-primary tracking-tight">
-                Synapsa
-              </span>
+              <img src="/horizontal-logo.png" alt="Synapsa Logo" className="h-12 w-auto scale-150 origin-left object-contain transition-transform duration-300 group-hover:scale-[1.55]" />
             </Link>
 
             <div className="flex items-center gap-1 sm:gap-2">
@@ -47,21 +66,24 @@ export default function Landing() {
                 onClick={scrollToSection('fitur')}
                 className="hidden md:inline-flex px-3 py-2 text-sm font-label text-secondary hover:text-primary transition-colors duration-200"
               >
-                Fitur
+                {t('landing.features', 'Fitur')}
               </a>
               <a
                 href="#cara-kerja"
                 onClick={scrollToSection('cara-kerja')}
                 className="hidden md:inline-flex px-3 py-2 text-sm font-label text-secondary hover:text-primary transition-colors duration-200"
               >
-                Cara Kerja
+                {t('landing.how_it_works', 'Cara Kerja')}
               </a>
+
+              <LanguageToggle />
+
               <Link to="/login" className="hidden sm:block">
                 <Button
                   variant="ghost"
                   className="text-secondary hover:text-primary font-label transition-colors duration-200"
                 >
-                  Masuk
+                  {t('landing.login', 'Masuk')}
                 </Button>
               </Link>
               <Link to="/register">
@@ -69,7 +91,7 @@ export default function Landing() {
                   variant="tertiary"
                   className="font-label tracking-wide transition-all duration-300 hover:shadow-warm-md"
                 >
-                  Daftar
+                  {t('landing.register', 'Daftar')}
                 </Button>
               </Link>
             </div>
@@ -100,7 +122,7 @@ export default function Landing() {
               </span>
             </div>
             <p className="text-sm font-label">
-              Personal Learning Agent — Skripsi S1 · 2026
+              {t('landing.footer_tagline')}
             </p>
           </div>
         </div>

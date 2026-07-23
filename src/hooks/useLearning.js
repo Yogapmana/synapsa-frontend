@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { completeTopic, getCurriculum, getModule, getSessions, getTopics, startLearning } from '../api/learning'
+import { useLearningStore } from '../stores/learningStore'
 import {
   getMindmap,
   regenerateMindmap,
@@ -39,9 +40,33 @@ export function useActiveSession(options = {}) {
     queryKey: ['active-session'],
     queryFn: async () => {
       const sessions = await getSessions()
-      return findActiveSession(sessions)
+      const storeSession = useLearningStore.getState().activeSession
+      
+      // If store has an active session, check if it's in the fetched sessions
+      if (storeSession) {
+        const matched = sessions.find(s => s.id === storeSession.id)
+        if (matched) {
+          // Keep the store in sync with fresh data
+          useLearningStore.getState().setActiveSession(matched)
+          return matched
+        }
+      }
+      
+      // Fallback to highest priority session
+      const fallback = findActiveSession(sessions)
+      if (fallback) {
+        useLearningStore.getState().setActiveSession(fallback)
+      }
+      return fallback
     },
     enabled: options.enabled !== false,
+  })
+}
+
+export function useAllSessions() {
+  return useQuery({
+    queryKey: ['sessions'],
+    queryFn: getSessions,
   })
 }
 

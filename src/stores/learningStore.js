@@ -4,6 +4,7 @@ export const SESSION_STATUSES = {
   PROCESSING: 'processing',
   READY: 'ready',
   ACTIVE: 'active',
+  FAILED: 'failed',
 }
 
 export function hasActiveSession(session) {

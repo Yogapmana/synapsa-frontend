@@ -1,4 +1,5 @@
-import { motion } from 'framer-motion'
+import { useTranslation } from 'react-i18next'
+import { motion, useReducedMotion } from 'framer-motion'
 import {
   Brain,
   BookOpen,
@@ -29,9 +30,10 @@ function BentoCard({
   children,
   large = false,
 }) {
+  const shouldReduceMotion = useReducedMotion()
   return (
     <motion.div
-      variants={fadeUp}
+      variants={shouldReduceMotion ? {} : fadeUp}
       className={cn(
         // Only stretch to fill on lg bento; avoid empty vertical space on mobile
         'group h-auto lg:h-full',
@@ -84,6 +86,8 @@ function BentoCard({
 }
 
 export default function FeaturesBento() {
+  const { t } = useTranslation()
+  const shouldReduceMotion = useReducedMotion()
   return (
     <section id="fitur" className="py-24 sm:py-32 bg-neutral relative overflow-hidden scroll-mt-20">
       <span
@@ -98,26 +102,25 @@ export default function FeaturesBento() {
           initial="initial"
           whileInView="animate"
           viewport={viewportOnce}
-          variants={staggerContainer}
+          variants={shouldReduceMotion ? {} : staggerContainer}
           className="text-center mb-16 sm:mb-20"
         >
-          <motion.div variants={fadeUp} className="flex justify-center mb-4">
-            <span className="eyebrow">Bab 01 — Fitur Utama</span>
+          <motion.div variants={shouldReduceMotion ? {} : fadeUp} className="flex justify-center mb-4">
+            <span className="eyebrow">{t('landing.features_section.eyebrow')}</span>
           </motion.div>
           <motion.h2
-            variants={fadeUp}
+            variants={shouldReduceMotion ? {} : fadeUp}
             className="text-4xl sm:text-5xl font-display font-bold text-primary leading-[1.05] tracking-tight"
           >
-            Platform yang membuat belajar
+            {t('landing.features_section.title_before')}
             <br className="hidden sm:block" />{' '}
-            <span className="italic text-tertiary">terasa cerdas</span>
+            <span className="italic text-tertiary">{t('landing.features_section.title_highlight')}</span>
           </motion.h2>
           <motion.p
-            variants={fadeUp}
+            variants={shouldReduceMotion ? {} : fadeUp}
             className="mt-5 max-w-2xl mx-auto text-lg text-secondary leading-relaxed font-serif-content"
           >
-            Bukan sekadar chatbot. Multi-agent Synapsa merancang, mencari,
-            memetakan, dan menguji — kamu tinggal fokus pada belajarmu.
+            {t('landing.features_section.subtitle')}
           </motion.p>
         </motion.div>
 
@@ -126,13 +129,13 @@ export default function FeaturesBento() {
           initial="initial"
           whileInView="animate"
           viewport={{ once: true }}
-          variants={staggerContainer}
+          variants={shouldReduceMotion ? {} : staggerContainer}
           className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 items-start lg:items-stretch lg:auto-rows-fr"
         >
           <BentoCard
             icon={PenLine}
-            title="Composer Agent"
-            description="Researcher & Composer bekerja paralel: mencari dari 7 sumber, lalu menyusun modul terstruktur yang siap dibaca — bukan sekadar daftar tautan."
+            title={t('landing.features_section.composer_title')}
+            description={t('landing.features_section.composer_desc')}
             number="01"
             accent="tertiary"
             large
@@ -152,8 +155,8 @@ export default function FeaturesBento() {
 
           <BentoCard
             icon={Network}
-            title="Concept Graph"
-            description="Kurikulummu dipetakan sebagai graf konsep terhubung — lihat relasi antar topik, prasyarat, dan progres secara visual."
+            title={t('landing.features_section.graph_title')}
+            description={t('landing.features_section.graph_desc')}
             number="02"
             accent="info"
             className="lg:row-span-2"
@@ -169,16 +172,16 @@ export default function FeaturesBento() {
 
           <BentoCard
             icon={ClipboardCheck}
-            title="Dynamic Quizzes"
-            description="Kuis adaptif menyesuaikan tingkat kesulitan dari performamu. Feedback Engine menutup celah pemahaman secara real-time."
+            title={t('landing.features_section.quiz_title')}
+            description={t('landing.features_section.quiz_desc')}
             number="03"
             accent="success"
           />
 
           <BentoCard
             icon={MessageSquare}
-            title="Tutor AI Kontekstual"
-            description="Tanya apa saja tentang modul yang sedang dipelajari. RAG + HyDE + FlashRank membuat jawaban spesifik — bukan generik."
+            title={t('landing.features_section.tutor_title')}
+            description={t('landing.features_section.tutor_desc')}
             number="04"
             accent="warning"
           />
@@ -188,7 +191,7 @@ export default function FeaturesBento() {
           initial="initial"
           whileInView="animate"
           viewport={{ once: true }}
-          variants={fadeUp}
+          variants={shouldReduceMotion ? {} : fadeUp}
           className="mt-4 sm:mt-5"
         >
           <Card className="border-none bg-surface shadow-warm-md overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-warm-lg group">
@@ -199,7 +202,7 @@ export default function FeaturesBento() {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-3 mb-1">
                   <h3 className="text-lg sm:text-xl font-display font-semibold text-primary">
-                    Kurikulum yang adaptif
+                    {t('landing.features_section.adaptive_title')}
                   </h3>
                   <span
                     aria-hidden="true"
@@ -209,14 +212,13 @@ export default function FeaturesBento() {
                   </span>
                 </div>
                 <p className="text-secondary leading-relaxed font-serif-content text-sm sm:text-base">
-                  Topik dan jadwal otomatis disesuaikan dengan performamu.
-                  Tidak ada kurikulum yang sama untuk semua orang — milikmu dibuat khusus untukmu.
+                  {t('landing.features_section.adaptive_desc')}
                 </p>
               </div>
               <div className="hidden md:flex items-center gap-2 shrink-0">
                 <BookOpen className="w-4 h-4 text-secondary/50" />
                 <span className="text-xs font-label uppercase tracking-widest text-secondary/60">
-                  Planner Agent
+                  {t('landing.features_section.planner_badge')}
                 </span>
               </div>
             </CardContent>

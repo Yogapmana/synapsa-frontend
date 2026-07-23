@@ -1,65 +1,86 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   MessageCircle,
   Sparkles,
   Send,
-  ChevronLeft,
-  ChevronRight,
-  ArrowUp,
   Lightbulb,
+  X,
 } from 'lucide-react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion, useReducedMotion } from 'framer-motion'
 import { cn } from '@/lib/utils'
 import { sendMessage, getHistory } from '@/api/chat'
 import ChatBubble from '@/components/chat/ChatBubble'
-
 import ThinkingIndicator from '@/components/chat/ThinkingIndicator'
 import { useTranslation } from 'react-i18next'
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet'
+
+const DESKTOP_QUERY = '(min-width: 1024px)'
+const WIDTH_STORAGE_KEY = 'synapsa.moduleChat.width'
+const MIN_WIDTH = 300
+const MAX_WIDTH = 560
+const DEFAULT_WIDTH = 400
+
+function clampWidth(value) {
+  return Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, Math.round(value)))
+}
+
+function readStoredWidth() {
+  if (typeof window === 'undefined') return DEFAULT_WIDTH
+  const raw = window.localStorage.getItem(WIDTH_STORAGE_KEY)
+  const parsed = Number(raw)
+  return Number.isFinite(parsed) ? clampWidth(parsed) : DEFAULT_WIDTH
+}
+
+function useIsDesktop() {
+  const [isDesktop, setIsDesktop] = useState(() => {
+    if (typeof window === 'undefined') return false
+    return window.matchMedia(DESKTOP_QUERY).matches
+  })
+
+  useEffect(() => {
+    const media = window.matchMedia(DESKTOP_QUERY)
+    const onChange = (event) => setIsDesktop(event.matches)
+    setIsDesktop(media.matches)
+    media.addEventListener('change', onChange)
+    return () => media.removeEventListener('change', onChange)
+  }, [])
+
+  return isDesktop
+}
 
 /**
- * ModuleChatPanel — sticky right sidebar for the AI tutor.
+ * Tutor AI chat for module reading.
  *
- * Phase 5.8 redesign — editorial treatment to match the rest of Synapsa:
- *  - Header is structured as: avatar → title block → collapse button
- *    (collapse now sits at the FAR RIGHT, where users expect it).
- *  - Top of header has a thin terracotta accent strip + "TUTOR · AI"
- *    eyebrow (matches the new eyebrow system used elsewhere).
- *  - The empty state now has:
- *      • gradient mesh backdrop (matches Dashboard hero)
- *      • bigger, more prominent avatar (Tutor icon in soft terracotta)
- *      • editorial eyebrow + larger display title
- *      • suggestion chips that look CLICKABLE (with hover state and
- *        a proper send icon), not just static labels
- *  - Messages area has subtle warm wash, scrollable.
- *  - Input has a clear "send" button styled to match Chat empty state.
+ * Desktop (lg+): collapsible + resizable split-pane sidebar that
+ * shares layout width with the article (no overlay/drawer).
+ * Mobile/tablet: floating semi-circle trigger + bottom sheet.
  */
-
-const EXPANDED_WIDTH = 420
-const COLLAPSED_WIDTH = 56
-
 export default function ModuleChatPanel({ sessionId, topicId, moduleTitle }) {
-  const { t } = useTranslation();
+  const { t } = useTranslation()
   const queryClient = useQueryClient()
   const scrollRef = useRef(null)
-  const [isCollapsed, setIsCollapsed] = useState(false)
-  const [draftValue, setDraftValue] = useState('')
   const textareaRef = useRef(null)
+  const [isOpen, setIsOpen] = useState(false)
+  const [draftValue, setDraftValue] = useState('')
+  const [width, setWidth] = useState(readStoredWidth)
+  const [isResizing, setIsResizing] = useState(false)
+  const dragStartX = useRef(0)
+  const dragStartWidth = useRef(DEFAULT_WIDTH)
+  const shouldReduceMotion = useReducedMotion()
+  const isDesktop = useIsDesktop()
 
-  const SUGGESTED_PROMPTS = [
-    {
-      label: t('module.tutor_suggestion_1'),
-      icon: Lightbulb,
-    },
-    {
-      label: t('module.tutor_suggestion_2'),
-      icon: MessageCircle,
-    },
-    {
-      label: t('module.tutor_suggestion_3'),
-      icon: Sparkles,
-    },
-  ];
+  const suggestedPrompts = [
+    { label: t('module.tutor_suggestion_1'), icon: Lightbulb },
+    { label: t('module.tutor_suggestion_2'), icon: MessageCircle },
+    { label: t('module.tutor_suggestion_3'), icon: Sparkles },
+  ]
 
   const { data: history = [], isLoading } = useQuery({
     queryKey: ['chat', 'module', topicId],
@@ -78,37 +99,32 @@ export default function ModuleChatPanel({ sessionId, topicId, moduleTitle }) {
     onMutate: async (newMessage) => {
       await queryClient.cancelQueries({ queryKey: ['chat', 'module', topicId] })
       const previousHistory = queryClient.getQueryData(['chat', 'module', topicId])
-
       const optimisticMessage = {
         id: 'optimistic-user',
         role: 'user',
         content: newMessage,
         created_at: new Date().toISOString(),
       }
-
       queryClient.setQueryData(['chat', 'module', topicId], (old = []) => [
         ...old,
         optimisticMessage,
       ])
-
       return { previousHistory }
     },
     onError: () => {
       queryClient.setQueryData(['chat', 'module', topicId], (old = []) =>
-        old.filter((msg) => msg.id !== 'optimistic-user')
+        old.filter((msg) => msg.id !== 'optimistic-user'),
       )
     },
     onSuccess: (data, newMessage) => {
       queryClient.setQueryData(['chat', 'module', topicId], (old = []) => {
         const filtered = old.filter((msg) => msg.id !== 'optimistic-user')
-        
         const userMessage = {
           id: `user-${Date.now()}`,
           role: 'user',
           content: newMessage,
           created_at: new Date().toISOString(),
         }
-        
         const aiMessage = {
           id: data.message_id || `ai-${Date.now()}`,
           role: 'assistant',
@@ -122,9 +138,7 @@ export default function ModuleChatPanel({ sessionId, topicId, moduleTitle }) {
   })
 
   useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight
-    }
+    if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight
   }, [history, sendMutation.isPending])
 
   useEffect(() => {
@@ -134,276 +148,370 @@ export default function ModuleChatPanel({ sessionId, topicId, moduleTitle }) {
     }
   }, [draftValue])
 
+  useEffect(() => {
+    if (!isResizing) return undefined
+
+    const onMove = (event) => {
+      const delta = dragStartX.current - event.clientX
+      setWidth(clampWidth(dragStartWidth.current + delta))
+    }
+
+    const onUp = () => {
+      setIsResizing(false)
+      document.body.style.cursor = ''
+      document.body.style.userSelect = ''
+    }
+
+    document.addEventListener('pointermove', onMove)
+    document.addEventListener('pointerup', onUp)
+    document.addEventListener('pointercancel', onUp)
+    document.body.style.cursor = 'col-resize'
+    document.body.style.userSelect = 'none'
+
+    return () => {
+      document.removeEventListener('pointermove', onMove)
+      document.removeEventListener('pointerup', onUp)
+      document.removeEventListener('pointercancel', onUp)
+      document.body.style.cursor = ''
+      document.body.style.userSelect = ''
+    }
+  }, [isResizing])
+
+  useEffect(() => {
+    if (!isResizing) {
+      try {
+        window.localStorage.setItem(WIDTH_STORAGE_KEY, String(width))
+      } catch {
+        // ignore quota / private mode
+      }
+    }
+  }, [width, isResizing])
+
+  const handleResizeStart = useCallback(
+    (event) => {
+      event.preventDefault()
+      dragStartX.current = event.clientX
+      dragStartWidth.current = width
+      setIsResizing(true)
+    },
+    [width],
+  )
+
   const handleSendMessage = (content) => {
     if (!content?.trim()) return
     sendMutation.mutate(content)
   }
 
-  // Click a suggestion → send it immediately
-  const handleSuggestionClick = (label) => {
-    handleSendMessage(label)
+  const handleSuggestionClick = (label) => handleSendMessage(label)
+
+  const bodyProps = {
+    history,
+    isLoading,
+    moduleTitle,
+    suggestedPrompts,
+    sendMutation,
+    scrollRef,
+    textareaRef,
+    draftValue,
+    setDraftValue,
+    handleSendMessage,
+    handleSuggestionClick,
+    t,
   }
 
-  return (
-    <motion.aside
-      role="complementary"
-      aria-label={`Tutor AI untuk ${moduleTitle || 'modul ini'}`}
-      aria-expanded={!isCollapsed}
-      className={cn(
-        'shrink-0 flex flex-col bg-surface-1 border-l border-tertiary/20',
-        'sticky top-0 self-stretch overflow-hidden h-[calc(100vh-60px)]'
-      )}
-      initial={false}
-      animate={{ width: isCollapsed ? COLLAPSED_WIDTH : EXPANDED_WIDTH }}
-      transition={{ type: 'spring', stiffness: 320, damping: 32 }}
-    >
-      {isCollapsed ? (
-        <CollapsedRail onExpand={() => setIsCollapsed(false)} />
-      ) : (
-        <>
-          {/* ─── HEADER ─── */}
-          <div className="relative shrink-0 bg-surface-1 border-b border-tertiary/20">
-            <div className="flex items-center gap-2.5 px-3 py-2">
-              {/* Avatar */}
-              <div className="relative shrink-0">
-                <div className="absolute inset-0 bg-tertiary/20 blur-md rounded-full" />
-                <div className="relative flex size-7 items-center justify-center rounded-xl bg-tertiary/10 border border-tertiary/25 text-tertiary">
-                  <Sparkles className="size-3.5" />
-                </div>
-                {/* Online dot */}
+  // ── Desktop: collapsible + resizable split pane ──────────────────
+  if (isDesktop) {
+    return (
+      <>
+        {!isOpen && (
+          <motion.button
+            type="button"
+            onClick={() => setIsOpen(true)}
+            whileHover={shouldReduceMotion ? undefined : { x: -3 }}
+            whileTap={shouldReduceMotion ? undefined : { scale: 0.96 }}
+            aria-label="Buka Tutor AI"
+            aria-expanded="false"
+            aria-controls="tutor-ai-sidebar"
+            className={cn(
+              'fixed right-0 top-[76px] z-40 flex h-12 w-11 items-center justify-center',
+              'rounded-l-full border border-r-0 border-tertiary/25 bg-surface text-tertiary',
+              'transition-colors duration-200 hover:bg-tertiary/10',
+              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-tertiary',
+            )}
+          >
+            <span className="relative flex size-8 items-center justify-center rounded-full bg-tertiary/10">
+              <MessageCircle className="size-4" />
+              <span className="absolute -right-0.5 -top-0.5 size-2 rounded-full border-2 border-surface bg-success" />
+            </span>
+          </motion.button>
+        )}
+
+        <aside
+          id="tutor-ai-sidebar"
+          aria-hidden={!isOpen}
+          style={{ width: isOpen ? width : 0 }}
+          className={cn(
+            'relative hidden h-full shrink-0 overflow-hidden border-l border-border-subtle/70 bg-surface lg:flex lg:flex-col',
+            !isResizing && 'transition-[width] duration-200 ease-out',
+          )}
+        >
+          {isOpen && (
+            <>
+              {/* Drag handle — left edge of the pane */}
+              <div
+                role="separator"
+                aria-orientation="vertical"
+                aria-label="Resize Tutor AI panel"
+                aria-valuemin={MIN_WIDTH}
+                aria-valuemax={MAX_WIDTH}
+                aria-valuenow={width}
+                tabIndex={0}
+                onPointerDown={handleResizeStart}
+                onKeyDown={(event) => {
+                  if (event.key === 'ArrowLeft') {
+                    event.preventDefault()
+                    setWidth((w) => clampWidth(w + 16))
+                  } else if (event.key === 'ArrowRight') {
+                    event.preventDefault()
+                    setWidth((w) => clampWidth(w - 16))
+                  }
+                }}
+                className={cn(
+                  'absolute inset-y-0 left-0 z-20 w-1.5 cursor-col-resize',
+                  'bg-transparent hover:bg-tertiary/25 active:bg-tertiary/40',
+                  'focus-visible:outline-none focus-visible:bg-tertiary/30',
+                  isResizing && 'bg-tertiary/40',
+                )}
+              >
                 <span
                   aria-hidden="true"
-                  className="absolute -bottom-0.5 -right-0.5 size-2 rounded-full bg-success border-2 border-surface-1"
+                  className="absolute left-1/2 top-1/2 h-8 w-0.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-border"
                 />
               </div>
 
-              {/* Title block */}
-              <div className="min-w-0 flex-1">
-                <h2 className="font-display font-bold text-[14px] text-primary leading-tight truncate">
-                  {t('module.tutor_title')}
-                </h2>
-                <p
-                  className="text-[11px] text-secondary font-label truncate mt-0.5"
-                  title={moduleTitle}
-                >
-                  {moduleTitle}
-                </p>
-              </div>
-
-              {/* Collapse button — moved to the FAR RIGHT (where users expect it) */}
-              <button
-                type="button"
-                onClick={() => setIsCollapsed(true)}
-                className={cn(
-                  'flex size-8 items-center justify-center rounded-lg shrink-0',
-                  'text-secondary hover:text-primary hover:bg-secondary/10',
-                  'transition-colors duration-150',
-                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-tertiary'
-                )}
-                aria-label="Sembunyikan Tutor AI"
-                title="Sembunyikan Tutor AI"
-              >
-                <ChevronRight size={16} />
-              </button>
-            </div>
-          </div>
-
-          {/* ─── MESSAGES ─── */}
-          <div
-            ref={scrollRef}
-            className="flex-1 overflow-y-auto px-4 py-4 space-y-5 bg-surface-0/30"
-          >
-            {isLoading ? (
-              <div className="flex items-center justify-center text-text-muted text-sm font-label py-12">
-                <Sparkles className="size-4 mr-2 animate-pulse" />
-              </div>
-            ) : history.length === 0 ? (
-              <EmptyChatState
-                moduleTitle={moduleTitle}
-                onSuggestionClick={handleSuggestionClick}
-                disabled={sendMutation.isPending}
-                suggestedPrompts={SUGGESTED_PROMPTS}
-              />
-            ) : (
-              <div className="space-y-5">
-                {history.map((msg, idx) => {
-                  const isLastAi =
-                    msg.role === 'assistant' &&
-                    idx === history.length - 1 &&
-                    !sendMutation.isPending
-                  return (
-                    <ChatBubble
-                      key={msg.id || idx}
-                      messageId={msg.id}
-                      message={msg.content}
-                      isAI={msg.role === 'assistant'}
-                      sources={msg.sources}
-                      timestamp={msg.created_at}
-                      isLastAiMessage={isLastAi}
-                      rag_faithfulness={msg.rag_faithfulness}
-                      rag_answer_relevancy={msg.rag_answer_relevancy}
-                    />
-                  )
-                })}
-                {sendMutation.isPending && (
-                  <div className="flex items-start gap-3">
-                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-tertiary to-tertiary-light flex items-center justify-center text-white shadow-warm-sm">
-                      <Sparkles size={14} />
-                    </div>
-                    <div className="rounded-2xl rounded-tl-sm bg-surface-2/60 px-4 py-3 border border-[rgba(58,41,22,0.06)]">
-                      <ThinkingIndicator />
-                    </div>
+              <header className="relative shrink-0 border-b border-border-subtle/70 bg-surface px-4 py-3">
+                <div className="flex items-center gap-3 pr-10">
+                  <div className="relative flex size-9 shrink-0 items-center justify-center rounded-xl border border-tertiary/25 bg-tertiary/10 text-tertiary">
+                    <Sparkles className="size-4" />
+                    <span className="absolute -bottom-0.5 -right-0.5 size-2.5 rounded-full border-2 border-surface bg-success" />
                   </div>
-                )}
+                  <div className="min-w-0">
+                    <h2 className="font-display text-base font-bold text-primary">
+                      {t('module.tutor_title')}
+                    </h2>
+                    <p className="truncate text-xs text-secondary">{moduleTitle}</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsOpen(false)}
+                  aria-label="Tutup Tutor AI"
+                  className="absolute right-3 top-3 flex size-8 items-center justify-center rounded-lg text-secondary transition-colors hover:bg-secondary/10 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-tertiary"
+                >
+                  <X className="size-4" />
+                </button>
+              </header>
+
+              <ChatPanelBody {...bodyProps} />
+            </>
+          )}
+        </aside>
+      </>
+    )
+  }
+
+  // ── Mobile / tablet: floating trigger + bottom sheet ─────────────
+  return (
+    <>
+      {!isOpen && (
+        <motion.button
+          type="button"
+          onClick={() => setIsOpen(true)}
+          whileHover={shouldReduceMotion ? undefined : { x: -3 }}
+          whileTap={shouldReduceMotion ? undefined : { scale: 0.96 }}
+          aria-label="Buka Tutor AI"
+          aria-expanded="false"
+          aria-controls="tutor-ai-sheet"
+          className={cn(
+            'fixed right-0 top-[76px] z-40 flex h-12 w-11 items-center justify-center',
+            'rounded-l-full border border-r-0 border-tertiary/25 bg-surface text-tertiary',
+            'transition-colors duration-200 hover:bg-tertiary/10',
+            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-tertiary',
+          )}
+        >
+          <span className="relative flex size-8 items-center justify-center rounded-full bg-tertiary/10">
+            <MessageCircle className="size-4" />
+            <span className="absolute -right-0.5 -top-0.5 size-2 rounded-full border-2 border-surface bg-success" />
+          </span>
+        </motion.button>
+      )}
+
+      <Sheet modal={false} open={isOpen} onOpenChange={setIsOpen}>
+        <SheetContent
+          id="tutor-ai-sheet"
+          side="bottom"
+          hideClose
+          hideOverlay
+          onInteractOutside={(event) => event.preventDefault()}
+          onPointerDownOutside={(event) => event.preventDefault()}
+          className={cn(
+            'z-[60] flex flex-col gap-0 overflow-hidden border-tertiary/25 bg-surface p-0 text-primary',
+            'h-[calc(100dvh-60px)] max-h-[calc(100dvh-60px)] w-full max-w-none rounded-t-2xl border-t',
+          )}
+        >
+          <SheetHeader className="relative shrink-0 border-b border-border-subtle/70 bg-surface px-4 py-3 text-left">
+            <div className="flex items-center gap-3 pr-10">
+              <div className="relative flex size-9 shrink-0 items-center justify-center rounded-xl border border-tertiary/25 bg-tertiary/10 text-tertiary">
+                <Sparkles className="size-4" />
+                <span className="absolute -bottom-0.5 -right-0.5 size-2.5 rounded-full border-2 border-surface bg-success" />
+              </div>
+              <div className="min-w-0">
+                <SheetTitle className="font-display text-base font-bold text-primary">
+                  {t('module.tutor_title')}
+                </SheetTitle>
+                <SheetDescription className="truncate text-xs text-secondary">
+                  {moduleTitle}
+                </SheetDescription>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setIsOpen(false)}
+              aria-label="Tutup Tutor AI"
+              className="absolute right-3 top-3 flex size-8 items-center justify-center rounded-lg text-secondary transition-colors hover:bg-secondary/10 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-tertiary"
+            >
+              <X className="size-4" />
+            </button>
+          </SheetHeader>
+          <ChatPanelBody {...bodyProps} />
+        </SheetContent>
+      </Sheet>
+    </>
+  )
+}
+
+function ChatPanelBody({
+  history,
+  isLoading,
+  moduleTitle,
+  suggestedPrompts,
+  sendMutation,
+  scrollRef,
+  textareaRef,
+  draftValue,
+  setDraftValue,
+  handleSendMessage,
+  handleSuggestionClick,
+  t,
+}) {
+  return (
+    <>
+      <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto bg-neutral/40 px-4 py-4 space-y-5">
+        {isLoading ? (
+          <div className="flex items-center justify-center py-12 font-label text-sm text-secondary">
+            <Sparkles className="mr-2 size-4 animate-pulse" />
+          </div>
+        ) : history.length === 0 ? (
+          <EmptyChatState
+            moduleTitle={moduleTitle}
+            onSuggestionClick={handleSuggestionClick}
+            disabled={sendMutation.isPending}
+            suggestedPrompts={suggestedPrompts}
+          />
+        ) : (
+          <div className="space-y-5">
+            {history.map((msg, idx) => {
+              const isLastAi =
+                msg.role === 'assistant' && idx === history.length - 1 && !sendMutation.isPending
+              return (
+                <ChatBubble
+                  key={msg.id || idx}
+                  messageId={msg.id}
+                  message={msg.content}
+                  isAI={msg.role === 'assistant'}
+                  sources={msg.sources}
+                  timestamp={msg.created_at}
+                  isLastAiMessage={isLastAi}
+                  rag_faithfulness={msg.rag_faithfulness}
+                  rag_answer_relevancy={msg.rag_answer_relevancy}
+                />
+              )
+            })}
+            {sendMutation.isPending && (
+              <div className="flex items-start gap-3">
+                <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-tertiary/15 text-tertiary">
+                  <Sparkles size={14} />
+                </div>
+                <div className="rounded-2xl rounded-tl-sm border border-border-subtle bg-surface px-4 py-3">
+                  <ThinkingIndicator />
+                </div>
               </div>
             )}
           </div>
-
-          {/* ─── INPUT ─── */}
-          <div className="px-3 py-2 border-t border-tertiary/20 bg-surface-1 shrink-0">
-            <div className="flex items-end gap-2 bg-surface border border-[rgba(58,41,22,0.06)] rounded-2xl px-3 py-2 focus-within:border-tertiary focus-within:ring-2 focus-within:ring-tertiary/20 transition-all shadow-warm-xs">
-              <textarea
-                rows={1}
-                value={draftValue}
-                onChange={(e) => setDraftValue(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault()
-                    if (draftValue.trim()) {
-                      handleSendMessage(draftValue)
-                      setDraftValue('')
-                    }
-                  }
-                }}
-                placeholder={t('module.tutor_input_placeholder')}
-                disabled={sendMutation.isPending}
-                className="flex-1 bg-transparent border-none focus:ring-0 focus:outline-none text-[13px] text-primary placeholder:text-secondary/50 resize-none py-1 max-h-[100px] leading-relaxed [&::-webkit-scrollbar]:hidden"
-                ref={textareaRef}
-              />
-              <button
-                onClick={() => {
-                  if (draftValue.trim()) {
-                    handleSendMessage(draftValue)
-                    setDraftValue('')
-                  }
-                }}
-                disabled={!draftValue.trim() || sendMutation.isPending}
-                aria-label="Kirim pesan"
-                className="bg-tertiary text-white rounded-full p-2 hover:bg-tertiary-light disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-150 flex-shrink-0 shadow-sm"
-              >
-                {sendMutation.isPending
-                  ? <span className="size-3.5 rounded-full border-2 border-white/40 border-t-white animate-spin block" />
-                  : <Send size={14} />}
-              </button>
-            </div>
-          </div>
-        </>
-      )}
-    </motion.aside>
-  )
-}
-
-/* ────────────────────────────────────────────────────────────────── */
-
-function CollapsedRail({ onExpand }) {
-  return (
-    <div className="flex flex-col h-full items-center">
-      <button
-        type="button"
-        onClick={onExpand}
-        className={cn(
-          'mt-3 p-1.5 rounded-lg shrink-0',
-          'text-secondary hover:text-primary hover:bg-secondary/10',
-          'transition-colors duration-150',
-          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-tertiary'
         )}
-        aria-label="Buka Tutor AI"
-        title="Buka Tutor AI"
-      >
-        <ChevronLeft size={16} />
-      </button>
-
-      <div className="flex-1 flex flex-col items-center justify-center gap-3">
-        <div
-          className={cn(
-            'size-10 rounded-xl flex items-center justify-center',
-            'bg-tertiary/15 text-tertiary'
-          )}
-          aria-hidden="true"
-        >
-          <Sparkles size={20} />
-        </div>
-        <span
-          className={cn(
-            'text-[10px] font-label font-bold uppercase tracking-widest',
-            'text-tertiary select-none'
-          )}
-          style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}
-        >
-          Tutor AI
-        </span>
       </div>
 
-      <div className="h-3 shrink-0" aria-hidden="true" />
-    </div>
+      <div className="shrink-0 border-t border-border-subtle/70 bg-surface px-3 py-2.5">
+        <div className="flex items-end gap-2 rounded-xl border border-border-subtle bg-surface px-3 py-2 transition-colors focus-within:border-tertiary/40 focus-within:ring-1 focus-within:ring-tertiary/20">
+          <textarea
+            rows={1}
+            value={draftValue}
+            onChange={(e) => setDraftValue(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault()
+                if (draftValue.trim()) {
+                  handleSendMessage(draftValue)
+                  setDraftValue('')
+                }
+              }
+            }}
+            placeholder={t('module.tutor_input_placeholder')}
+            disabled={sendMutation.isPending}
+            className="max-h-[100px] flex-1 resize-none border-none bg-transparent py-1 text-[13px] leading-relaxed text-primary placeholder:text-secondary/50 focus:outline-none focus:ring-0 [&::-webkit-scrollbar]:hidden"
+            ref={textareaRef}
+          />
+          <button
+            type="button"
+            onClick={() => {
+              if (draftValue.trim()) {
+                handleSendMessage(draftValue)
+                setDraftValue('')
+              }
+            }}
+            disabled={!draftValue.trim() || sendMutation.isPending}
+            aria-label="Kirim pesan"
+            className="flex shrink-0 rounded-full bg-tertiary p-2 text-white transition-colors duration-150 hover:bg-tertiary-light disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            {sendMutation.isPending ? (
+              <span className="block size-3.5 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+            ) : (
+              <Send size={14} />
+            )}
+          </button>
+        </div>
+      </div>
+    </>
   )
 }
-
-/* ────────────────────────────────────────────────────────────────── */
 
 function EmptyChatState({ moduleTitle, onSuggestionClick, disabled, suggestedPrompts }) {
-  const { t } = useTranslation();
+  const { t } = useTranslation()
   return (
-    <div className="relative flex flex-col items-center text-center px-4 py-8 overflow-hidden">
-      {/* Soft gradient backdrop — matches the rest of the app's hero treatment */}
-      <div
-        aria-hidden="true"
-        className="absolute inset-0 -z-10 gradient-mesh-warm opacity-40"
-      />
-
-      {/* Decorative oversized numeral — tiny, doesn't overlap */}
-      <span
-        aria-hidden="true"
-        className="absolute -top-2 -right-2 font-display text-[4rem] font-black italic text-tertiary/[0.06] leading-none pointer-events-none select-none"
-      >
-        ✦
-      </span>
-
-      {/* Avatar — big, prominent, with glow */}
-      <div className="relative mb-4">
-        <div
-          aria-hidden="true"
-          className="absolute inset-0 -m-3 bg-tertiary/15 blur-2xl rounded-full"
-        />
-        <div className="relative flex size-16 items-center justify-center rounded-2xl bg-tertiary/10 border-2 border-tertiary/25 text-tertiary shadow-warm-sm">
-          <MessageCircle className="size-7" strokeWidth={1.5} />
-        </div>
-        {/* Live indicator dot */}
-        <span
-          aria-hidden="true"
-          className="absolute -bottom-0.5 -right-0.5 flex size-3.5 items-center justify-center"
-        >
-          <span className="absolute inline-flex h-full w-full rounded-full bg-success/40 animate-ping" />
-          <span className="relative inline-flex size-2.5 rounded-full bg-success border-2 border-surface-1" />
-        </span>
+    <div className="relative flex flex-col items-center overflow-hidden rounded-xl bg-surface px-4 py-8 text-center">
+      <div className="relative mb-4 flex size-14 items-center justify-center rounded-2xl border border-tertiary/20 bg-tertiary/10 text-tertiary">
+        <MessageCircle className="size-6" strokeWidth={1.5} />
       </div>
-
-      {/* Title block */}
-      <p className="eyebrow !text-[10px] mb-1">{t('module.tutor_welcome')}</p>
-      <h3 className="font-display font-bold text-lg text-primary leading-tight tracking-tight mb-1.5">
+      <p className="eyebrow !mb-1 !text-[10px]">{t('module.tutor_welcome')}</p>
+      <h3 className="mb-1.5 font-display text-lg font-bold leading-tight tracking-tight text-primary">
         {t('module.tutor_name')}
       </h3>
-      <p className="text-[12px] text-secondary font-serif-content leading-relaxed max-w-[300px]">
+      <p className="max-w-[300px] font-serif-content text-[12px] leading-relaxed text-secondary">
         {t('module.tutor_intro')}{' '}
-        <span className="text-primary font-medium italic">
-          {moduleTitle}
-        </span>
-        .
+        <span className="font-medium italic text-primary">{moduleTitle}</span>.
       </p>
-
-      {/* Suggested prompts — actually clickable */}
       <div className="mt-5 w-full space-y-2">
-        <p className="text-[10px] font-label uppercase tracking-widest text-secondary/70 mb-2">
+        <p className="mb-2 font-label text-[10px] uppercase tracking-widest text-secondary/70">
           {t('module.tutor_try_ask')}
         </p>
         {suggestedPrompts.map(({ label, icon: Icon }) => (
@@ -412,32 +520,13 @@ function EmptyChatState({ moduleTitle, onSuggestionClick, disabled, suggestedPro
             type="button"
             disabled={disabled}
             onClick={() => onSuggestionClick?.(label)}
-            className={cn(
-              'group w-full inline-flex items-center gap-2.5 px-3 py-2.5 rounded-xl',
-              'bg-surface-1 border border-[rgba(58,41,22,0.06)]',
-              'text-left text-[12px] font-label text-secondary',
-              'transition-all duration-150',
-              'hover:border-tertiary/40 hover:bg-tertiary/[0.04] hover:text-primary',
-              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-tertiary',
-              'disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:border-[rgba(58,41,22,0.06)]'
-            )}
+            className="group inline-flex w-full items-center gap-2.5 rounded-xl border border-border bg-surface-1 px-3 py-2.5 text-left font-label text-[12px] text-secondary transition-colors duration-150 hover:border-tertiary/40 hover:bg-tertiary/[0.04] hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-tertiary disabled:cursor-not-allowed disabled:opacity-50"
           >
-            <span
-              className={cn(
-                'flex size-7 shrink-0 items-center justify-center rounded-lg',
-                'bg-tertiary/10 text-tertiary',
-                'transition-transform duration-200 group-hover:scale-105'
-              )}
-            >
+            <span className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-tertiary/10 text-tertiary">
               <Icon className="size-3.5" />
             </span>
             <span className="flex-1 leading-snug">{label}</span>
-            <Send
-              className={cn(
-                'size-3 shrink-0 text-secondary/40',
-                'transition-all duration-200 group-hover:text-tertiary group-hover:translate-x-0.5'
-              )}
-            />
+            <Send className="size-3 shrink-0 text-secondary/40 transition-colors group-hover:text-tertiary" />
           </button>
         ))}
       </div>

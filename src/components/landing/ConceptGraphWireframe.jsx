@@ -1,4 +1,5 @@
 import { motion, useReducedMotion } from 'framer-motion'
+import { useTranslation } from 'react-i18next'
 import { cn } from '@/lib/utils'
 
 /**
@@ -10,26 +11,27 @@ export default function ConceptGraphWireframe({
   compact = false,
   animated = true,
 }) {
+  const { t } = useTranslation()
   const shouldReduceMotion = useReducedMotion()
   const reduce = shouldReduceMotion || !animated
 
   // Node positions in a 400×320 viewBox
   const nodes = compact
     ? [
-        { id: 'a', cx: 80, cy: 90, r: 14, label: 'Topik' },
-        { id: 'b', cx: 200, cy: 50, r: 18, label: 'Konsep' },
-        { id: 'c', cx: 320, cy: 100, r: 14, label: 'Modul' },
-        { id: 'd', cx: 140, cy: 200, r: 12, label: 'Kuis' },
-        { id: 'e', cx: 260, cy: 220, r: 16, label: 'Tutor' },
+        { id: 'a', cx: 80, cy: 90, r: 14, label: t('landing.graph.topic') },
+        { id: 'b', cx: 200, cy: 50, r: 18, label: t('landing.graph.concept') },
+        { id: 'c', cx: 320, cy: 100, r: 14, label: t('landing.graph.module') },
+        { id: 'd', cx: 140, cy: 200, r: 12, label: t('landing.graph.quiz') },
+        { id: 'e', cx: 260, cy: 220, r: 16, label: t('landing.graph.tutor') },
       ]
     : [
-        { id: 'a', cx: 70, cy: 100, r: 16, label: 'Topik' },
-        { id: 'b', cx: 180, cy: 45, r: 20, label: 'Konsep A' },
-        { id: 'c', cx: 310, cy: 70, r: 14, label: 'Sub-bab' },
-        { id: 'd', cx: 360, cy: 180, r: 18, label: 'Modul' },
-        { id: 'e', cx: 240, cy: 240, r: 15, label: 'Kuis' },
-        { id: 'f', cx: 100, cy: 230, r: 13, label: 'Tutor' },
-        { id: 'g', cx: 200, cy: 150, r: 22, label: 'Inti' },
+        { id: 'a', cx: 70, cy: 100, r: 16, label: t('landing.graph.topic') },
+        { id: 'b', cx: 180, cy: 45, r: 20, label: t('landing.graph.concept_a') },
+        { id: 'c', cx: 310, cy: 70, r: 14, label: t('landing.graph.subchapter') },
+        { id: 'd', cx: 360, cy: 180, r: 18, label: t('landing.graph.module') },
+        { id: 'e', cx: 240, cy: 240, r: 15, label: t('landing.graph.quiz') },
+        { id: 'f', cx: 100, cy: 230, r: 13, label: t('landing.graph.tutor') },
+        { id: 'g', cx: 200, cy: 150, r: 22, label: t('landing.graph.core') },
       ]
 
   const edges = compact
@@ -113,7 +115,7 @@ export default function ConceptGraphWireframe({
 
         {/* Nodes */}
         {nodes.map((node, i) => {
-          const isCore = node.id === 'g' || (!compact && node.label === 'Inti')
+          const isCore = node.id === 'g'
           return (
             <motion.g
               key={node.id}

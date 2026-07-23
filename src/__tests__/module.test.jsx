@@ -49,13 +49,12 @@ vi.mock('@/components/module/StickyActionBar', () => ({
   ),
 }));
 
-// Chat panel is now ALWAYS visible (no toggle) — the module page
-// renders it as a persistent right sidebar once a module is loaded.
+// Tutor AI mounts once the module is loaded (floating trigger + sheet).
 vi.mock('@/components/module/ModuleChatSlider', () => ({
   default: ({ moduleTitle }) => (
-    <aside data-testid="module-chat-panel" data-topic={moduleTitle || ''}>
+    <div data-testid="module-chat-panel" data-topic={moduleTitle || ''}>
       Chat Panel
-    </aside>
+    </div>
   ),
 }));
 
@@ -66,7 +65,7 @@ vi.mock('react-router-dom', () => ({
 }));
 
 describe('Module Page Smoke Tests', () => {
-  it('Module page renders content, action bar, and persistent chat panel when data is loaded', () => {
+  it('Module page renders content, action bar, and Tutor AI host when data is loaded', () => {
     const mockModule = {
       title: 'Introduction to React',
       content_markdown: '# Hello React\nThis is a test module.',
@@ -103,9 +102,7 @@ describe('Module Page Smoke Tests', () => {
     expect(screen.getByText(/Rating/i)).toBeInTheDocument();
     expect(screen.getByText(/Tandai Selesai/i)).toBeInTheDocument();
 
-    // The chat panel is now ALWAYS visible (no toggle, no FAB) — it's
-    // a persistent right sidebar that appears once the module is
-    // loaded, with the topic shown in the header pill.
+    // Tutor AI host mounts once the module is loaded (topic title available).
     expect(screen.getByTestId('module-chat-panel')).toBeInTheDocument();
     expect(screen.getByTestId('module-chat-panel')).toHaveAttribute(
       'data-topic',
@@ -113,7 +110,7 @@ describe('Module Page Smoke Tests', () => {
     );
   });
 
-  it('Chat panel is NOT rendered when the module is still loading', () => {
+  it('Tutor AI host is NOT rendered when the module is still loading', () => {
     vi.mocked(useModule).mockReturnValue({
       data: null,
       isLoading: true,

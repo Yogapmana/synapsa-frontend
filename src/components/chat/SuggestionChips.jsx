@@ -19,8 +19,11 @@ const SuggestionChips = ({ topicTitle, onChipClick }) => {
         {suggestions.map((suggestion, index) => (
           <motion.button
             key={index}
-            whileHover={shouldReduceMotion ? {} : { scale: 1.03, y: -1 }}
-            whileTap={shouldReduceMotion ? {} : { scale: 0.97 }}
+            initial={shouldReduceMotion ? false : { opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ type: 'spring', stiffness: 300, damping: 26, delay: index * 0.05 }}
+            whileHover={shouldReduceMotion ? {} : { y: -1 }}
+            whileTap={shouldReduceMotion ? {} : { scale: 0.98 }}
             onClick={() => onChipClick(suggestion.text)}
             className="flex items-center gap-2 px-4 py-2.5 border border-border bg-surface text-primary rounded-full text-sm hover:border-tertiary hover:text-tertiary hover:bg-tertiary/5 transition-all duration-200 shadow-warm-xs"
           >

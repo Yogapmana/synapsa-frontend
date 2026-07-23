@@ -31,12 +31,34 @@ export function QuizResult({ result, questions, topicId, sessionId, onRetry }) {
     QUIZ_FEEDBACK.find((f) => percentage >= f.min && percentage <= f.max) ||
     QUIZ_FEEDBACK[QUIZ_FEEDBACK.length - 1];
 
-  const isPassed = percentage >= 60;
+  const isPassed = percentage >= 80;
 
   // Animated score counter
   const count = useMotionValue(0)
   const rounded = useTransform(count, (latest) => Math.round(latest))
   const [displayScore, setDisplayScore] = useState(0)
+
+  // Auto-complete the topic once the quiz is passed so curriculum status
+  // flips to "Selesai" even if the user never clicks "Lanjut Topik Berikutnya"
+  // (backend post-quiz eval also does this; this is a client-side safety net).
+  useEffect(() => {
+    if (!isPassed || !sessionId || !topicId) return
+    let cancelled = false
+    ;(async () => {
+      try {
+        await completeTopic.mutateAsync({ sessionId, topicId })
+      } catch {
+        // Backend may already have completed it, or quiz_score not yet
+        // written by the async eval — safe to ignore.
+      }
+      if (cancelled) return
+    })()
+    return () => {
+      cancelled = true
+    }
+    // completeTopic is a stable mutation object from react-query
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isPassed, sessionId, topicId])
 
   useEffect(() => {
     if (shouldReduceMotion) {
@@ -53,6 +75,7 @@ export function QuizResult({ result, questions, topicId, sessionId, onRetry }) {
       unsub()
     }
   }, [percentage, count, rounded, shouldReduceMotion])
+
 
   // Tier color logic
   const tierTone = isPassed
@@ -209,11 +232,11 @@ export function QuizResult({ result, questions, topicId, sessionId, onRetry }) {
               {t('quiz.back_to_material', 'Kembali ke Materi')}
             </Button>
 
-            {percentage > 85 ? (
+            {result.feedback_action === 'enrichment' ? (
               <Button
                 variant="default"
                 size="lg"
-                onClick={() => window.open(`/module/${topicId}/deep-dive`, "_blank")}
+                onClick={() => window.location.href = `/module/${topicId}/deep-dive`}
                 className="w-full rounded-xl font-label bg-amber-500 hover:bg-amber-600 text-white"
               >
                 <Sparkles className="size-4 mr-2" />
@@ -234,11 +257,11 @@ export function QuizResult({ result, questions, topicId, sessionId, onRetry }) {
               >
                 {isPassed
                   ? t('quiz.next_topic', 'Lanjut Topik Berikutnya')
-                  : t('quiz.pass_to_continue', 'Lulus Kuis (Min 60%) untuk Lanjut')}
+                  : t('quiz.pass_to_continue', 'Lulus Kuis (Min 80%) untuk Lanjut')}
               </Button>
             )}
 
-            {percentage > 85 && (
+            {result.feedback_action === 'enrichment' && (
               <Button
                 size="lg"
                 variant="tertiary"
@@ -262,6 +285,7 @@ export function QuizResult({ result, questions, topicId, sessionId, onRetry }) {
                     initialSeconds={result.cooldown_remaining_seconds} 
                     onComplete={() => window.location.reload()} 
                     topicId={topicId}
+                    feedbackAction={result.feedback_action}
                   />
                 </div>
               ) : (
@@ -321,7 +345,7 @@ export function QuizResult({ result, questions, topicId, sessionId, onRetry }) {
                     </div>
                     <ChevronDown className="w-4 h-4 text-secondary/70 shrink-0" />
                   </CollapsibleTrigger>
-                  <CollapsibleContent className="p-4 bg-neutral border-t border-[var(--border)]">
+                  <CollapsibleContent className="p-4 bg-surface border-t border-[var(--border)]">
                     <div className="space-y-4">
                       <div>
                         <p className="text-xs font-label uppercase tracking-wider text-secondary mb-1">

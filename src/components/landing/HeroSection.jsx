@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
-import { motion } from 'framer-motion'
+import { useTranslation } from 'react-i18next'
+import { motion, useReducedMotion } from 'framer-motion'
 import { ArrowRight, CheckCircle2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import HeroIllustration from './HeroIllustration'
@@ -7,6 +8,14 @@ import ConceptGraphWireframe from './ConceptGraphWireframe'
 import { fadeUp, staggerContainer } from './motion'
 
 export default function HeroSection() {
+  const { t } = useTranslation()
+  const shouldReduceMotion = useReducedMotion()
+  const trustItems = [
+    t('landing.hero.trust_1'),
+    t('landing.hero.trust_2'),
+    t('landing.hero.trust_3'),
+  ]
+
   return (
     <section className="relative flex items-center overflow-x-hidden gradient-mesh-warm min-h-0 lg:min-h-[78vh]">
       {/* Decorative flourishes — desktop only */}
@@ -37,41 +46,44 @@ export default function HeroSection() {
           <motion.div
             initial="initial"
             animate="animate"
-            variants={staggerContainer}
+            variants={shouldReduceMotion ? {} : staggerContainer}
             className="lg:col-span-6 text-center lg:text-left space-y-4 sm:space-y-5"
           >
-            <motion.div variants={fadeUp} className="flex justify-center lg:justify-start">
-              <span className="eyebrow">Personal Learning Agent</span>
+            <motion.div variants={shouldReduceMotion ? {} : fadeUp} className="flex justify-center lg:justify-start">
+              <span className="eyebrow">{t('landing.hero.eyebrow')}</span>
             </motion.div>
 
             <motion.h1
-              variants={fadeUp}
+              variants={shouldReduceMotion ? {} : fadeUp}
               className="text-4xl sm:text-6xl md:text-7xl font-bold font-display text-primary leading-[0.96] sm:leading-[0.94] tracking-tighter"
             >
-              Belajar lebih{' '}
+              {t('landing.hero.title_before')}{' '}
               <span className="relative inline-block">
-                <span className="relative z-10 italic text-tertiary">pintar,</span>
+                <span className="relative z-10 italic text-tertiary">{t('landing.hero.title_highlight')}</span>
                 <span
                   aria-hidden="true"
                   className="absolute bottom-[0.18em] left-0 right-0 h-[0.18em] bg-tertiary/15 -z-0 rounded-full"
                 />
               </span>
-              <br className="hidden sm:block" />
-              {' '}bukan lebih keras.
+              {t('landing.hero.title_after') ? (
+                <>
+                  <br className="hidden sm:block" />
+                  {' '}{t('landing.hero.title_after')}
+                </>
+              ) : null}
             </motion.h1>
 
             <motion.p
-              variants={fadeUp}
+              variants={shouldReduceMotion ? {} : fadeUp}
               className="max-w-xl mx-auto lg:mx-0 text-base sm:text-lg md:text-xl text-secondary leading-relaxed tracking-wide font-serif-content px-1 sm:px-0"
             >
-              Synapsa merancang kurikulum personal, mencari materi terkini
-              dari internet, dan menyesuaikan kecepatan belajarmu secara
-              <em className="font-display not-italic text-tertiary"> real-time </em>
-              berdasarkan performamu.
+              {t('landing.hero.subtitle_before')}{' '}
+              <em className="font-display not-italic text-tertiary">{t('landing.hero.subtitle_highlight')}</em>{' '}
+              {t('landing.hero.subtitle_after')}
             </motion.p>
 
             <motion.div
-              variants={fadeUp}
+              variants={shouldReduceMotion ? {} : fadeUp}
               className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start pt-1"
             >
               <Link to="/register" className="w-full sm:w-auto">
@@ -80,7 +92,7 @@ export default function HeroSection() {
                   variant="tertiary"
                   className="w-full sm:w-auto px-8 py-6 text-base font-semibold rounded-xl shadow-warm-lg font-label tracking-wide group transition-all duration-300 hover:shadow-warm-xl hover:-translate-y-0.5"
                 >
-                  Mulai Belajar Gratis
+                  {t('landing.hero.cta_primary')}
                   <ArrowRight className="ml-2 w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />
                 </Button>
               </Link>
@@ -90,29 +102,27 @@ export default function HeroSection() {
                   variant="outline"
                   className="w-full sm:w-auto px-8 py-6 text-base font-semibold rounded-xl border-2 font-label tracking-wide bg-surface/40 backdrop-blur-sm transition-all duration-300 hover:shadow-warm-md hover:-translate-y-0.5"
                 >
-                  Sudah punya akun? Masuk
+                  {t('landing.hero.cta_secondary')}
                 </Button>
               </Link>
             </motion.div>
 
             <motion.div
-              variants={fadeUp}
+              variants={shouldReduceMotion ? {} : fadeUp}
               className="flex flex-row flex-wrap items-center justify-center lg:justify-start gap-x-4 sm:gap-x-5 gap-y-1.5 pt-0.5 text-xs sm:text-sm text-secondary font-label"
             >
-              {['Tanpa kartu kredit', 'Materi selalu terkini', 'Adaptif & personal'].map(
-                (item) => (
-                  <span key={item} className="inline-flex items-center gap-1.5 whitespace-nowrap">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-success shrink-0" />
-                    {item}
-                  </span>
-                ),
-              )}
+              {trustItems.map((item) => (
+                <span key={item} className="inline-flex items-center gap-1.5 whitespace-nowrap">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-success shrink-0" />
+                  {item}
+                </span>
+              ))}
             </motion.div>
           </motion.div>
 
           {/* Visual column */}
           <motion.div
-            initial={{ opacity: 0, y: 24 }}
+            initial={shouldReduceMotion ? false : { opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.45, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
             className="lg:col-span-6 relative w-full max-w-md sm:max-w-lg mx-auto lg:max-w-none"

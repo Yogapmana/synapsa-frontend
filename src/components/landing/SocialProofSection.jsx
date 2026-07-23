@@ -1,13 +1,16 @@
-import { motion } from 'framer-motion'
+import { useTranslation } from 'react-i18next'
+import { motion, useReducedMotion } from 'framer-motion'
 import { fadeUp, staggerContainer, viewportOnce } from './motion'
 
-const metrics = [
-  { value: '87%', label: 'Kepuasan kuis adaptif' },
-  { value: '7', label: 'Sumber materi' },
-  { value: '5', label: 'Agent kolaboratif' },
-]
-
 export default function SocialProofSection() {
+  const { t } = useTranslation()
+  const shouldReduceMotion = useReducedMotion()
+  const metrics = [
+    { value: '87%', label: t('landing.proof.metric1') },
+    { value: '7', label: t('landing.proof.metric2') },
+    { value: '5', label: t('landing.proof.metric3') },
+  ]
+
   return (
     <section className="py-24 sm:py-28 bg-neutral relative overflow-hidden shadow-[inset_0_1px_3px_rgba(58,41,22,0.04),inset_0_-1px_3px_rgba(58,41,22,0.04)]">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
@@ -15,31 +18,31 @@ export default function SocialProofSection() {
           initial="initial"
           whileInView="animate"
           viewport={viewportOnce}
-          variants={staggerContainer}
+          variants={shouldReduceMotion ? {} : staggerContainer}
         >
           <motion.p
-            variants={fadeUp}
+            variants={shouldReduceMotion ? {} : fadeUp}
             className="text-xs font-label uppercase tracking-widest text-secondary mb-4"
           >
-            Bukti konsep
+            {t('landing.proof.eyebrow')}
           </motion.p>
           <motion.p
-            variants={fadeUp}
+            variants={shouldReduceMotion ? {} : fadeUp}
             className="text-2xl sm:text-3xl md:text-4xl font-display font-medium text-primary leading-snug tracking-tight max-w-3xl mx-auto"
           >
-            “Synapsa dirancang untuk skripsi S1. Pengujian internal menunjukkan
-            <span className="text-tertiary italic"> 87% </span>
-            kepuasan pengguna pada kuis adaptif.”
+            {t('landing.proof.quote_before')}{' '}
+            <span className="text-tertiary italic">{t('landing.proof.quote_highlight')}</span>{' '}
+            {t('landing.proof.quote_after')}
           </motion.p>
           <motion.p
-            variants={fadeUp}
+            variants={shouldReduceMotion ? {} : fadeUp}
             className="mt-5 text-sm text-secondary font-label"
           >
-            — Sample data, skripsi 2026
+            {t('landing.proof.attribution')}
           </motion.p>
 
           <motion.div
-            variants={fadeUp}
+            variants={shouldReduceMotion ? {} : fadeUp}
             className="mt-12 grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-5"
           >
             {metrics.map((m) => (
@@ -57,8 +60,8 @@ export default function SocialProofSection() {
             ))}
           </motion.div>
 
-          <motion.div variants={fadeUp} className="mt-12 signature-rule">
-            <span>Quality you can feel</span>
+          <motion.div variants={shouldReduceMotion ? {} : fadeUp} className="mt-12 signature-rule">
+            <span>{t('landing.proof.signature')}</span>
           </motion.div>
         </motion.div>
       </div>

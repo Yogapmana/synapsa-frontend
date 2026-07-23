@@ -1,4 +1,5 @@
 import { motion, useReducedMotion } from 'framer-motion'
+import { useTranslation } from 'react-i18next'
 import { Sparkles, Brain, MessageSquare, Search, FileText } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -8,14 +9,15 @@ import { cn } from '@/lib/utils'
  * Mobile: book centered + compact 2×2 chip grid (no overflow/clipping).
  */
 export default function HeroIllustration({ className }) {
+  const { t } = useTranslation()
   const shouldReduceMotion = useReducedMotion()
 
   // Desktop orbit positions — kept well inside the stage
   const fragments = [
     {
       icon: Search,
-      label: 'Riset',
-      sublabel: 'web · arXiv',
+      label: t('landing.hero.chip_research'),
+      sublabel: t('landing.hero.chip_research_sub'),
       x: '6%',
       y: '8%',
       tone: 'tertiary',
@@ -24,8 +26,8 @@ export default function HeroIllustration({ className }) {
     },
     {
       icon: Brain,
-      label: 'Planner',
-      sublabel: 'kurikulum',
+      label: t('landing.hero.chip_planner'),
+      sublabel: t('landing.hero.chip_planner_sub'),
       x: '56%',
       y: '6%',
       tone: 'success',
@@ -34,8 +36,8 @@ export default function HeroIllustration({ className }) {
     },
     {
       icon: FileText,
-      label: 'Modul',
-      sublabel: 'dari 7 sumber',
+      label: t('landing.hero.chip_module'),
+      sublabel: t('landing.hero.chip_module_sub'),
       x: '4%',
       y: '54%',
       tone: 'info',
@@ -44,8 +46,8 @@ export default function HeroIllustration({ className }) {
     },
     {
       icon: MessageSquare,
-      label: 'Tutor',
-      sublabel: 'RAG chat',
+      label: t('landing.hero.chip_tutor'),
+      sublabel: t('landing.hero.chip_tutor_sub'),
       x: '52%',
       y: '52%',
       tone: 'warning',
@@ -126,7 +128,7 @@ export default function HeroIllustration({ className }) {
           className="flex items-center justify-center gap-2 text-[10px] font-label text-secondary/60"
         >
           <span className="inline-block w-6 h-px bg-tertiary/30" />
-          <span className="uppercase tracking-[0.16em]">Multi-Agent · RAG · Adaptif</span>
+          <span className="uppercase tracking-[0.16em]">{t('landing.hero.caption')}</span>
           <span className="inline-block w-6 h-px bg-tertiary/30" />
         </motion.div>
       </div>
@@ -215,7 +217,7 @@ export default function HeroIllustration({ className }) {
         className="mt-3 hidden md:flex items-center justify-center gap-3 text-xs font-label text-secondary/60"
       >
         <span className="inline-block w-8 h-px bg-tertiary/30" />
-        <span className="uppercase tracking-[0.18em]">Multi-Agent · RAG · Adaptif</span>
+        <span className="uppercase tracking-[0.18em]">{t('landing.hero.caption')}</span>
         <span className="inline-block w-8 h-px bg-tertiary/30" />
       </motion.div>
     </div>

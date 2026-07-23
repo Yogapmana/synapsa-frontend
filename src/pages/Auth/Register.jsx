@@ -5,25 +5,15 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
 import { Sparkles, Loader2, Eye, EyeOff, Brain, BookOpen, MessageSquare } from 'lucide-react'
 import { motion } from 'framer-motion'
+import { useTranslation } from 'react-i18next'
 import { cn } from '@/lib/utils'
 import { register as registerApi, googleLogin as googleLoginApi } from '@/api/auth'
 import { useAuthStore } from '@/stores/authStore'
 import { useQueryClient } from '@tanstack/react-query'
 import { GoogleLogin } from '@react-oauth/google'
+import LanguageToggle from '@/components/common/LanguageToggle'
 
-const registerSchema = z.object({
-  username: z.string()
-    .min(3, 'Username minimal 3 karakter')
-    .max(50, 'Username maksimal 50 karakter'),
-  email: z.string().email('Format email tidak valid'),
-  password: z.string().min(8, 'Password minimal 8 karakter'),
-  confirmPassword: z.string()
-}).refine((data) => data.password === data.confirmPassword, {
-  message: 'Password tidak cocok',
-  path: ['confirmPassword'],
-})
-
-function getPasswordStrength(password) {
+function getPasswordStrength(password, labels) {
   if (!password) return { score: 0, label: '', color: '' }
   let score = 0
   if (password.length >= 8) score++
@@ -32,17 +22,34 @@ function getPasswordStrength(password) {
   if (/[0-9]/.test(password)) score++
   if (/[^A-Za-z0-9]/.test(password)) score++
 
-  if (score <= 1) return { score: 1, label: 'Lemah', color: 'rgb(var(--danger))' }
-  if (score <= 3) return { score: 2, label: 'Sedang', color: 'rgb(var(--warning))' }
-  return { score: 3, label: 'Kuat', color: 'rgb(var(--success))' }
+  if (score <= 1) return { score: 1, label: labels.weak, color: 'rgb(var(--danger))' }
+  if (score <= 3) return { score: 2, label: labels.medium, color: 'rgb(var(--warning))' }
+  return { score: 3, label: labels.strong, color: 'rgb(var(--success))' }
 }
 
 export default function Register() {
+  const { t } = useTranslation()
   const [error, setError] = useState(null)
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const navigate = useNavigate()
   const queryClient = useQueryClient()
+
+  const registerSchema = useMemo(
+    () =>
+      z.object({
+        username: z.string()
+          .min(3, t('auth.username_min'))
+          .max(50, t('auth.username_max')),
+        email: z.string().email(t('auth.email_invalid')),
+        password: z.string().min(8, t('auth.password_min')),
+        confirmPassword: z.string()
+      }).refine((data) => data.password === data.confirmPassword, {
+        message: t('auth.password_mismatch'),
+        path: ['confirmPassword'],
+      }),
+    [t],
+  )
 
   const {
     register,
@@ -50,7 +57,10 @@ export default function Register() {
     watch,
     formState: { errors, isSubmitting },
   } = useForm({
-    resolver: zodResolver(registerSchema),
+    // Always resolve against the latest schema so validation messages
+    // follow the active language after a language switch.
+    resolver: (values, context, options) =>
+      zodResolver(registerSchema)(values, context, options),
     defaultValues: {
       username: '',
       email: '',
@@ -60,7 +70,24 @@ export default function Register() {
   })
 
   const passwordValue = watch('password')
-  const strength = useMemo(() => getPasswordStrength(passwordValue), [passwordValue])
+  const strengthLabels = useMemo(
+    () => ({
+      weak: t('auth.strength_weak'),
+      medium: t('auth.strength_medium'),
+      strong: t('auth.strength_strong'),
+    }),
+    [t],
+  )
+  const strength = useMemo(
+    () => getPasswordStrength(passwordValue, strengthLabels),
+    [passwordValue, strengthLabels],
+  )
+
+  const benefits = [
+    { icon: Brain, label: t('auth.benefit_planner') },
+    { icon: BookOpen, label: t('auth.benefit_modules') },
+    { icon: MessageSquare, label: t('auth.benefit_tutor') },
+  ]
 
   const onSubmit = async (data) => {
     setError(null)
@@ -83,12 +110,21 @@ export default function Register() {
         },
       })
     } catch (err) {
-      setError(err.response?.data?.detail || 'Pendaftaran gagal. Silakan coba lagi nanti.')
+      setError(err.response?.data?.detail || t('auth.register_failed'))
     }
   }
 
   return (
-    <div className="min-h-screen flex bg-neutral texture-grain">
+    <div className="relative min-h-screen flex bg-neutral texture-grain">
+      <div className="absolute left-4 top-4 z-20 sm:left-6 sm:top-5">
+        <Link to="/" className="block">
+          <img src="/horizontal-logo.png" alt="Synapsa Logo" className="h-16 sm:h-24 w-auto object-contain transition-transform hover:scale-105" />
+        </Link>
+      </div>
+      <div className="absolute right-4 top-4 z-20 sm:right-6 sm:top-5">
+        <LanguageToggle className="bg-surface/80 backdrop-blur-sm shadow-warm-xs ring-1 ring-border/50" />
+      </div>
+
       <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-gradient-to-br from-surface via-neutral to-tertiary/5 items-center justify-center">
         <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(circle, rgb(var(--tertiary)) 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
         <div
@@ -97,24 +133,17 @@ export default function Register() {
         />
 
         <div className="relative z-10 flex flex-col items-center text-center px-12 max-w-md">
-          <div className="w-20 h-20 rounded-2xl bg-tertiary flex items-center justify-center mb-6 shadow-warm-lg ring-4 ring-tertiary/15">
-            <Sparkles className="h-10 w-10 text-white" />
+          <div className="w-40 h-40 mb-6 shrink-0">
+            <img src="/logo.png" alt="Synapsa Logo" className="w-full h-full object-contain drop-shadow-lg" />
           </div>
-          <h1 className="text-5xl font-display font-bold text-primary tracking-tighter leading-none">
-            Synapsa
-          </h1>
           <p className="text-lg text-secondary mt-3 font-serif-content leading-relaxed">
-            Personal Learning Agent — kurikulum adaptif yang
-            <span className="text-tertiary italic"> belajar </span>
-            dari cara kamu belajar.
+            {t('auth.brand_tagline_before')}
+            <span className="text-tertiary italic"> {t('auth.brand_tagline_highlight')} </span>
+            {t('auth.brand_tagline_after')}
           </p>
 
           <div className="mt-12 w-full space-y-3 text-left">
-            {[
-              { icon: Brain, label: 'Planner Agent rancang kurikulum personal' },
-              { icon: BookOpen, label: 'Modul dari 7 sumber terpercaya' },
-              { icon: MessageSquare, label: 'Tutor AI kontekstual 24/7' },
-            ].map((item, i) => (
+            {benefits.map((item, i) => (
               <motion.div
                 key={item.label}
                 initial={{ opacity: 0, x: -10 }}
@@ -139,17 +168,10 @@ export default function Register() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, ease: [0.25, 0.46, 0.45, 0.94] }}
         >
-          <div className="lg:hidden flex items-center justify-center gap-2.5 mb-8">
-            <div className="bg-tertiary p-2 rounded-xl">
-              <Sparkles className="h-5 w-5 text-white" />
-            </div>
-            <span className="text-2xl font-display font-bold tracking-tight text-primary">Synapsa</span>
-          </div>
-
-          <div className="bg-surface rounded-[2rem] p-8 md:p-10 shadow-warm-xl ring-1 ring-border-subtle/50">
+          <div className="bg-surface rounded-[2rem] p-8 md:p-10 shadow-warm-xl ring-1 ring-border-subtle/50 mt-12 lg:mt-0">
             <div className="mb-6">
-              <h2 className="text-2xl font-display font-bold text-primary">Mulai perjalanan kamu ✨</h2>
-              <p className="text-sm text-secondary mt-1">Buat akun gratis, dapetin kurikulum personal</p>
+              <h2 className="text-2xl font-display font-bold text-primary">{t('auth.register_title')}</h2>
+              <p className="text-sm text-secondary mt-1">{t('auth.register_subtitle')}</p>
             </div>
 
             {error && (
@@ -160,7 +182,7 @@ export default function Register() {
 
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
               <div className="space-y-2">
-                <label className="text-sm font-label text-primary" htmlFor="username">Nama</label>
+                <label className="text-sm font-label text-primary" htmlFor="username">{t('auth.username')}</label>
                 <input
                   id="username"
                   autoComplete="username"
@@ -179,7 +201,7 @@ export default function Register() {
               </div>
 
               <div className="space-y-2">
-                <label className="text-sm font-label text-primary" htmlFor="email">Email</label>
+                <label className="text-sm font-label text-primary" htmlFor="email">{t('auth.email')}</label>
                 <input
                   id="email"
                   type="email"
@@ -199,7 +221,7 @@ export default function Register() {
               </div>
 
               <div className="space-y-2">
-                <label className="text-sm font-label text-primary" htmlFor="password">Password</label>
+                <label className="text-sm font-label text-primary" htmlFor="password">{t('auth.password')}</label>
                 <div className="relative">
                   <input
                     id="password"
@@ -215,7 +237,7 @@ export default function Register() {
                   />
                   <button
                     type="button"
-                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                    aria-label={showPassword ? t('auth.hide_password') : t('auth.show_password')}
                     onClick={() => setShowPassword(!showPassword)}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-secondary/70 hover:text-secondary transition-colors"
                   >
@@ -246,7 +268,7 @@ export default function Register() {
               </div>
 
               <div className="space-y-2">
-                <label className="text-sm font-label text-primary" htmlFor="confirmPassword">Konfirmasi Password</label>
+                <label className="text-sm font-label text-primary" htmlFor="confirmPassword">{t('auth.confirm_password')}</label>
                 <div className="relative">
                   <input
                     id="confirmPassword"
@@ -262,7 +284,7 @@ export default function Register() {
                   />
                   <button
                     type="button"
-                    aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
+                    aria-label={showConfirmPassword ? t('auth.hide_password') : t('auth.show_password')}
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-secondary/70 hover:text-secondary transition-colors"
                   >
@@ -280,7 +302,7 @@ export default function Register() {
                 className="w-full bg-tertiary text-white rounded-xl px-6 py-3 font-semibold hover:bg-tertiary-light active:bg-tertiary-dark transition-all duration-150 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2 font-label tracking-wide shadow-warm-sm hover:shadow-warm-md"
               >
                 {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
-                {isSubmitting ? 'Membuat akun...' : 'Daftar'}
+                {isSubmitting ? t('auth.register_submitting') : t('auth.register_submit')}
               </button>
             </form>
 
@@ -289,7 +311,7 @@ export default function Register() {
                 <div className="w-full border-t border-border/60" />
               </div>
               <div className="relative flex justify-center text-xs">
-                <span className="bg-surface px-3 text-secondary">atau</span>
+                <span className="bg-surface px-3 text-secondary">{t('auth.or')}</span>
               </div>
             </div>
 
@@ -305,11 +327,11 @@ export default function Register() {
                     login(response.access_token, response.user, response.streak)
                     navigate('/dashboard')
                   } catch (err) {
-                    setError(err.response?.data?.detail || 'Pendaftaran Google gagal.')
+                    setError(err.response?.data?.detail || t('auth.google_register_failed'))
                   }
                 }}
                 onError={() => {
-                  setError('Pendaftaran Google dibatalkan.')
+                  setError(t('auth.google_register_cancelled'))
                 }}
                 shape="rectangular"
                 theme="outline"
@@ -320,9 +342,9 @@ export default function Register() {
             </div>
           
             <p className="text-sm text-center text-secondary mt-6">
-              Sudah punya akun?{' '}
+              {t('auth.have_account')}{' '}
               <Link to="/login" className="text-tertiary hover:text-tertiary-light font-semibold transition-colors">
-                Masuk
+                {t('auth.go_login')}
               </Link>
             </p>
           </div>

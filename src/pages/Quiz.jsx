@@ -1,14 +1,14 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom'
 import { useQuiz, useSubmitQuiz } from '@/hooks/useQuiz';
 import { useToast } from '@/hooks/use-toast';
 import { useLearningStore } from '@/stores/learningStore';
 import { QuizCard } from '@/components/quiz/QuizCard';
 import { QuizResult } from '@/components/quiz/QuizResult';
 import { Loader2, Clock, BookOpen } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/ui/button'
 
-export function CooldownTimer({ initialSeconds, onComplete, topicId }) {
+export function CooldownTimer({ initialSeconds, onComplete, topicId, feedbackAction }) {
   const [seconds, setSeconds] = useState(initialSeconds);
 
   useEffect(() => {
@@ -28,21 +28,36 @@ export function CooldownTimer({ initialSeconds, onComplete, topicId }) {
       <Clock className="w-12 h-12 text-primary animate-pulse" />
       <h3 className="text-xl font-bold text-primary">Jeda Kuis Aktif</h3>
       <p className="text-secondary text-center max-w-md">
-        Nilai kuis Anda sebelumnya di bawah 60%. Silakan baca dan pelajari materi remedial yang baru saja digenerate untuk Anda.
+        Nilai kuis Anda di bawah 80%. Silakan baca dan pelajari kembali materi sebelum mencoba kuis lagi.
       </p>
       
-      <div className="mt-4 w-full max-w-xs">
+      <div className="mt-4 flex flex-col sm:flex-row gap-3 w-full max-w-md">
         <Button 
-          variant="default" 
-          className="w-full text-lg h-12 mb-4 bg-tertiary hover:bg-tertiary/90 text-white"
-          onClick={() => window.open(`/module/${topicId}/remedial`, "_blank")}
+          variant="outline" 
+          className="w-full h-11"
+          onClick={() => window.location.href = `/module/${topicId}`}
         >
-          <BookOpen className="w-5 h-5 mr-2" />
-          Buka Materi Remedial
+          <BookOpen className="w-4 h-4 mr-2" />
+          Baca Materi Utama
         </Button>
+        {feedbackAction === 'remedial' && (
+          <Button 
+            variant="default" 
+            className="w-full h-11 bg-tertiary hover:bg-tertiary/90 text-white"
+            onClick={() => window.location.href = `/module/${topicId}/remedial`}
+          >
+            <BookOpen className="w-4 h-4 mr-2" />
+            Buka Materi Remedial
+          </Button>
+        )}
       </div>
 
-      <div className="text-3xl font-mono font-bold text-foreground bg-muted px-6 py-3 rounded-lg">
+      <div
+        role="timer"
+        aria-live="polite"
+        aria-label={`Sisa waktu jeda: ${mins} menit ${secs} detik`}
+        className="text-3xl font-mono font-bold text-foreground bg-muted px-6 py-3 rounded-lg"
+      >
         {String(mins).padStart(2, '0')}:{String(secs).padStart(2, '0')}
       </div>
       <p className="text-sm text-tertiary">Kuis akan terbuka secara otomatis setelah waktu habis.</p>
@@ -52,7 +67,7 @@ export function CooldownTimer({ initialSeconds, onComplete, topicId }) {
 
 export default function Quiz() {
   const { topicId } = useParams();
-  const navigate = useNavigate();
+  const navigate = useNavigate()
   const { toast } = useToast();
   const { activeSession } = useLearningStore();
   
@@ -74,7 +89,7 @@ export default function Quiz() {
 
   if (isLoading) {
     return (
-      <div className="flex h-[calc(100vh-4rem)] items-center justify-center">
+      <div className="flex min-h-[60vh] items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-tertiary" />
       </div>
     );
@@ -84,7 +99,7 @@ export default function Quiz() {
     const errorDetail = error?.response?.data?.detail;
     if (errorDetail && errorDetail.message === 'cooldown') {
       return (
-        <div className="flex flex-col h-[calc(100vh-4rem)] items-center justify-center p-4">
+        <div className="flex flex-col min-h-[60vh] items-center justify-center p-4">
           <CooldownTimer 
             initialSeconds={errorDetail.remaining_seconds} 
             onComplete={() => refetch()} 
@@ -95,10 +110,13 @@ export default function Quiz() {
     }
 
     return (
-      <div className="flex flex-col h-[calc(100vh-4rem)] items-center justify-center text-center p-4">
+      <div className="flex flex-col min-h-[60vh] items-center justify-center text-center p-4">
         <h2 className="text-xl font-bold text-primary mb-2">Gagal Memuat Kuis</h2>
         <p className="text-secondary mb-4">Terjadi kesalahan saat mengambil data kuis.</p>
-        <Button onClick={() => refetch()}>Coba Lagi</Button>
+        <div className="flex items-center gap-3">
+          <Button variant="ghost" onClick={() => navigate('/curriculum')}>Kembali</Button>
+          <Button onClick={() => refetch()}>Coba Lagi</Button>
+        </div>
       </div>
     );
   }
@@ -200,6 +218,14 @@ export default function Quiz() {
 
   const currentQuestion = quizData.questions[currentIndex];
 
+  const answerStatuses = quizData.questions.map((q, i) => {
+    const selected = answers[q.id || i]
+    if (selected === undefined || selected === null || selected === '') {
+      return 'pending'
+    }
+    return selected === q.correct_answer ? 'correct' : 'wrong'
+  })
+
   return (
     <div className="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6 lg:px-0 flex flex-col items-center">
       {quizState === 'submitting' ? (
@@ -216,6 +242,7 @@ export default function Quiz() {
           isRevealed={isRevealed}
           onSelectOption={handleSelectOption}
           onNext={handleNext}
+          answerStatuses={answerStatuses}
         />
       )}
     </div>

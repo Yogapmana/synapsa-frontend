@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ArrowLeft, ArrowRight, Sparkles, Loader2, Play, Check } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -54,6 +54,9 @@ export default function Onboarding() {
   const [showAgentLoading, setShowAgentLoading] = useState(false)
   const activeSession = useLearningStore((s) => s.activeSession)
   const setActiveSession = useLearningStore((s) => s.setActiveSession)
+  const location = useLocation()
+  
+  const isNewRequest = new URLSearchParams(location.search).get('new') === 'true'
 
   const isStep1Valid = formData.topic.trim() && formData.duration_weeks && formData.level && formData.hours_per_day
 
@@ -114,7 +117,7 @@ export default function Onboarding() {
     return <AgentLoadingScreen sessionId={sessionId} />
   }
 
-  if (activeSession) {
+  if (activeSession && !isNewRequest) {
     return (
       <div className="flex min-h-[80vh] items-center justify-center px-4 py-10">
         <div className="w-full max-w-md relative">
@@ -194,7 +197,7 @@ export default function Onboarding() {
             </Button>
 
             <button
-              onClick={() => setActiveSession(null)}
+              onClick={() => navigate('/onboarding?new=true')}
               className="text-sm font-medium text-secondary hover:text-primary transition-colors font-label"
             >
               Atau mulai sesi baru

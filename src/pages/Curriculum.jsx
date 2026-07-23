@@ -1,15 +1,12 @@
-import React, { useMemo, useRef, useCallback, useState, Suspense } from 'react'
+import React, { useMemo, useState, Suspense } from 'react'
 import { useActiveSession, useCurriculum, useTopics } from '@/hooks/useLearning'
-import { useLearningStore } from '@/stores/learningStore'
 import { TopicNode } from '@/components/curriculum/TopicNode'
 import WeekCard from '@/components/curriculum/WeekCard'
-import JourneyMap from '@/components/curriculum/JourneyMap'
 import { ProgressRing } from '@/components/curriculum/ProgressRing'
 import {
   BookOpen,
   Sparkles,
   Play,
-  Flame,
   Check,
   Clock,
   Calendar,
@@ -37,10 +34,9 @@ const MindMapView = React.lazy(() => import('@/components/curriculum/MindMapView
  *
  * Layout (top → bottom):
  *   1. PageHeader — title + course title
- *   2. HeroStats  — big progress ring + streak + total/active counts
+ *   2. HeroStats  — big progress ring + total/active counts
  *   3. Today's Focus banner (when there's an active topic)
- *   4. JourneyMap  — horizontal scroll of all weeks as nodes on a path
- *   5. Week Grid  — detailed week cards (3-col on desktop)
+ *   4. Week Grid  — detailed week cards (3-col on desktop)
  *
  * The page tells a story: "you're here in your journey, this is your
  * next step, this is what's coming". The visual hierarchy reflects
@@ -61,11 +57,9 @@ export default function Curriculum() {
   const navigate = useNavigate()
   const { data: activeSession, isLoading: isLoadingSession } = useActiveSession()
   const sessionId = activeSession?.id
-  const streak = useLearningStore((s) => s.streak)
-  const weekRefs = useRef({})
   const shouldReduceMotion = useReducedMotion()
 
-  // 'roadmap' = original JourneyMap + Week Grid
+  // 'roadmap' = Week Grid
   // 'mindmap' = AI-generated Mermaid diagram
   const [viewMode, setViewMode] = useState('roadmap')
   const [selectedWeek, setSelectedWeek] = useState(null)
@@ -75,7 +69,7 @@ export default function Curriculum() {
   const isLoading = isLoadingSession || isLoadingCurriculum || isLoadingTopics
 
   // Derive all stats in a single pass
-  const { weeks, topics, completedTopics, totalTopics, progressPercentage, journeyWeeks } =
+  const { weeks, topics, completedTopics, totalTopics, progressPercentage } =
     useMemo(() => {
       if (!curriculumData || !topicsData) {
         return {
@@ -84,7 +78,6 @@ export default function Curriculum() {
           completedTopics: 0,
           totalTopics: 0,
           progressPercentage: 0,
-          journeyWeeks: [],
         }
       }
       const curriculumJson = curriculumData.curriculum_json || {}
@@ -98,28 +91,12 @@ export default function Curriculum() {
       const total = allTopics.length
       const pct = total === 0 ? 0 : (completed / total) * 100
 
-      // For journey map: derive each week's status from its topics
-      const topicsByWeekForJourney = allTopics.reduce((acc, t) => {
-        const wk = t.week_number ?? 1
-        if (!acc[wk]) acc[wk] = []
-        acc[wk].push(t)
-        return acc
-      }, {})
-      const journey = mappedWeeks.map((w) => {
-        const wkTopics = topicsByWeekForJourney[w.week_number] || []
-        let status = 'locked'
-        if (wkTopics.some((t) => t.status === 'active')) status = 'active'
-        else if (wkTopics.length > 0 && wkTopics.every((t) => t.status === 'completed')) status = 'completed'
-        return { week_number: w.week_number, title: w.title, status }
-      })
-
       return {
         weeks: mappedWeeks,
         topics: allTopics,
         completedTopics: completed,
         totalTopics: total,
         progressPercentage: pct,
-        journeyWeeks: journey,
       }
     }, [curriculumData, topicsData])
 
@@ -145,14 +122,6 @@ export default function Curriculum() {
   // Find the active topic (for "Today's Focus" banner)
   const activeTopic = topics.find((t) => t.status === 'active')
   const activeWeekNumber = activeTopic?.week_number
-
-  // Journey map → click to scroll a specific week card into view
-  const handleSelectWeek = useCallback((week) => {
-    const el = weekRefs.current[week.week_number]
-    if (el && typeof el.scrollIntoView === 'function') {
-      el.scrollIntoView({ behavior: 'smooth', block: 'start' })
-    }
-  }, [])
 
   // ─── Loading state ───
   if (isLoading) {
@@ -357,7 +326,7 @@ export default function Curriculum() {
         </motion.div>
       )}
 
-      {/* ─── View: Roadmap (JourneyMap + Week Grid) ─── */}
+      {/* ─── View: Roadmap (Week Grid) ─── */}
       {viewMode === 'roadmap' && (
         <motion.div
           key="roadmap-view"
@@ -366,17 +335,6 @@ export default function Curriculum() {
           transition={{ duration: 0.35, ease: [0.25, 1, 0.5, 1] }}
           className="space-y-7"
         >
-          {/* ─── Journey Map ─── */}
-          {journeyWeeks.length > 0 && (
-            <motion.div
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, delay: 0.1 }}
-            >
-              <JourneyMap weeks={journeyWeeks} onSelectWeek={handleSelectWeek} />
-            </motion.div>
-          )}
-
           {/* ─── Week Grid or Week Detail ─── */}
           <AnimatePresence mode="wait">
             {selectedWeek ? (
@@ -427,9 +385,6 @@ export default function Curriculum() {
                 {weeks.map((week, i) => (
                   <div
                     key={week.week_number ?? i}
-                    ref={(el) => {
-                      if (el) weekRefs.current[week.week_number ?? i] = el
-                    }}
                     className="scroll-mt-24"
                   >
                     <WeekCard

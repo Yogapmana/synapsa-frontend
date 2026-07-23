@@ -63,6 +63,31 @@ export const useNotification = (autoFetch = true) => {
     }
   };
 
+  const deleteNotification = async (id) => {
+    try {
+      const notifToDelete = notifications.find(n => n.id === id);
+      setNotifications(prev => prev.filter(n => n.id !== id));
+      if (notifToDelete && !notifToDelete.is_read) {
+        setUnreadCount(prev => Math.max(0, prev - 1));
+      }
+      await notificationApi.deleteNotification(id);
+    } catch (err) {
+      console.error('Failed to delete notification', err);
+      fetchNotifications();
+    }
+  };
+
+  const deleteAllNotifications = async () => {
+    try {
+      setNotifications([]);
+      setUnreadCount(0);
+      await notificationApi.deleteAllNotifications();
+    } catch (err) {
+      console.error('Failed to delete all notifications', err);
+      fetchNotifications();
+    }
+  };
+
   useEffect(() => {
     if (autoFetch) {
       fetchNotifications();
@@ -80,6 +105,8 @@ export const useNotification = (autoFetch = true) => {
     error,
     fetchNotifications,
     markAsRead,
-    markAllAsRead
+    markAllAsRead,
+    deleteNotification,
+    deleteAllNotifications
   };
 };

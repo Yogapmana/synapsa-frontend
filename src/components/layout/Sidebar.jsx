@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { NavLink, useLocation } from 'react-router-dom';
+import { NavLink } from 'react-router-dom';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import {
   LayoutDashboard,
@@ -60,7 +60,6 @@ const Sidebar = () => {
   const { user, logout } = useAuthStore();
   const { sidebarCollapsed, toggleSidebar } = useUIStore();
   const { streak = 0 } = useLearningStore() || {};
-  const location = useLocation();
   const shouldReduceMotion = useReducedMotion();
   const [isMobile, setIsMobile] = useState(
     typeof window !== 'undefined' ? window.innerWidth < 1024 : false
@@ -158,10 +157,10 @@ const Sidebar = () => {
                 transition={{ duration: 0.15 }}
                 className="flex items-center gap-2.5 overflow-hidden"
               >
-                <div className="w-8 h-8 rounded-lg bg-tertiary flex items-center justify-center shrink-0">
-                  <Flame size={18} className="text-white" fill="currentColor" />
+                <div className="w-8 h-8 shrink-0">
+                  <img src="/logo.png" alt="Synapsa Logo" className="w-full h-full object-contain" />
                 </div>
-                <span className="font-display font-bold text-lg text-primary tracking-tight whitespace-nowrap">
+                <span className="font-display font-bold text-lg text-primary/80 tracking-tight whitespace-nowrap">
                   Synapsa
                 </span>
               </motion.div>

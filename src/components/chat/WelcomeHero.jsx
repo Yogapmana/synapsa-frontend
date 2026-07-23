@@ -1,56 +1,39 @@
-import { motion } from 'framer-motion';
-import { Sparkles } from 'lucide-react';
+import { useTranslation } from 'react-i18next'
+import { motion, useReducedMotion } from 'framer-motion'
 
 /**
- * WelcomeHero — animated greeting shown in the Chat page's empty state.
- *
- * Phase 5.10 — simplified.
- *  - Single, large focal point (the sparkles icon) with a soft
- *    tertiary-colored glow.
- *  - Clean headline without editorial eyebrow or underline.
- *  - Standard chatbot greeting pattern.
+ * WelcomeHero — calm empty-state for general chat.
+ * Typography only: greeting + short helper line.
  */
 export default function WelcomeHero({ username }) {
+  const { t } = useTranslation()
+  const shouldReduceMotion = useReducedMotion()
+
   return (
     <motion.div
-      initial={{ opacity: 0, y: 12 }}
+      className="text-center max-w-lg mx-auto px-4"
+      initial={shouldReduceMotion ? false : { opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-      className="text-center max-w-xl mx-auto"
+      transition={{ type: 'spring', stiffness: 300, damping: 26 }}
     >
-      {/* Animated icon — single focal point with soft glow */}
-      <div className="relative inline-flex items-center justify-center mb-5">
-        <motion.div
-          aria-hidden="true"
-          animate={{ opacity: [0.3, 0.5, 0.3], scale: [1, 1.08, 1] }}
-          transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
-          className="absolute inset-0 rounded-2xl bg-gradient-to-br from-tertiary to-tertiary-light blur-xl"
-        />
-        <motion.div
-          animate={{ scale: [1, 1.04, 1], rotate: [0, 2, -2, 0] }}
-          transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
-          className="relative w-16 h-16 rounded-2xl bg-gradient-to-br from-tertiary via-tertiary to-tertiary-dark flex items-center justify-center shadow-warm-md"
-        >
-          <Sparkles className="w-8 h-8 text-white" strokeWidth={2} />
-        </motion.div>
-      </div>
-
-      {/* Greeting — clean headline */}
-      <h1 className="font-display font-bold text-2xl md:text-3xl text-primary mb-2 tracking-tight leading-tight">
-        Halo! Saya Synapsa Chatbot 👋
+      <h1 className="font-display text-2xl sm:text-[1.75rem] font-semibold tracking-tight text-primary leading-snug">
+        {username
+          ? t('chat.empty_title_named', 'Hi {{name}}, what shall we explore?', {
+              name: username,
+            })
+          : t('chat.empty_title', 'What would you like to explore?')}
       </h1>
-
-      {username && (
-        <p className="text-secondary text-sm md:text-base mb-1.5">
-          Senang bertemu dengan Anda,{' '}
-          <span className="font-semibold text-primary">{username}</span>!
-        </p>
-      )}
-
-      <p className="text-secondary text-sm md:text-base max-w-md mx-auto leading-relaxed">
-        Tanyakan apa saja — saya bisa mencari info terbaru dari internet,
-        merangkum dokumen, atau sekadar berdiskusi.
-      </p>
+      <motion.p
+        className="mt-3 text-sm text-secondary leading-relaxed"
+        initial={shouldReduceMotion ? false : { opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ type: 'spring', stiffness: 300, damping: 26, delay: 0.05 }}
+      >
+        {t(
+          'chat.empty_subtitle',
+          'Ask anything, upload a document, or pick a starter below — answers can use your materials and the web.'
+        )}
+      </motion.p>
     </motion.div>
-  );
+  )
 }

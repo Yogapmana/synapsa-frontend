@@ -1,11 +1,13 @@
 import { cn } from '@/lib/utils'
 import React, { useEffect, useState, useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
+import { getDailyStudyTime } from '../api/progress';
 import { useAuthStore } from '../stores/authStore';
 import { useLearningStore } from '../stores/learningStore';
 import { getCurriculum, getTopics } from '../api/learning';
 import { getQuizHistory } from '../api/quiz';
-import { motion } from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 
 import GreetingHero from '../components/dashboard/GreetingHero';
@@ -29,11 +31,94 @@ const fadeUp = {
   show: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 300, damping: 26 } },
 };
 
+/** Return last N day keys as 'YYYY-MM-DD' strings (oldest first). */
+function lastNDays(n = 7) {
+  const days = [];
+  for (let i = n - 1; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    days.push(d.toISOString().split('T')[0]);
+  }
+  return days;
+}
+
+/** Aggregate a numeric field per day from a timestamped array. */
+function aggregateByDay(items, valueFn, days = lastNDays()) {
+  const map = {};
+  items.forEach((item) => {
+    const key = new Date(item.created_at).toISOString().split('T')[0];
+    map[key] = (map[key] || 0) + valueFn(item);
+  });
+  return days.map((d) => map[d] || 0);
+}
+
+/** Sparkline: quiz scores per day (averaged). */
+function quizScoreSparkline(quizHistory) {
+  const days = lastNDays();
+  const buckets = {};
+  quizHistory.forEach((q) => {
+    const key = new Date(q.created_at).toISOString().split('T')[0];
+    if (!buckets[key]) buckets[key] = [];
+    buckets[key].push(q.score > 1 ? q.score : q.score * 100);
+  });
+  return days.map((d) => {
+    const scores = buckets[d];
+    return scores ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : 0;
+  });
+}
+
+/** Sparkline: study hours per day (from quiz time_spent as proxy). */
+function studyTimeSparkline(quizHistory) {
+  const days = lastNDays();
+  const buckets = {};
+  quizHistory.forEach((q) => {
+    const key = new Date(q.created_at).toISOString().split('T')[0];
+    buckets[key] = (buckets[key] || 0) + (q.time_spent_seconds || 0) / 3600;
+  });
+  return days.map((d) => {
+    const h = buckets[d];
+    return h ? Math.round(h * 10) / 10 : 0;
+  });
+}
+
+/** Sparkline: cumulative completed topics per day. */
+function completedTopicsSparkline(topics) {
+  const completed = topics.filter((t) => t.status === 'completed');
+  if (completed.length === 0) return Array(7).fill(0);
+  const days = lastNDays();
+  const hasTimestamp = completed.some((t) => t.completed_at);
+  if (!hasTimestamp) {
+    // No per-topic timestamp — show progressive count
+    return Array.from({ length: 7 }, (_, i) => Math.round((completed.length * (i + 1)) / 7));
+  }
+  const buckets = {};
+  completed.forEach((t) => {
+    const key = new Date(t.completed_at).toISOString().split('T')[0];
+    buckets[key] = (buckets[key] || 0) + 1;
+  });
+  let cumulative = 0;
+  return days.map((d) => {
+    cumulative += buckets[d] || 0;
+    return cumulative;
+  });
+}
+
+/** Trend: compare avg of last 3 days vs first 3 days of sparkline. */
+function sparklineTrend(data) {
+  if (!data || data.length < 6) return null;
+  const first3 = data.slice(0, 3).reduce((a, b) => a + b, 0) / 3;
+  const last3 = data.slice(-3).reduce((a, b) => a + b, 0) / 3;
+  const delta = last3 - first3;
+  if (Math.abs(delta) < 1) return null;
+  return Math.round(delta);
+}
+
 export default function Dashboard() {
   const { t } = useTranslation();
   const { user } = useAuthStore();
   const { activeSession, streak } = useLearningStore();
   const navigate = useNavigate();
+  const shouldReduceMotion = useReducedMotion();
 
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState({
@@ -70,15 +155,16 @@ export default function Dashboard() {
     loadDashboardData();
   }, [activeSession]);
 
+  const { data: rawStudyTime = [] } = useQuery({
+    queryKey: ['daily-study-time', activeSession?.id],
+    queryFn: () => getDailyStudyTime(activeSession?.id, 30),
+    enabled: !!activeSession?.id,
+    staleTime: 60_000,
+  });
+
   const { curriculum, topics, quizHistory } = data;
 
   const completedTopicsCount = topics.filter(t => t.status === 'completed').length;
-  // The fake XP formula below (topics*10 + streak*5) was a
-  // pre-gamification placeholder. The real XP system lives on
-  // the backend (see ``/api/v1/gamification/xp``) and is now
-  // displayed in the new <XpCard /> below. We delete the
-  // calculation entirely — no one reads it now.
-  const xp = 0; // legacy prop, see <XpCard /> for real value
 
   const avgQuizScore = quizHistory.length > 0
     ? Math.round(quizHistory.reduce((sum, q) => {
@@ -87,23 +173,28 @@ export default function Dashboard() {
       }, 0) / quizHistory.length)
     : 0;
 
-  const totalStudyMinutes = topics
-    .filter(t => t.status === 'completed')
-    .reduce((sum, t) => sum + (t.duration_minutes || 0), 0);
-  const studyHoursThisWeek = Math.round((totalStudyMinutes / 60) * 10) / 10;
+  const studyHoursThisWeek = useMemo(() => {
+    const recent7Days = rawStudyTime.slice(-7);
+    const totalMins = recent7Days.reduce((sum, entry) => sum + (entry.total_minutes || 0), 0);
+    return Math.round((totalMins / 60) * 10) / 10;
+  }, [rawStudyTime]);
+
+  // Real sparkline data from quiz history and topic completions
+  const completedSparkline = useMemo(() => completedTopicsSparkline(topics), [topics]);
+  const studyTimeSpark = useMemo(() => {
+    return rawStudyTime.slice(-7).map(entry => (entry.total_minutes || 0) / 60);
+  }, [rawStudyTime]);
+  const quizScoreSpark = useMemo(() => quizScoreSparkline(quizHistory), [quizHistory]);
 
   const stats = useMemo(() => [
-    // Note: "Streak Hari" was removed from this array because
-    // it's now shown in the dedicated <StreakCard /> with full
-    // 12-week heatmap. Keeping it here too would be redundant.
     {
       label: t('dashboard.stats_completed_topics', 'Topik Selesai'),
       value: completedTopicsCount,
       subtext: t('dashboard.stats_from_total', { total: topics.length || 0, defaultValue: `dari ${topics.length || 0} total` }),
       icon: 'BookOpen',
       color: 'success',
-      sparkline: Array.from({ length: 7 }, (_, i) => Math.max(0, completedTopicsCount - (6 - i) * 0.5)),
-      trend: completedTopicsCount > 0 ? 8 : null,
+      sparkline: completedSparkline,
+      trend: sparklineTrend(completedSparkline),
     },
     {
       label: t('dashboard.stats_study_time', 'Waktu Belajar'),
@@ -111,8 +202,8 @@ export default function Dashboard() {
       subtext: t('dashboard.stats_this_week', 'minggu ini'),
       icon: 'Clock',
       color: 'warning',
-      sparkline: [1.2, 1.8, 0.5, 2.4, 1.1, 2.0, studyHoursThisWeek || 0],
-      trend: 15,
+      sparkline: studyTimeSpark,
+      trend: sparklineTrend(studyTimeSpark),
     },
     {
       label: t('dashboard.stats_quiz_score', 'Skor Kuis'),
@@ -120,10 +211,10 @@ export default function Dashboard() {
       subtext: t('dashboard.stats_quizzes_count', { count: quizHistory.length, defaultValue: `${quizHistory.length} kuis` }),
       icon: 'Target',
       color: 'info',
-      sparkline: [60, 70, 75, 80, 78, 85, avgQuizScore || 0],
-      trend: avgQuizScore > 70 ? 6 : null,
+      sparkline: quizScoreSpark,
+      trend: sparklineTrend(quizScoreSpark),
     },
-  ], [completedTopicsCount, topics.length, studyHoursThisWeek, avgQuizScore, quizHistory.length]);
+  ], [completedTopicsCount, topics.length, studyHoursThisWeek, avgQuizScore, quizHistory.length, completedSparkline, studyTimeSpark, quizScoreSpark]);
 
   const todayTopic = topics.find(t => t.status === 'active') ||
                       topics.find(t => t.status === 'locked' || !t.status);
@@ -193,7 +284,7 @@ export default function Dashboard() {
 
   return (
     <motion.div
-      variants={stagger}
+      variants={shouldReduceMotion ? { hidden: {}, show: {} } : stagger}
       initial="hidden"
       animate="show"
       className="max-w-6xl mx-auto space-y-6 relative pb-8 md:pb-12"
@@ -206,17 +297,16 @@ export default function Dashboard() {
         ✦
       </span>
       {/* 1. Page header — greeting */}
-      <motion.div variants={fadeUp}>
+      <motion.div variants={shouldReduceMotion ? {} : fadeUp}>
         <GreetingHero
           username={user?.username || 'Pelajar'}
           streak={streak}
-          xp={xp}
         />
       </motion.div>
 
       {/* Feedback banner */}
       {showFeedback && feedbackData && (
-        <motion.div variants={fadeUp}>
+        <motion.div variants={shouldReduceMotion ? {} : fadeUp}>
           <FeedbackBanner
             title={feedbackData?.title}
             message={feedbackData?.message}
@@ -236,7 +326,7 @@ export default function Dashboard() {
       )}
 
       {/* 2. Hero "Continue Learning" card */}
-      <motion.div variants={fadeUp}>
+      <motion.div variants={shouldReduceMotion ? {} : fadeUp}>
         <ContinueLearningHero
           topic={todayTopic}
           session={activeSession}
@@ -247,7 +337,7 @@ export default function Dashboard() {
       </motion.div>
 
       {/* 3. Stats grid — 3 kolom (Streak dipindah ke StreakCard) */}
-      <motion.div variants={fadeUp}>
+      <motion.div variants={shouldReduceMotion ? {} : fadeUp}>
         <StatCards stats={stats} />
       </motion.div>
 
@@ -259,10 +349,10 @@ export default function Dashboard() {
           live data from /api/v1/gamification/* — no fake client
           computations, no stale values. */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-5">
-        <motion.div variants={fadeUp}>
+        <motion.div variants={shouldReduceMotion ? {} : fadeUp}>
           <StreakCard />
         </motion.div>
-        <motion.div variants={fadeUp}>
+        <motion.div variants={shouldReduceMotion ? {} : fadeUp}>
           <XpCard />
         </motion.div>
       </div>
@@ -273,7 +363,7 @@ export default function Dashboard() {
       )}
 
       {/* 4. Recent Activity — full width */}
-      <motion.div variants={fadeUp}>
+      <motion.div variants={shouldReduceMotion ? {} : fadeUp}>
         <RecentActivity activities={activities} />
       </motion.div>
     </motion.div>

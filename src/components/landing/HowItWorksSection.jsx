@@ -1,35 +1,18 @@
-import { motion } from 'framer-motion'
+import { useTranslation } from 'react-i18next'
+import { motion, useReducedMotion } from 'framer-motion'
 import { Target, Brain, BookOpen, GraduationCap } from 'lucide-react'
 import { fadeUp, staggerContainer, viewportOnce } from './motion'
 
-const steps = [
-  {
-    number: '01',
-    title: 'Tentukan topik & target',
-    description: 'Tulis topik, pilih level, durasi, dan jam belajar per hari.',
-    icon: Target,
-  },
-  {
-    number: '02',
-    title: 'Planner merancang kurikulum',
-    description: 'AI memecah topik menjadi sub-bab terstruktur dengan jadwal personal.',
-    icon: Brain,
-  },
-  {
-    number: '03',
-    title: 'Riset & sintesis paralel',
-    description: 'Researcher & Composer mencari materi dan menyusunnya menjadi modul.',
-    icon: BookOpen,
-  },
-  {
-    number: '04',
-    title: 'Belajar, tanya, kuis',
-    description: 'Baca modul, tanya Tutor AI kontekstual, dan uji pemahamanmu.',
-    icon: GraduationCap,
-  },
+const stepMeta = [
+  { number: '01', icon: Target, titleKey: 'step1_title', descKey: 'step1_desc' },
+  { number: '02', icon: Brain, titleKey: 'step2_title', descKey: 'step2_desc' },
+  { number: '03', icon: BookOpen, titleKey: 'step3_title', descKey: 'step3_desc' },
+  { number: '04', icon: GraduationCap, titleKey: 'step4_title', descKey: 'step4_desc' },
 ]
 
 export default function HowItWorksSection() {
+  const { t } = useTranslation()
+  const shouldReduceMotion = useReducedMotion()
   return (
     <section id="cara-kerja" className="py-24 sm:py-32 bg-surface relative overflow-hidden scroll-mt-20">
       <span aria-hidden="true" className="deco-num bottom-12 left-[3%] hidden lg:block">
@@ -41,26 +24,26 @@ export default function HowItWorksSection() {
           initial="initial"
           whileInView="animate"
           viewport={viewportOnce}
-          variants={staggerContainer}
+          variants={shouldReduceMotion ? {} : staggerContainer}
           className="text-center mb-16 sm:mb-20"
         >
-          <motion.div variants={fadeUp} className="flex justify-center mb-4">
-            <span className="eyebrow">Bab 02 — Cara Kerja</span>
+          <motion.div variants={shouldReduceMotion ? {} : fadeUp} className="flex justify-center mb-4">
+            <span className="eyebrow">{t('landing.how.eyebrow')}</span>
           </motion.div>
           <motion.h2
-            variants={fadeUp}
+            variants={shouldReduceMotion ? {} : fadeUp}
             className="text-4xl sm:text-5xl font-display font-bold text-primary leading-[1.05] tracking-tight"
           >
-            Dari ide ke kurikulum
+            {t('landing.how.title_before')}
             <br className="hidden sm:block" />{' '}
-            dalam <span className="italic text-tertiary">4 langkah</span>
+            {t('landing.how.title_mid')}{' '}
+            <span className="italic text-tertiary">{t('landing.how.title_highlight')}</span>
           </motion.h2>
           <motion.p
-            variants={fadeUp}
+            variants={shouldReduceMotion ? {} : fadeUp}
             className="mt-5 max-w-2xl mx-auto text-lg text-secondary leading-relaxed font-serif-content"
           >
-            Pipeline multi-agent yang bekerja di belakang layar — transparan,
-            terstruktur, dan siap dipakai dalam hitungan menit.
+            {t('landing.how.subtitle')}
           </motion.p>
         </motion.div>
 
@@ -71,7 +54,7 @@ export default function HowItWorksSection() {
             className="hidden lg:block absolute top-12 left-[12.5%] right-[12.5%] h-0.5 bg-gradient-to-r from-transparent via-tertiary/30 to-transparent"
           />
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-6">
-            {steps.map((step) => {
+            {stepMeta.map((step) => {
               const Icon = step.icon
               return (
                 <motion.div
@@ -79,7 +62,7 @@ export default function HowItWorksSection() {
                   initial="initial"
                   whileInView="animate"
                   viewport={{ once: true }}
-                  variants={fadeUp}
+                  variants={shouldReduceMotion ? {} : fadeUp}
                   className="relative group"
                 >
                   <div className="flex flex-col items-center text-center">
@@ -92,10 +75,10 @@ export default function HowItWorksSection() {
                       </div>
                     </div>
                     <h3 className="text-lg font-display font-semibold text-primary mb-2 leading-snug">
-                      {step.title}
+                      {t(`landing.how.${step.titleKey}`)}
                     </h3>
                     <p className="text-sm text-secondary leading-relaxed font-serif-content max-w-[220px]">
-                      {step.description}
+                      {t(`landing.how.${step.descKey}`)}
                     </p>
                   </div>
                 </motion.div>

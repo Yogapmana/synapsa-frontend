@@ -20,6 +20,20 @@ export function getMe() {
   return api.get('/auth/me').then((response) => response.data)
 }
 
+export function updateProfile({ username }) {
+  return api.patch('/auth/me', { username }).then((response) => response.data)
+}
+
+export function updateLanguagePreference(language_preference) {
+  return api
+    .put('/auth/me/language', { language_preference })
+    .then((response) => response.data)
+}
+
+export function deleteAccount() {
+  return api.delete('/auth/me').then((response) => response.data)
+}
+
 export function googleLogin(credential) {
   return api.post('/auth/google', { credential })
     .then((response) => response.data)

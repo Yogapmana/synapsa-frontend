@@ -13,6 +13,20 @@ import { QuizFeedback } from './QuizFeedback';
  *  - Better hierarchy: counter → question → options
  *  - Smooth question transitions with framer-motion
  */
+function dotClass(status, isCurrent) {
+  // status: 'correct' | 'wrong' | 'pending'
+  if (status === 'correct') {
+    return 'w-6 bg-success'
+  }
+  if (status === 'wrong') {
+    return 'w-6 bg-danger'
+  }
+  if (isCurrent) {
+    return 'w-8 bg-tertiary animate-pulse'
+  }
+  return 'w-2 bg-border'
+}
+
 export function QuizCard({
   question,
   currentIndex,
@@ -21,6 +35,8 @@ export function QuizCard({
   isRevealed,
   onSelectOption,
   onNext,
+  /** per-index: 'correct' | 'wrong' | 'pending' — for progress dots */
+  answerStatuses = [],
 }) {
   const progressPercent = ((currentIndex + 1) / totalQuestions) * 100;
 
@@ -43,23 +59,43 @@ export function QuizCard({
           </span>
         </div>
 
-        {/* Stepped dots — editorial indicator */}
-        <div className="flex items-center gap-1.5">
+        {/* Stepped dots — green correct, red wrong, pulse current */}
+        <div
+          className="flex items-center gap-1.5"
+          role="list"
+          aria-label="Status jawaban per soal"
+        >
           {Array.from({ length: totalQuestions }).map((_, i) => {
-            const isDone = i < currentIndex || (i === currentIndex && isRevealed)
             const isCurrent = i === currentIndex
+            let status = answerStatuses[i] || 'pending'
+            // Current question only counts after reveal
+            if (isCurrent && !isRevealed) status = 'pending'
             return (
               <span
                 key={i}
+                role="listitem"
+                title={
+                  status === 'correct'
+                    ? `Soal ${i + 1}: benar`
+                    : status === 'wrong'
+                    ? `Soal ${i + 1}: salah`
+                    : isCurrent
+                    ? `Soal ${i + 1}: sedang dikerjakan`
+                    : `Soal ${i + 1}: belum dijawab`
+                }
                 className={
                   'h-2 rounded-full transition-all duration-300 ' +
-                  (isDone
-                    ? 'w-6 bg-tertiary'
-                    : isCurrent
-                    ? 'w-8 bg-tertiary animate-pulse'
-                    : 'w-2 bg-border')
+                  dotClass(status, isCurrent)
                 }
-                aria-hidden="true"
+                aria-label={
+                  status === 'correct'
+                    ? `Soal ${i + 1} benar`
+                    : status === 'wrong'
+                    ? `Soal ${i + 1} salah`
+                    : isCurrent
+                    ? `Soal ${i + 1} aktif`
+                    : `Soal ${i + 1} belum`
+                }
               />
             )
           })}

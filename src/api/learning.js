@@ -30,6 +30,15 @@ export function getSession(sessionId) {
   return api.get(`/learning/${sessionId}`).then((response) => response.data)
 }
 
+/** Persisted agent pipeline logs — used to resume AgentLoadingScreen after refresh. */
+export function getAgentLogs(sessionId) {
+  return api.get(`/learning/${sessionId}/agent-logs`).then((response) => response.data)
+}
+
+export function deleteSession(sessionId) {
+  return api.delete(`/learning/${sessionId}`).then((response) => response.data)
+}
+
 export function getCurriculum(sessionId) {
   return api.get(`/learning/${sessionId}/curriculum`).then((response) => response.data)
 }

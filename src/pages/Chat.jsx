@@ -1,353 +1,442 @@
 import { cn } from '@/lib/utils'
-import React, { useState, useEffect, useRef } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getChatSessions, createChatSession, deleteChatSession, sendMessage, getHistory, uploadDocument } from '@/api/chat';
-import { useChatStore } from '@/stores/chatStore';
-import { useAuthStore } from '@/stores/authStore';
-import ChatBubble from '@/components/chat/ChatBubble';
-import ChatInput from '@/components/chat/ChatInput';
-import WelcomeHero from '@/components/chat/WelcomeHero';
-import CapabilityBadges from '@/components/chat/CapabilityBadges';
-import ChatHistoryEmpty from '@/components/chat/ChatHistoryEmpty';
-import ThinkingIndicator from '@/components/chat/ThinkingIndicator';
-import StatusBadge from '@/components/common/StatusBadge';
-import Avatar from '@/components/common/Avatar';
-import { History, Sparkles, Plus, MessageSquare, MessageCircle, Trash2, Menu, X } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { useTranslation } from 'react-i18next';
+import React, { useState, useEffect, useRef } from 'react'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import {
+  getChatSessions,
+  createChatSession,
+  deleteChatSession,
+  sendMessage,
+  getHistory,
+  uploadDocument,
+} from '@/api/chat'
+import { useChatStore } from '@/stores/chatStore'
+import { useAuthStore } from '@/stores/authStore'
+import ChatBubble from '@/components/chat/ChatBubble'
+import ChatInput from '@/components/chat/ChatInput'
+import WelcomeHero from '@/components/chat/WelcomeHero'
+import ChatHistoryEmpty from '@/components/chat/ChatHistoryEmpty'
+import ThinkingIndicator from '@/components/chat/ThinkingIndicator'
+import {
+  Sparkles,
+  Plus,
+  MessageCircle,
+  Trash2,
+  Menu,
+  X,
+  PanelRightClose,
+  PanelRightOpen,
+} from 'lucide-react'
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
+import { useTranslation } from 'react-i18next'
+
+const pageStagger = {
+  hidden: { opacity: 0 },
+  show: { opacity: 1, transition: { staggerChildren: 0.06 } },
+}
+
+const fadeUp = {
+  hidden: { opacity: 0, y: 16 },
+  show: {
+    opacity: 1,
+    y: 0,
+    transition: { type: 'spring', stiffness: 300, damping: 26 },
+  },
+}
+
+const listStagger = {
+  hidden: { opacity: 0 },
+  show: { opacity: 1, transition: { staggerChildren: 0.05 } },
+}
 
 export default function Chat() {
-  const { t } = useTranslation();
-  const queryClient = useQueryClient();
-  const { activeChatSessionId, setActiveChatSessionId } = useChatStore();
-  const { user } = useAuthStore();
-  const scrollRef = useRef(null);
-  const messagesEndRef = useRef(null);
+  const { t } = useTranslation()
+  const queryClient = useQueryClient()
+  const { activeChatSessionId, setActiveChatSessionId } = useChatStore()
+  const { user } = useAuthStore()
+  const messagesEndRef = useRef(null)
+  const shouldReduceMotion = useReducedMotion()
 
-  const [uploadToast, setUploadToast] = useState(null);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  // Desktop sidebar collapse state — when true, the sidebar shrinks
-  // to a narrow icon rail. State is local (not persisted).
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  
-  // Queries
-  const { data: sessions = [], isLoading: isSessionsLoading } = useQuery({
+  const [uploadToast, setUploadToast] = useState(null)
+  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+
+  const { data: sessions = [] } = useQuery({
     queryKey: ['chat-sessions'],
-    queryFn: getChatSessions
-  });
+    queryFn: getChatSessions,
+  })
 
   const { data: history = [], isLoading: isHistoryLoading } = useQuery({
     queryKey: ['chat', 'general', activeChatSessionId],
     queryFn: () => getHistory(activeChatSessionId, null),
     enabled: !!activeChatSessionId,
-  });
+  })
 
-  // Mutations
   const createSessionMutation = useMutation({
     mutationFn: createChatSession,
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['chat-sessions'] });
-      setActiveChatSessionId(data.id);
-      setSidebarOpen(false);
-    }
-  });
+      queryClient.invalidateQueries({ queryKey: ['chat-sessions'] })
+      setActiveChatSessionId(data.id)
+      setSidebarOpen(false)
+    },
+  })
 
   const deleteSessionMutation = useMutation({
     mutationFn: deleteChatSession,
     onSuccess: (_, deletedId) => {
-      queryClient.invalidateQueries({ queryKey: ['chat-sessions'] });
+      queryClient.invalidateQueries({ queryKey: ['chat-sessions'] })
       if (activeChatSessionId === deletedId) {
-        setActiveChatSessionId(null);
+        setActiveChatSessionId(null)
       }
-    }
-  });
+    },
+  })
 
   const sendMutation = useMutation({
-    mutationFn: ({ sessionId, content }) => sendMessage({
-      session_id: sessionId,
-      topic_id: null,
-      message: content,
-      include_sources: true
-    }),
+    mutationFn: ({ sessionId, content }) =>
+      sendMessage({
+        session_id: sessionId,
+        topic_id: null,
+        message: content,
+        include_sources: true,
+      }),
     onMutate: async ({ sessionId, content }) => {
-      await queryClient.cancelQueries({ queryKey: ['chat', 'general', sessionId] });
-      const previousHistory = queryClient.getQueryData(['chat', 'general', sessionId]);
-      
+      await queryClient.cancelQueries({ queryKey: ['chat', 'general', sessionId] })
+      const previousHistory = queryClient.getQueryData(['chat', 'general', sessionId])
+
       const optimisticMessage = {
         id: 'optimistic-user',
         role: 'user',
         content,
-        created_at: new Date().toISOString()
-      };
-      
-      queryClient.setQueryData(['chat', 'general', sessionId], (old = []) => [...old, optimisticMessage]);
-      return { previousHistory, sessionId };
+        created_at: new Date().toISOString(),
+      }
+
+      queryClient.setQueryData(['chat', 'general', sessionId], (old = []) => [
+        ...old,
+        optimisticMessage,
+      ])
+      return { previousHistory, sessionId }
     },
     onError: (err, variables, context) => {
       if (context?.previousHistory) {
-        queryClient.setQueryData(['chat', 'general', context.sessionId], context.previousHistory);
+        queryClient.setQueryData(
+          ['chat', 'general', context.sessionId],
+          context.previousHistory
+        )
       }
-      
-      // If the session was deleted or not found on the backend, clear the frontend cache
+
       if (err.response?.status === 404) {
-        setActiveChatSessionId(null);
-        setUploadToast({ type: 'error', message: t('chat.invalid_session', 'Sesi percakapan tidak valid. Silakan coba kirim ulang.') });
+        setActiveChatSessionId(null)
+        setUploadToast({
+          type: 'error',
+          message: t(
+            'chat.invalid_session',
+            'Sesi percakapan tidak valid. Silakan coba kirim ulang.'
+          ),
+        })
       } else {
-        setUploadToast({ type: 'error', message: err.response?.data?.detail || t('chat.send_failed', 'Gagal mengirim pesan (Timeout/Error)') });
+        setUploadToast({
+          type: 'error',
+          message:
+            err.response?.data?.detail ||
+            t('chat.send_failed', 'Gagal mengirim pesan (Timeout/Error)'),
+        })
       }
-      
-      setTimeout(() => setUploadToast(null), 4000);
+
+      setTimeout(() => setUploadToast(null), 4000)
     },
     onSuccess: (data, variables, context) => {
       queryClient.setQueryData(['chat', 'general', context.sessionId], (old = []) => {
-        const filtered = old.filter(msg => msg.id !== 'optimistic-user');
+        const filtered = old.filter((msg) => msg.id !== 'optimistic-user')
         const aiMessage = {
           id: data.message_id || `ai-${Date.now()}`,
           role: 'assistant',
           content: data.response,
           sources: data.sources,
-          created_at: new Date().toISOString()
-        };
-        return [...filtered, aiMessage];
-      });
-    }
-  });
+          created_at: new Date().toISOString(),
+        }
+        return [...filtered, aiMessage]
+      })
+      queryClient.invalidateQueries({ queryKey: ['chat-sessions'] })
+    },
+  })
 
   const uploadMutation = useMutation({
     mutationFn: ({ file, sessionId }) => uploadDocument(file, sessionId, null),
     onSuccess: (data, variables) => {
-      setUploadToast({ type: 'success', message: t('chat.upload_success', 'Dokumen berhasil diunggah dan diindeks!') });
-      setTimeout(() => setUploadToast(null), 4000);
-      queryClient.invalidateQueries({ queryKey: ['chat', 'general', variables.sessionId] });
+      setUploadToast({
+        type: 'success',
+        message: t('chat.upload_success', 'Dokumen berhasil diunggah dan diindeks!'),
+      })
+      setTimeout(() => setUploadToast(null), 4000)
+      queryClient.invalidateQueries({
+        queryKey: ['chat', 'general', variables.sessionId],
+      })
     },
     onError: (err) => {
-      setUploadToast({ type: 'error', message: err.response?.data?.detail || t('chat.upload_failed', 'Gagal mengunggah dokumen') });
-      setTimeout(() => setUploadToast(null), 4000);
-    }
-  });
+      setUploadToast({
+        type: 'error',
+        message:
+          err.response?.data?.detail || t('chat.upload_failed', 'Gagal mengunggah dokumen'),
+      })
+      setTimeout(() => setUploadToast(null), 4000)
+    },
+  })
 
-  // Auto-scroll to bottom on new messages
   useEffect(() => {
     if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' })
     }
-  }, [history, sendMutation.isPending]);
+  }, [history, sendMutation.isPending])
 
   const handleSendMessage = async (content) => {
-    let currentSessionId = activeChatSessionId;
+    let currentSessionId = activeChatSessionId
     if (!currentSessionId) {
-      const newSession = await createSessionMutation.mutateAsync(content.substring(0, 30) + "...");
-      currentSessionId = newSession.id;
+      const newSession = await createSessionMutation.mutateAsync(
+        content.substring(0, 30) + '...'
+      )
+      currentSessionId = newSession.id
     }
-    sendMutation.mutate({ sessionId: currentSessionId, content });
-  };
+    sendMutation.mutate({ sessionId: currentSessionId, content })
+  }
 
   const handleUploadDocument = async (file) => {
-    let currentSessionId = activeChatSessionId;
+    let currentSessionId = activeChatSessionId
     if (!currentSessionId) {
-      const newSession = await createSessionMutation.mutateAsync(t('chat.new_document', "Dokumen Baru"));
-      currentSessionId = newSession.id;
+      const newSession = await createSessionMutation.mutateAsync(
+        t('chat.new_document', 'Dokumen Baru')
+      )
+      currentSessionId = newSession.id
     }
-    uploadMutation.mutate({ file, sessionId: currentSessionId });
-  };
+    uploadMutation.mutate({ file, sessionId: currentSessionId })
+  }
 
   const handleRegenerate = () => {
-    const lastUserMessage = [...history].reverse().find(msg => msg.role === 'user');
+    const lastUserMessage = [...history].reverse().find((msg) => msg.role === 'user')
     if (lastUserMessage && activeChatSessionId) {
-      sendMutation.mutate({ sessionId: activeChatSessionId, content: lastUserMessage.content });
+      sendMutation.mutate({
+        sessionId: activeChatSessionId,
+        content: lastUserMessage.content,
+      })
     }
-  };
+  }
 
-  const isEmpty = history.length === 0 && !isHistoryLoading;
+  const isEmpty = history.length === 0 && !isHistoryLoading
+  const activeSession = sessions.find((s) => s.id === activeChatSessionId)
+  const headerTitle = activeSession?.topic || t('chat.title', 'Ask Synapsa Chatbot')
 
   const SidebarContent = () => (
     <>
-      {/* Top section — h-16, matches the chat header height */}
-      <div className="border-b border-border/60 shrink-0 flex items-center h-16 px-4 bg-surface-1">
+      <div className="flex h-14 shrink-0 items-center bg-transparent px-3 shadow-[inset_0_-1px_0_rgba(58,41,22,0.06)]">
         <button
-          onClick={() => { setActiveChatSessionId(null); setSidebarOpen(false); }}
-          className="group flex items-center gap-2 w-full justify-center px-4 py-2.5 bg-tertiary text-white rounded-xl hover:bg-tertiary-light font-medium text-[13px] transition-all duration-200 shadow-warm-sm hover:shadow-warm-md"
+          type="button"
+          onClick={() => {
+            setActiveChatSessionId(null)
+            setSidebarOpen(false)
+          }}
+          className="group flex h-9 w-full items-center justify-center gap-2 rounded-xl border border-danger/25 bg-danger/[0.04] px-3 text-[13px] font-medium text-danger transition-colors hover:bg-danger/10"
         >
-          <Plus size={16} className="transition-transform duration-200 group-hover:rotate-90" />
-          {t('chat.new_chat', 'Percakapan Baru')}
+          <Plus size={16} className="text-danger" />
+          {t('chat.new_chat', 'New Conversation')}
         </button>
       </div>
 
-      {/* Sessions list */}
-      <div className="flex-1 min-h-0 px-3 pt-4 pb-3 overflow-y-auto bg-surface-1">
+      <div className="min-h-0 flex-1 overflow-y-auto bg-transparent px-2.5 pb-3 pt-3">
         {sessions.length === 0 ? (
           <ChatHistoryEmpty onTemplateClick={handleSendMessage} />
         ) : (
-          <div className="space-y-0.5">
-            {sessions.map(session => (
-              <div
-                key={session.id}
-                className={cn(
-                  "flex items-center justify-between px-3 py-2.5 rounded-xl cursor-pointer group transition-all duration-200 mb-1",
-                  activeChatSessionId === session.id
-                    ? "bg-surface border border-tertiary/30 text-tertiary font-semibold shadow-sm ring-1 ring-tertiary/10"
-                    : "border border-transparent hover:bg-tertiary/[0.04] text-secondary hover:text-primary hover:border-tertiary/10"
-                )}
-                onClick={() => { setActiveChatSessionId(session.id); setSidebarOpen(false); }}
-              >
-                <div className="flex items-center gap-2.5 overflow-hidden">
-                  <MessageCircle size={14} className={cn("shrink-0", activeChatSessionId === session.id ? "text-tertiary" : "text-secondary/60 group-hover:text-tertiary/70")} />
-                  <span className="text-[13px] truncate">{session.topic}</span>
-                </div>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    deleteSessionMutation.mutate(session.id);
+          <motion.div
+            className="space-y-0.5"
+            variants={shouldReduceMotion ? undefined : listStagger}
+            initial={shouldReduceMotion ? false : 'hidden'}
+            animate="show"
+          >
+            <p className="mb-2 px-2 text-[10px] font-label font-semibold uppercase tracking-widest text-secondary/45">
+              {t('chat.recent', 'Recent')}
+            </p>
+            {sessions.map((session) => {
+              const isActive = activeChatSessionId === session.id
+              return (
+                <motion.div
+                  key={session.id}
+                  variants={shouldReduceMotion ? undefined : fadeUp}
+                  className={cn(
+                    'group mb-0.5 flex cursor-pointer items-center justify-between rounded-md px-2.5 py-2 transition-colors duration-150',
+                    isActive
+                      ? 'bg-tertiary/8 text-primary font-medium'
+                      : 'text-secondary hover:bg-secondary/8 hover:text-primary'
+                  )}
+                  onClick={() => {
+                    setActiveChatSessionId(session.id)
+                    setSidebarOpen(false)
                   }}
-                  className="opacity-0 group-hover:opacity-100 hover:text-danger p-1.5 rounded-md hover:bg-danger/10 transition-all shrink-0"
-                  aria-label={`Hapus percakapan ${session.topic}`}
                 >
-                  <Trash2 size={14} />
-                </button>
-              </div>
-            ))}
-          </div>
+                  <div className="flex min-w-0 items-center gap-2.5">
+                    <MessageCircle
+                      size={14}
+                      className={cn(
+                        'shrink-0',
+                        isActive ? 'text-tertiary' : 'text-secondary/50'
+                      )}
+                    />
+                    <span className="truncate text-[13px]">{session.topic}</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      deleteSessionMutation.mutate(session.id)
+                    }}
+                    className="shrink-0 rounded-md p-1.5 opacity-0 transition-all hover:bg-danger/10 hover:text-danger group-hover:opacity-100"
+                    aria-label={`Delete conversation ${session.topic}`}
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </motion.div>
+              )
+            })}
+          </motion.div>
         )}
       </div>
     </>
-  );
+  )
 
   return (
-    // Fixed-height chat pattern (same as Slack/Discord/ChatGPT):
-    // the page wrapper is exactly viewport-minus-topbar, the header
-    // and input are pinned at top/bottom, and the messages area
-    // scrolls in the middle.
-    //
-    // Height: `h-full` (NOT `h-[calc(100vh-60px)]` — that was the
-    // root cause of the "double scroll" bug). The parent chain
-    // (AppLayout → main → inner content div) is now properly
-    // height-constrained, so this Chat root can just fill whatever
-    // space the parent gives it. This means: page itself never
-    // scrolls, only the messages area does. No more double scroll.
-    //
-    // Background: `bg-transparent` so the Chat page blends with the
-    // AppLayout's `bg-neutral` outer container. The page no longer
-    // looks "tempelan" (patched on) — it reads as part of the same
-    // surface as the rest of the app.
-    <div className="flex h-full bg-transparent overflow-y-auto relative items-start" ref={scrollRef}>
-
-      {/* Mobile Sidebar Overlay */}
-      <AnimatePresence>
+    <motion.div
+      className="relative flex h-full min-h-0 overflow-hidden bg-transparent"
+      initial={shouldReduceMotion ? false : { opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.35, ease: [0.25, 1, 0.5, 1] }}
+    >
+<AnimatePresence>
         {sidebarOpen && (
           <motion.div
-            initial={{ opacity: 0 }}
+            initial={shouldReduceMotion ? false : { opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
+            transition={{ duration: 0.2, ease: [0.25, 1, 0.5, 1] }}
             onClick={() => setSidebarOpen(false)}
-            className="fixed inset-0 bg-neutral/30 backdrop-blur-sm z-20 md:hidden"
+            className="fixed inset-0 z-20 bg-primary/35 md:hidden"
           />
         )}
       </AnimatePresence>
 
-      {/* Main Chat Area — comes FIRST (left side) */}
-      <div className="flex-1 flex flex-col min-w-0 min-h-full relative">
-        {/* ── Chat Header */}
-        <header className="sticky top-0 px-4 md:px-6 py-3 bg-neutral/85 backdrop-blur-md shadow-[0_1px_0_rgba(58,41,22,0.05)] flex items-center justify-between z-20 shrink-0 h-16">
-          <div className="flex items-center gap-3">
+      {/* Main chat column */}
+      <div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
+        <header className="z-20 flex h-14 shrink-0 items-center justify-between bg-neutral/90 px-4 shadow-[0_1px_0_rgba(58,41,22,0.06)] md:px-6">
+          <div className="flex min-w-0 items-center gap-2">
             <button
+              type="button"
               onClick={() => setSidebarOpen(true)}
-              className="md:hidden p-2 -ml-2 text-secondary hover:text-primary rounded-lg hover:bg-secondary/10 transition-colors"
-              aria-label="Buka riwayat"
+              className="-ml-1 flex size-9 items-center justify-center rounded-md text-secondary transition-colors hover:bg-secondary/10 hover:text-primary md:hidden"
+              aria-label={t('chat.show_history', 'Show history')}
             >
               <Menu size={20} />
             </button>
-            <div className="relative shrink-0 hidden sm:block">
-              <div className="absolute inset-0 bg-tertiary/20 blur-md rounded-full" />
-              <div className="relative flex size-9 items-center justify-center rounded-xl bg-tertiary/10 border border-tertiary/25 text-tertiary shadow-warm-sm">
-                <Sparkles className="size-5" />
-              </div>
-              <span className="absolute -bottom-0.5 -right-0.5 size-2.5 rounded-full bg-success border-2 border-surface-1" />
-            </div>
-            <div className="flex flex-col min-w-0">
-              <div className="flex items-center gap-2.5">
-                <h1 className="font-display font-bold text-[16px] sm:text-lg text-primary tracking-tight leading-none">
-                  {t('chat.title', 'Tanya Synapsa Chatbot')}
-                </h1>
-                <StatusBadge variant="success" className="flex items-center gap-1.5 hidden sm:flex !py-0.5 !px-2 !text-[10px] shadow-sm">
-                  <span className="w-1.5 h-1.5 bg-success rounded-full animate-pulse" />
-                  {t('chat.rag_active', 'RAG & Web Search Aktif')}
-                </StatusBadge>
-              </div>
-              <p className="text-[11px] text-secondary font-label mt-1 truncate">
-                {t('chat.subtitle', 'Asisten AI General • Jawaban komprehensif')}
-              </p>
+
+            <div className="min-w-0">
+              <h1 className="truncate font-display text-[15px] font-semibold tracking-tight text-primary sm:text-base">
+                {headerTitle}
+              </h1>
             </div>
           </div>
-          {/* History toggle — visible on desktop when sidebar is collapsed */}
-          <button
-            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-            className={cn(
-              "hidden md:flex items-center justify-center size-9 rounded-lg text-secondary hover:text-primary hover:bg-secondary/10 transition-colors",
-              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-tertiary"
-            )}
-            title={sidebarCollapsed ? t('chat.show_history', 'Tampilkan riwayat') : t('chat.hide_history', 'Sembunyikan riwayat')}
-            aria-label={sidebarCollapsed ? t('chat.show_history', 'Tampilkan riwayat') : t('chat.hide_history', 'Sembunyikan riwayat')}
-          >
-            <History size={18} />
-          </button>
+
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() => {
+                setActiveChatSessionId(null)
+                setSidebarOpen(false)
+              }}
+              className="hidden items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[12px] font-medium text-secondary transition-colors hover:bg-secondary/10 hover:text-primary sm:inline-flex"
+            >
+              <Plus size={14} />
+              {t('chat.new', 'New')}
+            </button>
+            <button
+              type="button"
+              onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+              className={cn(
+                'hidden size-9 items-center justify-center rounded-md text-secondary transition-colors hover:bg-secondary/10 hover:text-primary md:flex',
+                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-tertiary/30'
+              )}
+              title={
+                sidebarCollapsed
+                  ? t('chat.show_history', 'Show history')
+                  : t('chat.hide_history', 'Hide history')
+              }
+              aria-label={
+                sidebarCollapsed
+                  ? t('chat.show_history', 'Show history')
+                  : t('chat.hide_history', 'Hide history')
+              }
+            >
+              {sidebarCollapsed ? <PanelRightOpen size={18} /> : <PanelRightClose size={18} />}
+            </button>
+          </div>
         </header>
 
-        {/* ── Chat Content ── */}
-        <div className="flex-1">
-          <div className="max-w-[850px] mx-auto px-4 md:px-6 py-6 min-h-full flex flex-col">
-
+        {/* Messages / empty — independent scroll */}
+        <div className="relative min-h-0 flex-1 overflow-y-auto">
+          <div
+            className={cn(
+              'mx-auto flex min-h-full max-w-3xl flex-col px-4 md:px-6',
+              isEmpty ? 'justify-center py-10 md:py-14' : 'py-5 md:py-6'
+            )}
+          >
             <AnimatePresence mode="wait">
               {isEmpty ? (
                 <motion.div
                   key="empty"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="flex-1 flex flex-col items-center justify-center text-center py-10"
+                  variants={shouldReduceMotion ? undefined : pageStagger}
+                  initial={shouldReduceMotion ? false : 'hidden'}
+                  animate="show"
+                  exit={
+                    shouldReduceMotion
+                      ? undefined
+                      : { opacity: 0, y: -8, transition: { duration: 0.18 } }
+                  }
+                  className="flex flex-1 flex-col items-center justify-center"
                 >
-                  <div className="w-full max-w-2xl mx-auto flex flex-col items-center gap-6">
-                    <WelcomeHero username={user?.username} />
-                    <CapabilityBadges />
-                    <div className="flex items-center gap-1.5 text-[11px] text-secondary/60 font-label mt-1">
-                      <span
-                        className="w-1.5 h-1.5 bg-success rounded-full animate-pulse"
-                        aria-hidden="true"
-                      />
-                      {t('chat.powered_by', 'Didukung oleh RAG & Web Search')}
-                    </div>
-                  </div>
+                  <WelcomeHero username={user?.username || user?.name} />
                 </motion.div>
               ) : (
                 <motion.div
                   key="messages"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="flex-1 flex flex-col gap-1"
+                  variants={shouldReduceMotion ? undefined : pageStagger}
+                  initial={shouldReduceMotion ? false : 'hidden'}
+                  animate="show"
+                  className="flex flex-1 flex-col gap-0.5 pb-2"
                 >
                   {history.map((msg, index) => {
-                    const isLastAi = msg.role === 'assistant' &&
+                    const isLastAi =
+                      msg.role === 'assistant' &&
                       index === history.length - 1 &&
-                      !sendMutation.isPending;
+                      !sendMutation.isPending
                     return (
-                      <ChatBubble
+                      <motion.div
                         key={msg.id}
-                        messageId={msg.id}
-                        message={msg.content}
-                        isAI={msg.role === 'assistant'}
-                        sources={msg.sources}
-                        timestamp={msg.created_at}
-                        isLastAiMessage={isLastAi}
-                        onRegenerate={isLastAi ? handleRegenerate : undefined}
-                        rag_faithfulness={msg.rag_faithfulness}
-                        rag_answer_relevancy={msg.rag_answer_relevancy}
-                      />
-                    );
+                        variants={shouldReduceMotion ? undefined : fadeUp}
+                      >
+                        <ChatBubble
+                          messageId={msg.id}
+                          message={msg.content}
+                          isAI={msg.role === 'assistant'}
+                          sources={msg.sources}
+                          timestamp={msg.created_at}
+                          isLastAiMessage={isLastAi}
+                          onRegenerate={isLastAi ? handleRegenerate : undefined}
+                          rag_faithfulness={msg.rag_faithfulness}
+                          rag_answer_relevancy={msg.rag_answer_relevancy}
+                        />
+                      </motion.div>
+                    )
                   })}
 
                   {sendMutation.isPending && (
-                    <ThinkingIndicator
-                      message={t('chat.thinking', 'Memikirkan jawaban...')}
-                    />
+                    <motion.div variants={shouldReduceMotion ? undefined : fadeUp}>
+                      <ThinkingIndicator
+                        message={t('chat.thinking', 'Memikirkan jawaban...')}
+                      />
+                    </motion.div>
                   )}
 
                   <div ref={messagesEndRef} />
@@ -357,20 +446,25 @@ export default function Chat() {
           </div>
         </div>
 
-        {/* ── Input Area (pinned bottom) ── */}
-        <div className="sticky bottom-0 z-20 shrink-0 bg-surface-0/95 backdrop-blur-sm pb-2 pt-2">
+        {/* Composer — no solid divider; soft fade into messages */}
+        <div className="relative z-20 shrink-0 bg-neutral/95">
           <AnimatePresence>
             {uploadToast && (
               <motion.div
-                initial={{ opacity: 0, y: 10 }}
+                initial={shouldReduceMotion ? false : { opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 10 }}
+                exit={{ opacity: 0, y: 8 }}
+                transition={{ type: 'spring', stiffness: 300, damping: 26 }}
                 className={cn(
-                  "absolute -top-12 left-1/2 -translate-x-1/2 px-4 py-2 rounded-full text-sm font-medium shadow-warm-md z-20 flex items-center gap-2",
-                  uploadToast.type === 'success' ? "bg-success/10 text-success border border-success/20" : "bg-danger/10 text-danger border border-danger/20"
+                  'absolute -top-12 left-1/2 z-20 flex -translate-x-1/2 items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium shadow-warm-sm',
+                  uploadToast.type === 'success'
+                    ? 'bg-surface text-primary'
+                    : 'bg-surface text-danger'
                 )}
               >
-                {uploadToast.type === 'success' ? <Sparkles size={16} /> : null}
+                {uploadToast.type === 'success' ? (
+                  <Sparkles size={16} className="text-tertiary" />
+                ) : null}
                 {uploadToast.message}
               </motion.div>
             )}
@@ -381,33 +475,44 @@ export default function Chat() {
             onUpload={handleUploadDocument}
             isLoading={sendMutation.isPending || createSessionMutation.isPending}
             isUploading={uploadMutation.isPending}
-            placeholder={t('chat.input_placeholder', 'Tanya apapun atau unggah dokumen...')}
+            placeholder={t(
+              'chat.input_placeholder',
+              'Tanya apapun atau unggah dokumen...'
+            )}
           />
         </div>
       </div>
 
-      {/* Chat History Sidebar — RIGHT side, border-l instead of border-r.
-          On mobile, slides in from the right edge. */}
+      {/* History sidebar — soft inset hairline instead of solid border */}
       <aside
         className={cn(
-          "fixed md:sticky inset-y-0 md:top-0 right-0 z-30 bg-surface-1 border-l border-[rgba(58,41,22,0.06)] flex flex-col min-h-0 md:shadow-none shadow-warm-lg",
-          "transition-all duration-300 ease-in-out",
-          "w-72 md:h-[calc(100vh-60px)]",
-          sidebarOpen ? "translate-x-0" : "translate-x-full md:translate-x-0",
-          // Desktop: collapse to hidden
-          sidebarCollapsed && "md:w-0 md:border-l-0 md:overflow-hidden"
+          // Mobile: drawer below topbar (z-20 < Topbar z-40 so notif stays on top).
+          // Desktop: static in flex row — no viewport overlay.
+          'fixed top-[60px] bottom-0 right-0 z-20 flex min-h-0 flex-col bg-neutral',
+          'shadow-[inset_1px_0_0_rgba(58,41,22,0.06)]',
+          'transition-all duration-300 ease-in-out md:static md:top-auto md:z-auto',
+          'w-[min(20rem,88vw)] md:h-full',
+          sidebarOpen ? 'translate-x-0' : 'translate-x-full md:translate-x-0',
+          sidebarCollapsed && 'md:w-0 md:overflow-hidden md:shadow-none'
         )}
-        aria-label="Riwayat percakapan"
+        aria-label={t('chat.chat_history', 'Chat history')}
       >
-        {/* Mobile Header for Sidebar */}
-        <div className="md:hidden flex items-center justify-between p-4 border-b border-border/60 shrink-0">
-          <span className="font-display font-bold text-primary">{t('chat.chat_history', 'Riwayat Obrolan')}</span>
-          <button onClick={() => setSidebarOpen(false)} className="p-2 text-secondary hover:text-primary rounded-lg">
+        <div className="flex h-14 shrink-0 items-center justify-between px-4 shadow-[inset_0_-1px_0_rgba(58,41,22,0.06)] md:hidden">
+          <span className="font-display font-semibold text-primary">
+            {t('chat.chat_history', 'Chat history')}
+          </span>
+          <button
+            type="button"
+            onClick={() => setSidebarOpen(false)}
+            className="rounded-md p-2 text-secondary transition-colors hover:bg-secondary/10 hover:text-primary"
+          >
             <X size={20} />
           </button>
         </div>
-        <SidebarContent />
+        <div className="flex min-h-0 flex-1 flex-col">
+          <SidebarContent />
+        </div>
       </aside>
-    </div>
-  );
+    </motion.div>
+  )
 }
