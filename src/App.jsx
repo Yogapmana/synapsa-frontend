@@ -14,6 +14,9 @@ import { Button } from '@/components/ui/button'
 
 const Login = lazy(() => import('./pages/Auth/Login'))
 const Register = lazy(() => import('./pages/Auth/Register'))
+const VerifyEmail = lazy(() => import('./pages/Auth/VerifyEmail'))
+const ForgotPassword = lazy(() => import('./pages/Auth/ForgotPassword'))
+const ResetPassword = lazy(() => import('./pages/Auth/ResetPassword'))
 const Dashboard = lazy(() => import('./pages/Dashboard'))
 const Curriculum = lazy(() => import('./pages/Curriculum'))
 const Module = lazy(() => import('./pages/Module'))
@@ -141,6 +144,9 @@ function AppRoutes() {
     else if (path.startsWith('/settings')) title = 'Pengaturan — Synapsa';
     else if (path.startsWith('/login')) title = 'Masuk — Synapsa';
     else if (path.startsWith('/register')) title = 'Daftar — Synapsa';
+    else if (path.startsWith('/verify-email')) title = 'Verifikasi Email — Synapsa';
+    else if (path.startsWith('/forgot-password')) title = 'Lupa Password — Synapsa';
+    else if (path.startsWith('/reset-password')) title = 'Reset Password — Synapsa';
     else if (path.startsWith('/onboarding')) title = 'Onboarding — Synapsa';
 
     document.title = title;
@@ -152,6 +158,9 @@ function AppRoutes() {
         <Route path="/" element={<Landing />} />
         <Route path="/login" element={<ErrorBoundary><Login /></ErrorBoundary>} />
         <Route path="/register" element={<ErrorBoundary><Register /></ErrorBoundary>} />
+        <Route path="/verify-email" element={<ErrorBoundary><VerifyEmail /></ErrorBoundary>} />
+        <Route path="/forgot-password" element={<ErrorBoundary><ForgotPassword /></ErrorBoundary>} />
+        <Route path="/reset-password" element={<ErrorBoundary><ResetPassword /></ErrorBoundary>} />
         <Route
           path="/onboarding"
           element={

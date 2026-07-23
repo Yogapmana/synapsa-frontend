@@ -102,10 +102,9 @@ export default function Register() {
       queryClient.clear()
 
       const registeredEmail = response?.user?.email || data.email
-      navigate('/login', {
+      navigate('/verify-email', {
         replace: true,
         state: {
-          registered: true,
           email: registeredEmail,
         },
       })

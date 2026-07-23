@@ -16,6 +16,26 @@ export function register({ username, email, password }) {
     .then((response) => response.data)
 }
 
+export function verifyEmail(email, code) {
+  return api.post('/auth/verify-email', { email, code })
+    .then((response) => response.data)
+}
+
+export function resendVerification(email) {
+  return api.post('/auth/resend-verification', { email })
+    .then((response) => response.data)
+}
+
+export function forgotPassword(email) {
+  return api.post('/auth/forgot-password', { email })
+    .then((response) => response.data)
+}
+
+export function resetPassword(token, password) {
+  return api.post('/auth/reset-password', { token, password })
+    .then((response) => response.data)
+}
+
 export function getMe() {
   return api.get('/auth/me').then((response) => response.data)
 }

@@ -24,6 +24,7 @@ export default function Login() {
   const shouldReduceMotion = useReducedMotion()
 
   const registeredNotice = location.state?.registered
+  const verifiedNotice = location.state?.verified
   const prefilledEmail = location.state?.email || ''
 
   const loginSchema = useMemo(
@@ -141,6 +142,13 @@ export default function Login() {
               </div>
             )}
 
+            {verifiedNotice && (
+              <div className="flex items-start gap-2.5 p-3.5 text-sm text-success-fg bg-success-light rounded-xl border border-success/20 mb-5">
+                <CheckCircle2 className="h-4 w-4 mt-0.5 shrink-0" />
+                <span>{t('auth.verified_notice')}</span>
+              </div>
+            )}
+
             {error && (
               <motion.div
                 initial={shouldReduceMotion ? false : { opacity: 0, y: -4 }}
@@ -176,7 +184,7 @@ export default function Login() {
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <label className="text-sm font-label text-primary" htmlFor="password">{t('auth.password')}</label>
-                  <Link to="#" className="text-xs text-tertiary hover:text-tertiary-light transition-colors">
+                  <Link to="/forgot-password" className="text-xs text-tertiary hover:text-tertiary-light transition-colors">
                     {t('auth.forgot_password')}
                   </Link>
                 </div>
