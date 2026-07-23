@@ -136,14 +136,44 @@ export default function Quiz() {
   };
 
   const handleNext = async () => {
-    if (currentIndex < quizData.questions.length - 1) {
-      setCurrentIndex(prev => prev + 1);
-      setIsRevealed(false);
-      setQuizState('answering');
-    } else {
-      await handleSubmit();
+    // From a past review jump: go to first unanswered, or submit if all done
+    const statuses = quizData.questions.map((q, i) => {
+      const selected = answers[q.id || i]
+      if (selected === undefined || selected === null || selected === '') return 'pending'
+      return selected === q.correct_answer ? 'correct' : 'wrong'
+    })
+    const firstPending = statuses.findIndex((s) => s === 'pending')
+
+    if (firstPending !== -1 && firstPending !== currentIndex) {
+      setCurrentIndex(firstPending)
+      setIsRevealed(false)
+      setQuizState('answering')
+      return
     }
-  };
+
+    if (currentIndex < quizData.questions.length - 1) {
+      const next = currentIndex + 1
+      setCurrentIndex(next)
+      const nextQ = quizData.questions[next]
+      const nextAns = answers[nextQ.id || next]
+      const already = nextAns !== undefined && nextAns !== null && nextAns !== ''
+      setIsRevealed(already)
+      setQuizState(already ? 'feedback' : 'answering')
+    } else {
+      await handleSubmit()
+    }
+  }
+
+  const handleJumpTo = (index) => {
+    if (index < 0 || index >= quizData.questions.length) return
+    const q = quizData.questions[index]
+    const selected = answers[q.id || index]
+    const answered = selected !== undefined && selected !== null && selected !== ''
+    if (!answered) return
+    setCurrentIndex(index)
+    setIsRevealed(true)
+    setQuizState('feedback')
+  }
 
   const handleSubmit = async () => {
     setQuizState('submitting');
@@ -243,6 +273,7 @@ export default function Quiz() {
           onSelectOption={handleSelectOption}
           onNext={handleNext}
           answerStatuses={answerStatuses}
+          onJumpTo={handleJumpTo}
         />
       )}
     </div>

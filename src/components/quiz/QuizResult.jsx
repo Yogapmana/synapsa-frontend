@@ -215,75 +215,134 @@ export function QuizResult({ result, questions, topicId, sessionId, onRetry }) {
             Benar {correct_answers} dari {total_questions} soal
           </motion.div>
 
-          {/* Action buttons */}
+          {/*
+            Satu primary next path (UX):
+            - fail + remedial → buka remedial
+            - fail → baca materi utama
+            - pass + enrichment → deep dive
+            - pass → lanjut kurikulum
+            Secondary: outline / ghost di bawah.
+          */}
           <motion.div
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.9, duration: 0.4 }}
-            className="grid grid-cols-1 sm:grid-cols-2 gap-3"
+            className="flex flex-col gap-3 max-w-md mx-auto w-full"
           >
-            <Button
-              variant="outline"
-              size="lg"
-              onClick={() => navigate(`/module/${topicId}`)}
-              className="w-full rounded-xl font-label"
-            >
-              <BookOpen className="size-4 mr-2" />
-              {t('quiz.back_to_material', 'Kembali ke Materi')}
-            </Button>
-
-            {result.feedback_action === 'enrichment' ? (
-              <Button
-                variant="default"
-                size="lg"
-                onClick={() => window.location.href = `/module/${topicId}/deep-dive`}
-                className="w-full rounded-xl font-label bg-amber-500 hover:bg-amber-600 text-white"
-              >
-                <Sparkles className="size-4 mr-2" />
-                Jelajahi Materi Deep Dive
-              </Button>
-            ) : (
-              <Button
-                size="lg"
-                variant="tertiary"
-                onClick={async () => {
-                  if (sessionId) {
-                    await completeTopic.mutateAsync({ sessionId, topicId });
+            {(() => {
+              const action = result.feedback_action
+              const goCurriculum = async () => {
+                if (sessionId) {
+                  try {
+                    await completeTopic.mutateAsync({ sessionId, topicId })
+                  } catch {
+                    /* already completed */
                   }
-                  navigate('/curriculum');
-                }}
-                disabled={!isPassed}
-                className="w-full rounded-xl font-label shadow-warm-md"
-              >
-                {isPassed
-                  ? t('quiz.next_topic', 'Lanjut Topik Berikutnya')
-                  : t('quiz.pass_to_continue', 'Lulus Kuis (Min 80%) untuk Lanjut')}
-              </Button>
-            )}
+                }
+                navigate('/curriculum')
+              }
 
-            {result.feedback_action === 'enrichment' && (
-              <Button
-                size="lg"
-                variant="tertiary"
-                onClick={async () => {
-                  if (sessionId) {
-                    await completeTopic.mutateAsync({ sessionId, topicId });
-                  }
-                  navigate('/curriculum');
-                }}
-                disabled={!isPassed}
-                className="w-full sm:col-span-2 rounded-xl font-label shadow-warm-md"
-              >
-                Lanjut Topik Berikutnya
-              </Button>
-            )}
+              if (!isPassed && action === 'remedial') {
+                return (
+                  <Button
+                    size="lg"
+                    variant="tertiary"
+                    onClick={() => navigate(`/module/${topicId}/remedial`)}
+                    className="w-full rounded-xl font-label shadow-warm-md h-12"
+                  >
+                    <BookOpen className="size-4 mr-2" />
+                    {t('quiz.open_remedial', 'Buka Materi Remedial')}
+                  </Button>
+                )
+              }
+              if (!isPassed) {
+                return (
+                  <Button
+                    size="lg"
+                    variant="tertiary"
+                    onClick={() => navigate(`/module/${topicId}`)}
+                    className="w-full rounded-xl font-label shadow-warm-md h-12"
+                  >
+                    <BookOpen className="size-4 mr-2" />
+                    {t('quiz.review_material', 'Pelajari Ulang Materi')}
+                  </Button>
+                )
+              }
+              if (action === 'enrichment') {
+                return (
+                  <Button
+                    size="lg"
+                    onClick={() => navigate(`/module/${topicId}/deep-dive`)}
+                    className="w-full rounded-xl font-label bg-amber-500 hover:bg-amber-600 text-white shadow-warm-md h-12"
+                  >
+                    <Sparkles className="size-4 mr-2" />
+                    {t('quiz.open_deep_dive', 'Jelajahi Materi Deep Dive')}
+                  </Button>
+                )
+              }
+              return (
+                <Button
+                  size="lg"
+                  variant="tertiary"
+                  onClick={goCurriculum}
+                  className="w-full rounded-xl font-label shadow-warm-md h-12"
+                >
+                  {t('quiz.next_topic', 'Lanjut Topik Berikutnya')}
+                </Button>
+              )
+            })()}
 
-            {percentage <= 85 && (
-              result.cooldown_remaining_seconds > 0 ? (
-                <div className="col-span-1 sm:col-span-2 mt-4">
-                  <CooldownTimer 
-                    initialSeconds={result.cooldown_remaining_seconds} 
-                    onComplete={() => window.location.reload()} 
+            {/* Secondary actions — quieter */}
+            <div className="flex flex-col sm:flex-row gap-2">
+              {isPassed && result.feedback_action === 'enrichment' && (
+                <Button
+                  variant="outline"
+                  size="lg"
+                  onClick={async () => {
+                    if (sessionId) {
+                      try {
+                        await completeTopic.mutateAsync({ sessionId, topicId })
+                      } catch {
+                        /* ignore */
+                      }
+                    }
+                    navigate('/curriculum')
+                  }}
+                  className="w-full rounded-xl font-label"
+                >
+                  {t('quiz.skip_to_next', 'Lewati ke Topik Berikutnya')}
+                </Button>
+              )}
+              {isPassed && result.feedback_action !== 'enrichment' && (
+                <Button
+                  variant="outline"
+                  size="lg"
+                  onClick={() => navigate(`/module/${topicId}`)}
+                  className="w-full rounded-xl font-label"
+                >
+                  <BookOpen className="size-4 mr-2" />
+                  {t('quiz.back_to_material', 'Kembali ke Materi')}
+                </Button>
+              )}
+              {!isPassed && result.feedback_action === 'remedial' && (
+                <Button
+                  variant="outline"
+                  size="lg"
+                  onClick={() => navigate(`/module/${topicId}`)}
+                  className="w-full rounded-xl font-label"
+                >
+                  {t('quiz.back_to_material', 'Kembali ke Materi')}
+                </Button>
+              )}
+            </div>
+
+            {/* Cooldown / retry — tertiary path */}
+            {percentage < 80 &&
+              (result.cooldown_remaining_seconds > 0 ? (
+                <div className="mt-1">
+                  <CooldownTimer
+                    initialSeconds={result.cooldown_remaining_seconds}
+                    onComplete={() => window.location.reload()}
                     topicId={topicId}
                     feedbackAction={result.feedback_action}
                   />
@@ -293,13 +352,12 @@ export function QuizResult({ result, questions, topicId, sessionId, onRetry }) {
                   variant="ghost"
                   size="lg"
                   onClick={onRetry}
-                  className="w-full sm:col-span-2 rounded-xl font-label gap-2"
+                  className="w-full rounded-xl font-label gap-2"
                 >
                   <RefreshCw className="size-4" />
-                  Ulangi Kuis
+                  {t('quiz.retry', 'Ulangi Kuis')}
                 </Button>
-              )
-            )}
+              ))}
           </motion.div>
         </div>
       </div>
