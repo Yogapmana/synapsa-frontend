@@ -2,6 +2,7 @@ import React, { Suspense, lazy, useEffect } from 'react'
 import { BrowserRouter, Navigate, Route, Routes, useLocation, useParams, Link } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { SpeedInsights } from '@vercel/speed-insights/react'
+import { Analytics } from '@vercel/analytics/react'
 import ErrorBoundary from './components/common/ErrorBoundary'
 import ProtectedRoute from './components/layout/ProtectedRoute'
 import AppLayout from './components/layout/AppLayout'
@@ -309,6 +310,7 @@ export default function App() {
       <BrowserRouter>
         <AppRoutes />
         <SpeedInsights />
+        <Analytics />
       </BrowserRouter>
     </QueryClientProvider>
   )
