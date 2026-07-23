@@ -6,8 +6,10 @@ dist/
 build/
 
 # Environment variables
-.env
-.env.local
+# Environment variables
+.env*
+!.env.example
+
 
 # Build and compile artifacts
 *.log
